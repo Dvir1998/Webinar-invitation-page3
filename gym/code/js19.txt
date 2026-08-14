@@ -1,0 +1,59 @@
+/* Dvir Gym AI 6.2 — Cloud Memory */
+const DG_CLOUD_URL='https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/cloud-memory';
+const DG_CLOUD_TOKEN_KEY='dvirGymCloudRecoveryV1';
+const DG_CLOUD_META_KEY='dvirGymCloudMetaV1';
+let dgCloudTimer=null,dgCloudBusy=false,dgCloudStatus='connecting';
+
+function dgMakeRecoveryKey(){
+ const a=new Uint8Array(32);crypto.getRandomValues(a);
+ return btoa(String.fromCharCode(...a)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function dgCloudToken(){let t=localStorage.getItem(DG_CLOUD_TOKEN_KEY);if(!t){t=dgMakeRecoveryKey();localStorage.setItem(DG_CLOUD_TOKEN_KEY,t)}return t}
+function dgCloudMeta(){try{return JSON.parse(localStorage.getItem(DG_CLOUD_META_KEY))||{}}catch{return{}}}
+function dgSetCloudMeta(p){const m={...dgCloudMeta(),...p};localStorage.setItem(DG_CLOUD_META_KEY,JSON.stringify(m));return m}
+function dgCloudSnapshot(){
+ const x=JSON.parse(JSON.stringify(S));
+ x.cloud={provider:'supabase',version:'6.2',syncedAt:Date.now()};
+ return x;
+}
+async function dgCloudRequest(action,state=null){
+ const r=await fetch(DG_CLOUD_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,token:dgCloudToken(),state})});
+ if(!r.ok)throw new Error('cloud '+r.status);const j=await r.json();if(!j.ok)throw new Error(j.error||'cloud error');return j;
+}
+async function dgCloudPush(){
+ if(dgCloudBusy||!navigator.onLine)return false;dgCloudBusy=true;
+ try{const j=await dgCloudRequest('push',dgCloudSnapshot());const now=Date.now();dgSetCloudMeta({lastPushAt:now,lastCloudAt:j.updatedAt||now,lastError:''});dgCloudStatus='live';return true}
+ catch(e){dgSetCloudMeta({lastError:String(e),lastErrorAt:Date.now()});dgCloudStatus='offline';return false}
+ finally{dgCloudBusy=false;dgRefreshCloudBadges()}
+}
+function dgScheduleCloudPush(){clearTimeout(dgCloudTimer);dgCloudTimer=setTimeout(dgCloudPush,1300)}
+async function dgCloudBoot(){
+ dgCloudToken();if(!navigator.onLine){dgCloudStatus='offline';return}
+ dgCloudBusy=true;
+ try{
+  const j=await dgCloudRequest('pull'),m=dgCloudMeta(),cloudTs=j.updatedAt?new Date(j.updatedAt).getTime():0,localTs=+m.localModifiedAt||0,lastPush=+m.lastPushAt||0;
+  if(j.state&&cloudTs>0){
+   if(localTs>lastPush&&localTs>cloudTs){dgCloudBusy=false;await dgCloudPush();return}
+   const d=defaults();S={...d,...j.state,profile:{...d.profile,...(j.state.profile||{})},readiness:{...d.readiness,...(j.state.readiness||{})},prefs:{...d.prefs,...(j.state.prefs||{})},ai:{...d.ai,...(j.state.ai||{})},daily:{...d.daily,...(j.state.daily||{})},hydration:{...d.hydration,...(j.state.hydration||{})}};
+   localStorage.setItem(STORE,JSON.stringify(S));dgSetCloudMeta({lastPushAt:cloudTs,lastCloudAt:cloudTs,lastError:''});dgCloudStatus='live';renderCurrent();toast('☁ הזיכרון סונכרן מהענן');
+  }else{dgCloudBusy=false;await dgCloudPush();return}
+ }catch(e){dgCloudStatus='offline';dgSetCloudMeta({lastError:String(e),lastErrorAt:Date.now()})}
+ finally{dgCloudBusy=false;dgRefreshCloudBadges()}
+}
+
+const dgSaveLocal=save;
+save=function(){dgSaveLocal();dgSetCloudMeta({localModifiedAt:Date.now()});dgScheduleCloudPush()};
+
+function dgCloudStatusText(){const m=dgCloudMeta();if(dgCloudStatus==='live')return `Cloud Memory פעיל${m.lastPushAt?' · '+new Date(m.lastPushAt).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'}):''}`;if(!navigator.onLine)return'Offline · יסתנכרן כשתחזור לרשת';return'Cloud Memory מתחבר…'}
+function dgRefreshCloudBadges(){document.querySelectorAll('[data-cloud-status]').forEach(x=>{x.textContent=dgCloudStatusText();x.dataset.state=dgCloudStatus})}
+function dgMaskKey(k){return k?`${k.slice(0,7)}••••••••${k.slice(-6)}`:'—'}
+async function dgCopyRecovery(){try{await navigator.clipboard.writeText(dgCloudToken());toast('מפתח השחזור הועתק · שמור אותו במקום פרטי')}catch{toast('לא הצלחתי להעתיק') }}
+function dgImportRecovery(){const k=prompt('הדבק את מפתח השחזור הפרטי שלך');if(!k)return;const clean=k.trim();if(clean.length<32){toast('המפתח קצר מדי');return}localStorage.setItem(DG_CLOUD_TOKEN_KEY,clean);localStorage.removeItem(DG_CLOUD_META_KEY);toast('המפתח נשמר · מושך זיכרון מהענן');dgCloudBoot()}
+
+const dgRenderMoreBase=renderMore;
+renderMore=function(){dgRenderMoreBase();setTimeout(()=>{const s=$('#screen-more');if(!s||s.querySelector('#dgCloudCard'))return;const card=document.createElement('div');card.id='dgCloudCard';card.className='card system-card';card.style.marginTop='14px';card.innerHTML=`<div class="section-head" style="margin-top:0"><div><h2>☁ Cloud Memory</h2><small data-cloud-status>${dgCloudStatusText()}</small></div><span class="badge">SUPABASE</span></div><div class="system-row"><div><b>Recovery Key</b><small>${dgMaskKey(dgCloudToken())}</small></div><button class="secondary" id="dgCopyCloud" style="width:auto;padding:8px 11px">העתק</button></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px"><button class="secondary" id="dgSyncNow">סנכרן עכשיו</button><button class="secondary" id="dgRestoreCloud">שחזר בטלפון אחר</button></div><p class="help" style="margin:10px 0 0">המפתח הוא פרטי. מי שמחזיק בו יכול לשחזר את זיכרון האפליקציה. אל תפרסם אותו.</p>`;s.appendChild(card);$('#dgCopyCloud').onclick=dgCopyRecovery;$('#dgSyncNow').onclick=async()=>{toast('מסנכרן…');const ok=await dgCloudPush();toast(ok?'☁ הזיכרון בענן מעודכן':'הסנכרון ינסה שוב כשהחיבור יחזור')};$('#dgRestoreCloud').onclick=dgImportRecovery;},0)};
+
+window.addEventListener('online',()=>setTimeout(dgCloudBoot,300));
+window.addEventListener('pagehide',()=>{if(navigator.sendBeacon){try{const blob=new Blob([JSON.stringify({action:'push',token:dgCloudToken(),state:dgCloudSnapshot()})],{type:'application/json'});navigator.sendBeacon(DG_CLOUD_URL,blob)}catch{}}});
+setTimeout(dgCloudBoot,1500);
+setInterval(()=>{if(navigator.onLine)dgCloudPush()},5*60*1000);
