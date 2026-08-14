@@ -21,7 +21,7 @@ jobs:
         run: |
           set -euo pipefail
           URL="https://dvir-gym-ai-selftest-dvirs-projects-b157a454.vercel.app/api/selftest"
-          BODY=$(curl --fail --silent --show-error --max-time 60 "$URL")
+          BODY=$(curl -L --fail --silent --show-error --max-time 60 "$URL")
           echo "$BODY"
           echo "$BODY" | grep -q '"ok":true'
           echo "$BODY" | grep -q '"servedBy"'
