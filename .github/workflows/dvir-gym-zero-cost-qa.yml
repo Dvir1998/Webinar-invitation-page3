@@ -25,18 +25,18 @@ jobs:
           test -f gym/index.html
           test -f gym/manifest.json
           test -f gym/sw.js
-          for i in $(seq 1 5); do test -f "gym/code/css${i}.txt"; done
-          for i in $(seq 1 24); do test -f "gym/code/js${i}.txt"; done
+          for i in $(seq 1 6); do test -f "gym/code/css${i}.txt"; done
+          for i in $(seq 1 25); do test -f "gym/code/js${i}.txt"; done
           for i in $(seq 1 7); do test -f "gym/assets/sprite${i}.txt"; done
-          grep -q 'length:5' gym/index.html
-          grep -q 'length:24' gym/index.html
-          grep -q 'v=7.2.0' gym/index.html
-          grep -q 'v7-2-0' gym/sw.js
+          grep -q 'length:6' gym/index.html
+          grep -q 'length:25' gym/index.html
+          grep -q 'v=7.2.1' gym/index.html
+          grep -q 'v7-2-1' gym/sw.js
       - name: JavaScript syntax check
         shell: bash
         run: |
           set -euo pipefail
-          cat $(for i in $(seq 1 24); do printf 'gym/code/js%s.txt ' "$i"; done) > /tmp/athlete-os.js
+          cat $(for i in $(seq 1 25); do printf 'gym/code/js%s.txt ' "$i"; done) > /tmp/athlete-os.js
           node --check /tmp/athlete-os.js
           node --check gym/sw.js
           node -e "JSON.parse(require('fs').readFileSync('gym/manifest.json','utf8')); console.log('manifest ok')"
@@ -55,6 +55,8 @@ jobs:
           grep -q 'oauth-exchange' gym/code/js20.txt
           grep -q "addEventListener('push'" gym/sw.js
           grep -q 'DG_VAPID_PUBLIC' gym/code/js24.txt
+          grep -q 'Israeli Workout Hits' gym/code/js25.txt
+          grep -q 'Workout Energy Mix' gym/code/js25.txt
       - name: Verify cloud services are alive and free-only
         shell: bash
         run: |
