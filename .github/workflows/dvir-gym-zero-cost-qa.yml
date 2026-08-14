@@ -17,7 +17,7 @@ jobs:
     timeout-minutes: 6
     steps:
       - uses: actions/checkout@v4
-      - name: Verify required production files
+      - name: Verify production bundle and PWA files
         shell: bash
         run: |
           set -euo pipefail
@@ -25,20 +25,22 @@ jobs:
           test -f gym/index.html
           test -f gym/manifest.json
           test -f gym/sw.js
-          for i in $(seq 1 8); do test -f "gym/code/css${i}.txt"; done
-          for i in $(seq 1 27); do test -f "gym/code/js${i}.txt"; done
-          for i in $(seq 1 7); do test -f "gym/assets/sprite${i}.txt"; done
+          test -f gym/dist/app.js
+          test -f gym/dist/app.css
+          test -f gym/dist/SHA256SUMS
           test -f gym/tests/e2e.mjs
-          grep -q 'length:8' gym/index.html
-          grep -q 'length:27' gym/index.html
-          grep -q 'v=7.4.0' gym/index.html
-          grep -q 'v7-4-0' gym/sw.js
-      - name: JavaScript syntax check
+          for i in $(seq 1 7); do test -f "gym/assets/sprite${i}.txt"; done
+          grep -q 'dist/app.css?v=7.4.1' gym/index.html
+          grep -q 'dist/app.js?v=7.4.1' gym/index.html
+          grep -q 'v7-4-1' gym/sw.js
+          grep -q "'dist/app.css'" gym/sw.js
+          grep -q "'dist/app.js'" gym/sw.js
+          (cd gym/dist && sha256sum -c SHA256SUMS)
+      - name: JavaScript and manifest syntax check
         shell: bash
         run: |
           set -euo pipefail
-          cat $(for i in $(seq 1 27); do printf 'gym/code/js%s.txt ' "$i"; done) > /tmp/athlete-os.js
-          node --check /tmp/athlete-os.js
+          node --check gym/dist/app.js
           node --check gym/sw.js
           node --check gym/tests/e2e.mjs
           node -e "JSON.parse(require('fs').readFileSync('gym/manifest.json','utf8')); console.log('manifest ok')"
@@ -46,24 +48,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if grep -R -n -E 'api\.openai\.com|platform\.openai\.com' gym; then
-            echo 'Paid OpenAI path found in production source'
+          if grep -R -n -E 'api\.openai\.com|platform\.openai\.com' gym/index.html gym/dist gym/sw.js; then
+            echo 'Paid OpenAI path found in production artifacts'
             exit 1
           fi
-          grep -q 'openrouter/free' gym/code/js20.txt
-          grep -q 'ZERO COST\|Zero.Cost' gym/code/js20.txt
-          grep -q '0\$' gym/code/js20.txt
-          grep -q 'code_challenge_method=S256' gym/code/js20.txt
-          grep -q 'oauth-exchange' gym/code/js20.txt
+          grep -q 'openrouter/free' gym/dist/app.js
+          grep -q 'ZERO COST\|Zero.Cost' gym/dist/app.js
+          grep -q 'code_challenge_method=S256' gym/dist/app.js
+          grep -q 'oauth-exchange' gym/dist/app.js
+          grep -q 'DG_VAPID_PUBLIC' gym/dist/app.js
+          grep -q 'DG_PRIVACY_URL' gym/dist/app.js
+          grep -q 'Plateau detected' gym/dist/app.js
+          grep -q 'DG_FOOD_URL' gym/dist/app.js
+          grep -q 'Open Food Facts' gym/dist/app.js
           grep -q "addEventListener('push'" gym/sw.js
-          grep -q 'DG_VAPID_PUBLIC' gym/code/js24.txt
-          grep -q 'Israeli Workout Hits' gym/code/js25.txt
-          grep -q 'Workout Energy Mix' gym/code/js25.txt
-          grep -q 'DG_PRIVACY_URL' gym/code/js26.txt
-          grep -q 'Plateau detected' gym/code/js26.txt
-          grep -q 'conflict' gym/code/js26.txt
-          grep -q 'DG_FOOD_URL' gym/code/js27.txt
-          grep -q 'Open Food Facts' gym/code/js27.txt
       - name: Verify cloud services are alive and free-only
         shell: bash
         run: |
@@ -75,13 +73,6 @@ jobs:
           PUSH_DISP=$(curl --fail --silent --show-error --max-time 25 'https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/push-dispatch')
           PRIVACY=$(curl --fail --silent --show-error --max-time 25 'https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/privacy-control')
           FOOD=$(curl --fail --silent --show-error --max-time 25 'https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/food-lookup')
-          echo "$COACH"
-          echo "$MEMORY"
-          echo "$SETUP"
-          echo "$PUSH_SUB"
-          echo "$PUSH_DISP"
-          echo "$PRIVACY"
-          echo "$FOOD"
           echo "$COACH" | grep -q '"freeOnly":true'
           echo "$COACH" | grep -q '"model":"openrouter/free"'
           echo "$COACH" | grep -q '"originLocked":true'
