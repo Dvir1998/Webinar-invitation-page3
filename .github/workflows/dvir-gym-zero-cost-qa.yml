@@ -1,0 +1,65 @@
+name: Dvir Gym AI Zero-Cost QA
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'gym/**'
+      - '.github/workflows/dvir-gym-zero-cost-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-athlete-os:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify required production files
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f gym/index.html
+          test -f gym/manifest.json
+          test -f gym/sw.js
+          for i in $(seq 1 5); do test -f "gym/code/css${i}.txt"; done
+          for i in $(seq 1 23); do test -f "gym/code/js${i}.txt"; done
+          for i in $(seq 1 7); do test -f "gym/assets/sprite${i}.txt"; done
+          grep -q 'length:5' gym/index.html
+          grep -q 'length:23' gym/index.html
+          grep -q 'v=7.0.0' gym/index.html
+      - name: JavaScript syntax check
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat $(for i in $(seq 1 23); do printf 'gym/code/js%s.txt ' "$i"; done) > /tmp/athlete-os.js
+          node --check /tmp/athlete-os.js
+          node --check gym/sw.js
+          node -e "JSON.parse(require('fs').readFileSync('gym/manifest.json','utf8')); console.log('manifest ok')"
+      - name: Enforce zero-cost source policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -R -n -E 'api\.openai\.com|platform\.openai\.com' gym; then
+            echo 'Paid OpenAI path found in production source'
+            exit 1
+          fi
+          grep -q 'openrouter/free' gym/code/js20.txt || true
+          grep -q 'Zero.Cost' gym/code/js20.txt
+          grep -q '0\$' gym/code/js20.txt
+      - name: Verify cloud services are alive and free-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          COACH=$(curl --fail --silent --show-error --max-time 25 'https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/coach')
+          MEMORY=$(curl --fail --silent --show-error --max-time 25 'https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/cloud-memory')
+          SETUP=$(curl --fail --silent --show-error --max-time 25 'https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/ai-key-setup')
+          echo "$COACH"
+          echo "$MEMORY"
+          echo "$SETUP"
+          echo "$COACH" | grep -q '"freeOnly":true'
+          echo "$COACH" | grep -q '"model":"openrouter/free"'
+          echo "$MEMORY" | grep -q '"ok":true'
+          echo "$SETUP" | grep -q '"mode":"free-only"'
