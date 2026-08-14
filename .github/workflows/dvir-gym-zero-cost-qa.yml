@@ -21,6 +21,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          test -f .nojekyll
           test -f gym/index.html
           test -f gym/manifest.json
           test -f gym/sw.js
@@ -29,7 +30,8 @@ jobs:
           for i in $(seq 1 7); do test -f "gym/assets/sprite${i}.txt"; done
           grep -q 'length:5' gym/index.html
           grep -q 'length:23' gym/index.html
-          grep -q 'v=7.0.0' gym/index.html
+          grep -q 'v=7.1.0' gym/index.html
+          grep -q 'v7-1-0' gym/sw.js
       - name: JavaScript syntax check
         shell: bash
         run: |
@@ -46,9 +48,11 @@ jobs:
             echo 'Paid OpenAI path found in production source'
             exit 1
           fi
-          grep -q 'openrouter/free' gym/code/js20.txt || true
-          grep -q 'Zero.Cost' gym/code/js20.txt
+          grep -q 'openrouter/free' gym/code/js20.txt
+          grep -q 'ZERO COST\|Zero.Cost' gym/code/js20.txt
           grep -q '0\$' gym/code/js20.txt
+          grep -q 'code_challenge_method=S256' gym/code/js20.txt
+          grep -q 'oauth-exchange' gym/code/js20.txt
       - name: Verify cloud services are alive and free-only
         shell: bash
         run: |
@@ -63,3 +67,4 @@ jobs:
           echo "$COACH" | grep -q '"model":"openrouter/free"'
           echo "$MEMORY" | grep -q '"ok":true'
           echo "$SETUP" | grep -q '"mode":"free-only"'
+          echo "$SETUP" | grep -q '"oauth":"pkce"'
