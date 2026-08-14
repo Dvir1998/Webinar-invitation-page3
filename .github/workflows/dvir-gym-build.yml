@@ -41,7 +41,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if git diff --quiet -- gym/dist; then
+          if [ -z "$(git status --porcelain -- gym/dist)" ]; then
             echo 'Bundle already current'
             exit 0
           fi
