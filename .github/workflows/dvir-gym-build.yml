@@ -1,0 +1,56 @@
+name: Dvir Gym AI Production Bundle
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'gym/code/**'
+      - '.github/workflows/dvir-gym-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dvir-gym-bundle
+  cancel-in-progress: true
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Build deterministic production bundles
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p gym/dist
+          {
+            echo '/* Dvir Gym AI Athlete OS — generated production CSS. Do not edit directly. */'
+            for i in $(seq 1 8); do cat "gym/code/css${i}.txt"; printf '\n'; done
+          } > gym/dist/app.css
+          {
+            echo '/* Dvir Gym AI Athlete OS — generated production JS. Do not edit directly. */'
+            for i in $(seq 1 27); do cat "gym/code/js${i}.txt"; printf '\n'; done
+          } > gym/dist/app.js
+          node --check gym/dist/app.js
+          printf '%s\n' "$(sha256sum gym/dist/app.js | cut -d' ' -f1)  app.js" "$(sha256sum gym/dist/app.css | cut -d' ' -f1)  app.css" > gym/dist/SHA256SUMS
+      - name: Commit bundle when changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- gym/dist; then
+            echo 'Bundle already current'
+            exit 0
+          fi
+          git config user.name 'dvir-gym-build-bot'
+          git config user.email '156288344+Dvir1998@users.noreply.github.com'
+          git add gym/dist
+          git commit -m 'build: refresh Dvir Gym AI production bundle [skip ci]'
+          git push
