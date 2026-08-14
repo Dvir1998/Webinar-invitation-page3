@@ -1,0 +1,88 @@
+/* Dvir Gym AI 7.3 — Decision Engine + Privacy Control + Diagnostics */
+const DG_APP_VERSION='7.3.0';
+const DG_PRIVACY_URL='https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/privacy-control';
+const DG_DIAG_KEY='dvirGymDiagnosticsV1';
+const DG_CLOUD_DISABLED='dvirGymCloudDisabledV1';
+S.appVersion=DG_APP_VERSION;S.version=DG_APP_VERSION;
+
+// Keep persisted state version aligned with the actual production build.
+const dgSaveV73=save;
+save=function(){dgSaveV73();S.appVersion=DG_APP_VERSION;S.version=DG_APP_VERSION;try{localStorage.setItem(STORE,JSON.stringify(S))}catch{}};
+try{localStorage.setItem(STORE,JSON.stringify(S))}catch{}
+
+function dgDiagRead(){try{return JSON.parse(localStorage.getItem(DG_DIAG_KEY))||{errors:[]}}catch{return{errors:[]}}}
+function dgDiagWrite(p){const d={...dgDiagRead(),...p};try{localStorage.setItem(DG_DIAG_KEY,JSON.stringify(d))}catch{}return d}
+function dgRecordError(type,error){const d=dgDiagRead(),arr=Array.isArray(d.errors)?d.errors:[];arr.unshift({ts:Date.now(),type,message:String(error?.message||error||'unknown').slice(0,500)});dgDiagWrite({errors:arr.slice(0,20),lastErrorAt:Date.now()})}
+window.addEventListener('error',e=>dgRecordError('window',e.error||e.message));
+window.addEventListener('unhandledrejection',e=>dgRecordError('promise',e.reason));
+
+async function dgPrivacy(action='status'){
+ const c=new AbortController(),t=setTimeout(()=>c.abort(),20000);
+ try{const r=await fetch(DG_PRIVACY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:dgCloudToken(),action}),signal:c.signal});const j=await r.json().catch(()=>({}));if(!r.ok||!j.ok){const e=new Error(j.error||('privacy '+r.status));e.data=j;throw e}return j}finally{clearTimeout(t)}
+}
+function dgCloudPaused(){return localStorage.getItem(DG_CLOUD_DISABLED)==='1'}
+function dgSetCloudPaused(v){localStorage.setItem(DG_CLOUD_DISABLED,v?'1':'0');dgCloudStatus=v?'paused':'connecting';dgRefreshCloudBadges?.()}
+
+// Cloud transport with optimistic conflict detection. Memory remains encrypted end-to-end.
+dgCloudRequest=async function(action,state=null,baseUpdatedAt=null){
+ const body={action,token:dgCloudToken(),state};if(baseUpdatedAt!=null)body.baseUpdatedAt=baseUpdatedAt;
+ const r=await fetch(DG_CLOUD_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),j=await r.json().catch(()=>({}));
+ if(!r.ok||!j.ok){const e=new Error(j.error||('cloud '+r.status));e.status=r.status;e.data=j;throw e}return j;
+};
+function dgMergeById(cloud=[],local=[],limit=300){const map=new Map();for(const x of cloud||[]){const k=x?.id||`${x?.ts||''}:${x?.description||x?.title||JSON.stringify(x).slice(0,80)}`;map.set(k,x)}for(const x of local||[]){const k=x?.id||`${x?.ts||''}:${x?.description||x?.title||JSON.stringify(x).slice(0,80)}`;map.set(k,x)}return[...map.values()].sort((a,b)=>(b.ts||b.end||b.createdAt||0)-(a.ts||a.end||a.createdAt||0)).slice(0,limit)}
+function dgMergeStates(local,cloud){const d=defaults(),m={...d,...cloud,...local,profile:{...d.profile,...(cloud?.profile||{}),...(local?.profile||{})},readiness:{...d.readiness,...(cloud?.readiness||{}),...(local?.readiness||{})},prefs:{...d.prefs,...(cloud?.prefs||{}),...(local?.prefs||{})},ai:{...d.ai,...(cloud?.ai||{}),...(local?.ai||{})},daily:{...d.daily,...(cloud?.daily||{}),...(local?.daily||{})},hydration:{...d.hydration,...(cloud?.hydration||{}),...(local?.hydration||{})}};m.logs=dgMergeById(cloud?.logs,local?.logs,260);m.meals=dgMergeById(cloud?.meals,local?.meals,500);m.weights=dgMergeById(cloud?.weights,local?.weights,160);m.measures=dgMergeById(cloud?.measures,local?.measures,120);m.chat=dgMergeById(cloud?.chat,local?.chat,120);const rem=new Map();for(const r of cloud?.reminders||[])rem.set(r.id,r);for(const r of local?.reminders||[])rem.set(r.id,r);m.reminders=[...rem.values()];m.version=DG_APP_VERSION;m.appVersion=DG_APP_VERSION;return m}
+
+dgCloudPush=async function(){
+ if(dgCloudPaused()||dgCloudBusy||!navigator.onLine)return false;dgCloudBusy=true;
+ try{const meta=dgCloudMeta(),encrypted=await dgEncryptCloudState(dgCloudSnapshot());let j;
+  try{j=await dgCloudRequest('push',encrypted,+meta.lastCloudAt||0)}catch(e){
+   if(e.status===409&&e.data?.state){const cloud=await dgDecryptCloudState(e.data.state),merged=dgMergeStates(S,cloud);S=merged;localStorage.setItem(STORE,JSON.stringify(S));const serverTs=e.data.updatedAt?new Date(e.data.updatedAt).getTime():Date.now();dgSetCloudMeta({lastCloudAt:serverTs,lastPushAt:serverTs,lastConflictAt:Date.now(),lastError:'',encrypted:true});dgCloudBusy=false;renderCurrent();toast('☁ זוהה עדכון ממכשיר אחר · הזיכרונות מוזגו');return dgCloudPush()}throw e}
+  const now=Date.now(),cloudTs=j.updatedAt?new Date(j.updatedAt).getTime():now;dgSetCloudMeta({lastPushAt:cloudTs,lastCloudAt:cloudTs,lastError:'',encrypted:true});dgCloudStatus='live';return true
+ }catch(e){dgRecordError('cloud-push',e);dgSetCloudMeta({lastError:String(e),lastErrorAt:Date.now()});dgCloudStatus='offline';return false}
+ finally{dgCloudBusy=false;dgRefreshCloudBadges?.()}
+};
+const dgCloudBootV73=dgCloudBoot;dgCloudBoot=async function(){if(dgCloudPaused()){dgCloudStatus='paused';dgRefreshCloudBadges?.();return}return dgCloudBootV73()};
+
+// Adaptive nutrition: calibrate with percentage of body weight, not a fixed kg threshold.
+const dgNutritionTargetsV72=nutritionTargets;
+nutritionTargets=function(){
+ const p=S.profile,w=+p.weight||65,h=+p.height||165,a=+p.age||28,bmr=10*w+6.25*h-5*a+(p.sex==='female'?-161:5),fac={low:1.35,medium:1.5,high:1.65}[p.activity]||1.5,tdee=bmr*fac,tr=bodyTrend();
+ let delta=p.goal==='lean_gain'?180:p.goal==='fat_loss'?-300:0,adapt=0,trendPct=null,adaptReason='ממתין למספיק שקילות';
+ if(tr&&S.weights.filter(x=>+x.weight).length>=6){trendPct=tr.weekly/w*100;
+  if(p.goal==='lean_gain'){if(trendPct<.08){adapt=100;adaptReason='קצב העלייה נמוך מהיעד'}else if(trendPct>.30){adapt=-100;adaptReason='קצב העלייה מהיר מדי ל־Clean Bulk'}else adaptReason='קצב העלייה בטווח המתוכנן'}
+  if(p.goal==='fat_loss'){if(trendPct>-.35){adapt=-100;adaptReason='קצב הירידה נמוך'}else if(trendPct<-.85){adapt=100;adaptReason='קצב הירידה מהיר מדי'}else adaptReason='קצב הירידה בטווח המתוכנן'}
+  if(p.goal==='recomp'){if(trendPct>.30){adapt=-100;adaptReason='המשקל עולה מהר ל־Recomp'}else if(trendPct<-.40){adapt=100;adaptReason='המשקל יורד מהר ל־Recomp'}else adaptReason='המשקל יציב יחסית — מתאים ל־Recomp'}
+ }
+ let calories=Math.round((tdee+delta+adapt)/10)*10;if(+p.manualCalories>0)calories=+p.manualCalories;let protein=Math.round(w*(p.goal==='fat_loss'?2:1.8));if(+p.manualProtein>0)protein=+p.manualProtein;const fat=Math.round(w*.8),carbs=Math.max(80,Math.round((calories-protein*4-fat*9)/4));return{bmr:Math.round(bmr),tdee:Math.round(tdee),calories,protein,fat,carbs,adapt,trendPct,adaptReason}
+};
+
+function dgExerciseSessions(e,max=4){const out=[];for(const w of S.logs){for(const x of w.exercises||[]){if((x.exerciseId||x.mi)===e.exerciseId&&String(x.name||'').toLowerCase()===String(e.name||'').toLowerCase()){const done=(x.results||[]).filter(r=>r.done);if(done.length)out.push({ts:w.end||w.ts||w.createdAt||0,done});if(out.length>=max)return out}}}return out}
+function dgSessionScore(s){if(!s?.done?.length)return 0;const reps=sum(s.done.map(r=>+r.reps||0)),loads=s.done.map(r=>+r.weight||0).filter(Boolean),load=loads.length?avg(loads):0;return load>0?load*reps:reps}
+const dgProgressionV72=progressionAdvice;
+progressionAdvice=function(e){const base=dgProgressionV72(e),hist=dgExerciseSessions(e,4);if(readinessScore()<55)return{title:'Auto‑Regulation',text:'ה־Readiness נמוך היום. שמור 3 RIR לפחות, אל תרדוף אחרי PR, ואם הטכניקה יורדת עצור סט מוקדם.'};if(hist.length>=3){const s=hist.slice(0,3).map(dgSessionScore),eff=hist.slice(0,3).flatMap(x=>x.done.map(r=>Number.isFinite(+r.rir)?+r.rir:2)),hard=avg(eff)<=2.2;if(hard&&s[0]<=s[1]*1.01&&s[1]<=s[2]*1.01)return{title:'Plateau detected',text:'שלושה חשיפות בלי התקדמות ברורה למרות מאמץ גבוה. היום שמור טכניקה, אל תוסיף עומס בכוח; אם זה חוזר שוב, נוריד מעט עומס/נפח ונבנה מחדש.'};if(s[0]>s[1]*1.03&&s[1]>=s[2]*.98)return{title:'Progression confirmed',text:'ה־logbook מראה מגמת שיפור. המשך Double Progression: קודם מלא את טווח החזרות, ואז העלה עומס קטן.'}}return base};
+
+function dgFatigueFlag(){return readinessScore()<60&&weekLogs(6).length>=3}
+const dgLocalWorkoutV72=localWorkout;
+localWorkout=function(){const w=dgLocalWorkoutV72();if(w.type==='recovery')return w;const fatigue=dgFatigueFlag();w.autoRegulated=true;w.exercises=w.exercises.map((e,i)=>{const x={...e};if(fatigue&&x.sets>=3)x.sets=Math.max(2,x.sets-1);if(readinessScore()<65)x.targetRIR=Math.max(3,x.targetRIR||2);if(i<2&&x.sets>1)x.warmup='חימום: 1–2 סטים מדורגים, קלים מהעומס העובד; הם לא נספרים כסטי עבודה.';return x});if(fatigue){w.title+=' · Auto‑Regulated';w.reason+=` זוהתה עייפות מצטברת: נפח העבודה הופחת היום בלי לבטל את האימון.`}return w};
+
+// Ranked exercise substitutions instead of choosing the first match.
+swapExercise=function(e){const target=Object.keys(inferMuscles(e)),used=new Set((S.activeWorkout?.exercises||[]).map(x=>x.exerciseId)),src=S.location==='home'?HOME_EX:MACHINES,cands=src.filter(x=>x.id!==e.exerciseId&&!x.muscles?.includes('cardio')).map(x=>({x,score:(x.muscles||[]).filter(m=>target.includes(m)).length*10-(used.has(x.id)?4:0)})).filter(z=>z.score>0).sort((a,b)=>b.score-a.score).slice(0,4);if(!cands.length){toast('לא מצאתי תחליף איכותי לאותה מטרה');return}const root=$('#machineContent');root.innerHTML=`<div class="sheet"><div class="sheet-head"><div><div class="eyebrow">SMART SWAP</div><h2>המכשיר תפוס?</h2></div><button class="close" id="dgSwapClose">×</button></div><p class="help">החלופות מדורגות לפי השרירים של ${esc(e.name)} והתרגילים שכבר נמצאים באימון.</p><div class="dg-swap-list">${cands.map(z=>`<button class="dg-swap-option" data-dg-swap="${esc(z.x.id)}"><div><b>${esc(z.x.simple||z.x.pro)}</b><small>${esc(z.x.pro||'')} · ${(z.x.muscles||[]).map(m=>MUSCLE_NAMES[m]||m).join(' · ')}</small></div><span>החלף</span></button>`).join('')}</div></div>`;$('#machineDialog').showModal();$('#dgSwapClose').onclick=()=>$('#machineDialog').close();$$('[data-dg-swap]').forEach(b=>b.onclick=()=>{const x=src.find(y=>y.id===b.dataset.dgSwap);if(!x)return;e.exerciseId=x.id;e.name=x.pro||x.simple;e.results=[];save();$('#machineDialog').close();toast(`הוחלף ל־${x.simple||x.pro}`);renderWorkout()})};
+
+const dgRenderWorkoutV73=renderWorkout;renderWorkout=function(){dgRenderWorkoutV73();setTimeout(()=>{const w=S.activeWorkout,e=w?.exercises?.[w.currentIndex||0],panel=$('#workoutContent .exercise-panel');if(!e||!panel||panel.querySelector('#dgSmartSetBrief'))return;const d=document.createElement('div');d.id='dgSmartSetBrief';d.className='dg-smart-brief';const hist=dgExerciseSessions(e,3);d.innerHTML=`<div><small>SMART SESSION</small><b>${e.warmup?'חימום מדורג לפני סטי העבודה':'עבוד לפי ה־RIR וה־logbook'}</b></div><p>${esc(e.warmup||`יש ${hist.length} אימונים קודמים זמינים להשוואה. המטרה היא לנצח את ה־logbook בלי לפגוע בטכניקה.`)}</p>`;const rx=panel.querySelector('.rx');(rx||panel.firstChild).insertAdjacentElement('afterend',d)},10)};
+
+async function dgPhotoCount(){try{const db=await openDB(),tx=db.transaction('photos','readonly'),r=tx.objectStore('photos').count();return await new Promise((res,rej)=>{r.onsuccess=()=>res(r.result||0);r.onerror=()=>rej(r.error)})}catch{return 0}}
+async function dgStorageEstimate(){try{const e=await navigator.storage?.estimate?.();return{used:+e?.usage||0,quota:+e?.quota||0,persisted:await navigator.storage?.persisted?.()}}catch{return{used:0,quota:0,persisted:false}}}
+function dgMb(n){return n?`${(n/1048576).toFixed(1)} MB`:'—'}
+async function dgWipeMemoryOnly(){if(!confirm('למחוק את עותק הזיכרון המוצפן מהענן? הנתונים המקומיים בטלפון יישארו.'))return;try{await dgPrivacy('wipe-memory');dgSetCloudPaused(true);dgSetCloudMeta({lastCloudAt:0,lastPushAt:0,lastError:'cloud memory deleted'});toast('Cloud Memory נמחק והסנכרון הושהה כדי שלא יעלה שוב אוטומטית');renderMore()}catch(e){toast('לא הצלחתי למחוק את הזיכרון בענן');dgRecordError('privacy-wipe-memory',e)}}
+async function dgWipeAllCloud(){const x=prompt('מחיקה מלאה מהענן תסיר זיכרון, AI ו־Push. כדי לאשר הקלד: מחק ענן');if(x!=='מחק ענן')return;try{await dgPrivacy('wipe-all');dgSetCloudPaused(true);dgAiConfigured=false;localStorage.setItem('dvirGymAiConfigured','0');try{const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager?.getSubscription();await sub?.unsubscribe()}catch{}localStorage.setItem('dvirGymPushLive','0');toast('כל נתוני הענן נמחקו. הנתונים המקומיים נשארו אצלך.');renderMore()}catch(e){toast('המחיקה המלאה לא הושלמה');dgRecordError('privacy-wipe-all',e)}}
+async function dgResumeCloud(){dgSetCloudPaused(false);toast('Cloud Memory הופעל מחדש · מסנכרן');await dgCloudPush();renderMore()}
+async function dgClearLocal(){const x=prompt('פעולה זו מוחקת את הנתונים מהמכשיר הזה בלבד. הקלד: מחק מהמכשיר');if(x!=='מחק מהמכשיר')return;try{localStorage.removeItem(STORE);localStorage.removeItem(DG_CLOUD_META_KEY);localStorage.removeItem(DG_DIAG_KEY);indexedDB.deleteDatabase(DB_NAME);toast('הנתונים המקומיים נמחקו');setTimeout(()=>location.reload(),800)}catch{toast('לא הצלחתי להשלים מחיקה מקומית')}}
+
+function dgDiagLine(label,val,tone=''){return`<div class="system-row"><div><b>${esc(label)}</b><small>${esc(val)}</small></div><span class="badge ${tone}">${tone==='good'?'OK':'INFO'}</span></div>`}
+async function dgInjectPrivacyV73(){const s=$('#screen-more');if(!s||s.querySelector('#dgPrivacyV73'))return;const [storage,photos,privacy,push]=await Promise.all([dgStorageEstimate(),dgPhotoCount(),dgPrivacy('status').catch(()=>null),typeof dgPushStatus==='function'?dgPushStatus().catch(()=>null):null]),m=dgCloudMeta(),err=dgDiagRead().errors?.[0];const card=document.createElement('div');card.id='dgPrivacyV73';card.className='card system-card dg-privacy-card';card.style.marginTop='14px';card.innerHTML=`<div class="section-head" style="margin-top:0"><div><h2>Privacy & Diagnostics</h2><small>שליטה מלאה בנתונים + מצב המערכת</small></div><span class="badge dg-free-badge">7.3</span></div><div class="dg-diag-grid">${dgDiagLine('זיכרון מקומי',`${S.logs.length} אימונים · ${S.meals.length} ארוחות · ${S.weights.length} שקילות · ${photos} תמונות`,'good')}${dgDiagLine('אחסון',`${dgMb(storage.used)} בשימוש · ${storage.persisted?'Persistent':'Best effort'}`,storage.persisted?'good':'')}${dgDiagLine('Cloud Memory',dgCloudPaused()?'מושהה על ידך':privacy?.memory?'קיים ומוצפן בענן':'אין כרגע snapshot בענן',privacy?.memory&&!dgCloudPaused()?'good':'')}${dgDiagLine('AI Vault',privacy?.ai?'OpenRouter Free key קיים':'אין מפתח AI בענן',privacy?.ai?'good':'')}${dgDiagLine('Push',push?.subscribed?'Subscription פעיל':'לא רשום כרגע',push?.subscribed?'good':'')}${dgDiagLine('Sync אחרון',m.lastPushAt?new Date(m.lastPushAt).toLocaleString('he-IL'):'טרם סונכרן',m.lastPushAt?'good':'')}${dgDiagLine('שגיאה אחרונה',err?`${new Date(err.ts).toLocaleString('he-IL')} · ${err.message}`:'לא נרשמה שגיאת runtime','good')}</div><div class="dg-data-actions"><button class="secondary" id="dgExportV73">הורד גיבוי JSON</button><button class="secondary" id="dgCopyRecoveryV73">העתק Recovery Key</button>${dgCloudPaused()?'<button class="primary" id="dgResumeCloudV73">הפעל Cloud Memory מחדש</button>':'<button class="ghost danger" id="dgWipeMemoryV73">מחק רק Cloud Memory</button>'}<button class="ghost danger" id="dgWipeAllV73">מחק את כל נתוני הענן</button><button class="ghost danger" id="dgClearLocalV73">מחק נתונים מהמכשיר</button></div><p class="help">Cloud Memory מוצפן לפני העלאה. תמונות התקדמות נשמרות מקומית בלבד. מחיקה מהענן משהה סנכרון כדי למנוע העלאה מחדש אוטומטית.</p>`;s.appendChild(card);$('#dgExportV73').onclick=exportData;$('#dgCopyRecoveryV73').onclick=dgCopyRecovery;$('#dgResumeCloudV73')?.addEventListener('click',dgResumeCloud);$('#dgWipeMemoryV73')?.addEventListener('click',dgWipeMemoryOnly);$('#dgWipeAllV73').onclick=dgWipeAllCloud;$('#dgClearLocalV73').onclick=dgClearLocal}
+const dgRenderMoreV73=renderMore;renderMore=function(){dgRenderMoreV73();setTimeout(dgInjectPrivacyV73,160)};
+
+// Surface adaptive nutrition calibration in Fuel screen.
+const dgRenderFuelV73=renderFuel;renderFuel=function(){dgRenderFuelV73();setTimeout(()=>{const s=$('#screen-fuel');if(!s||s.querySelector('#dgAdaptiveFuel'))return;const t=nutritionTargets(),hero=s.querySelector('.fuel-hero,.card');if(!hero)return;const d=document.createElement('div');d.id='dgAdaptiveFuel';d.className='dg-adaptive-fuel';d.innerHTML=`<small>ADAPTIVE CALORIES</small><b>${t.adapt>0?'+':''}${t.adapt} kcal calibration</b><span>${esc(t.adaptReason||'')}</span>${t.trendPct!=null?`<em>${t.trendPct>0?'+':''}${t.trendPct.toFixed(2)}% משקל/שבוע</em>`:''}`;hero.appendChild(d)},40)};
+
+setTimeout(()=>{try{renderCurrent()}catch{}},1800);
