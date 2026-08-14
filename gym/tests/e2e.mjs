@@ -44,6 +44,9 @@ await page.waitForSelector('#screen-home.active');
 await domClick('#buildToday');
 await page.waitForSelector('#workoutDialog[open]',{timeout:15000});
 await page.waitForSelector('#dgSmartSetBrief',{timeout:5000});
+await page.waitForSelector('#dgTechniqueCheck',{timeout:5000});
+const techText=await page.locator('#dgTechniqueCheck').innerText();
+if(!techText.includes('בדיקת טכניקה'))throw new Error('Technique Snapshot entrypoint missing');
 if(await page.locator('#swapExercise').count()){await domClick('#swapExercise');await page.waitForSelector('#machineDialog[open]');await page.waitForSelector('.dg-swap-option');await domClick('#dgSwapClose');}
 
 const logic=await page.evaluate(()=>{
@@ -68,5 +71,5 @@ if(!logic.mergedLogs.includes('local-log')||!logic.mergedLogs.includes('cloud-lo
 if(!logic.mergedMeals.includes('meal-local')||!logic.mergedMeals.includes('meal-cloud'))throw new Error('Cloud meal merge failed: '+JSON.stringify(logic));
 if(logic.mergedName!=='LOCAL')throw new Error('Local profile precedence failed: '+JSON.stringify(logic));
 if(errors.length)throw new Error('Runtime errors: '+errors.join(' | '));
-console.log('Athlete OS E2E + decision logic + barcode OK',logic);
+console.log('Athlete OS E2E + decision logic + barcode + technique entrypoint OK',logic);
 await browser.close();
