@@ -1,0 +1,33 @@
+name: Dvir Gym AI Browser E2E
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'gym/**'
+      - '.github/workflows/dvir-gym-e2e.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install Playwright Chromium
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Serve Athlete OS
+        run: |
+          python3 -m http.server 4173 --directory gym >/tmp/dvir-gym-http.log 2>&1 &
+          echo $! > /tmp/dvir-gym-http.pid
+          sleep 2
+      - name: Run browser E2E
+        run: node gym/tests/e2e.mjs
