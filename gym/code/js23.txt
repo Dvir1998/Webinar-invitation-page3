@@ -1,55 +1,19 @@
-/* Dvir Gym AI 7.0 — Command Center UX */
-S.appVersion='7.0.0';
+/* Dvir Gym AI 7.1 — Command Center UX */
+S.appVersion='7.1.0';
 try{save()}catch{}
-document.documentElement.dataset.athleteOs='7.0.0';
-
+document.documentElement.dataset.athleteOs='7.1.0';
 function dgCostModeText(){return dgAiConfigured?'FREE CLOUD + LOCAL':'LOCAL + FREE CLOUD READY'}
 function dgCloudModeText(){const m=typeof dgCloudMeta==='function'?dgCloudMeta():{};return m.encrypted?'AES‑GCM LIVE':(typeof dgCloudStatus!=='undefined'&&dgCloudStatus==='live'?'CLOUD LIVE':'SYNC READY')}
-function dgNextMove(){
- try{
-  const score=readinessScore(),t=nutritionTargets(),x=mealTotals(),hour=new Date().getHours();
-  if(score<52)return{icon:'◌',title:'התאוששות קודם',text:`Readiness ${score}/100 · הורד עומס או בחר Recovery`};
-  const remain=Math.max(0,Math.round(t.protein-x.protein));
-  if(hour>=18&&remain>=35)return{icon:'◒',title:'סגור חלבון',text:`נשארו בערך ${remain}g חלבון לפי התיעוד`};
-  const d=deficits?.()[0];if(d&&d.pct<.55)return{icon:'↗',title:`תעדף ${MUSCLE_NAMES[d.k]}`,text:'זה הפער הגדול ביותר ב־Weekly Audit כרגע'};
-  return{icon:'▶',title:splitName(nextSplit()),text:`${S.duration} דקות · ${S.location==='gym'?'מכון':'בית'} · מוכן לבנייה`};
- }catch{return{icon:'✦',title:'המשך לתעד',text:'האפליקציה תחדד את ההמלצה ככל שהזיכרון גדל'}}
-}
-function dgEnhanceHomeV7(){
- const s=$('#screen-home');if(!s||s.querySelector('#dgCommandV7'))return;
- const hero=s.querySelector('.hero'),next=dgNextMove();if(!hero)return;
- const box=document.createElement('div');box.id='dgCommandV7';box.innerHTML=`<div class="dg-command-strip"><div class="dg-command-pill live"><small>SPEND GUARD</small><b>0$ · LOCKED</b></div><div class="dg-command-pill"><small>CLOUD MEMORY</small><b>${esc(dgCloudModeText())}</b></div><div class="dg-command-pill"><small>COACH MODE</small><b>${esc(dgCostModeText())}</b></div></div><button class="dg-cost-guardian" id="dgNextMoveBtn" style="width:100%;text-align:right;color:inherit"><span class="orb">${next.icon}</span><span><b>NEXT BEST ACTION · ${esc(next.title)}</b><small>${esc(next.text)}</small></span></button>`;
- hero.insertAdjacentElement('afterend',box);
- $('#dgNextMoveBtn').onclick=()=>{if(readinessScore()<52)openCoachWith('ה־Readiness שלי נמוך. תחליט אם נכון לי Recovery, מנוחה או אימון מקוצר היום.');else buildToday()};
-}
-
+function dgNextMove(){try{const score=readinessScore(),t=nutritionTargets(),x=mealTotals(),hour=new Date().getHours();if(score<52)return{icon:'◌',title:'התאוששות קודם',text:`Readiness ${score}/100 · הורד עומס או בחר Recovery`};const remain=Math.max(0,Math.round(t.protein-x.protein));if(hour>=18&&remain>=35)return{icon:'◒',title:'סגור חלבון',text:`נשארו בערך ${remain}g חלבון לפי התיעוד`};const d=deficits?.()[0];if(d&&d.pct<.55)return{icon:'↗',title:`תעדף ${MUSCLE_NAMES[d.k]}`,text:'זה הפער הגדול ביותר ב־Weekly Audit כרגע'};return{icon:'▶',title:splitName(nextSplit()),text:`${S.duration} דקות · ${S.location==='gym'?'מכון':'בית'} · מוכן לבנייה`}}catch{return{icon:'✦',title:'המשך לתעד',text:'האפליקציה תחדד את ההמלצה ככל שהזיכרון גדל'}}}
+function dgEnhanceHomeV7(){const s=$('#screen-home');if(!s||s.querySelector('#dgCommandV7'))return;const hero=s.querySelector('.hero'),next=dgNextMove();if(!hero)return;const box=document.createElement('div');box.id='dgCommandV7';box.innerHTML=`<div class="dg-command-strip"><div class="dg-command-pill live"><small>SPEND GUARD</small><b>0$ · LOCKED</b></div><div class="dg-command-pill"><small>CLOUD MEMORY</small><b>${esc(dgCloudModeText())}</b></div><div class="dg-command-pill"><small>COACH MODE</small><b>${esc(dgCostModeText())}</b></div></div><button class="dg-cost-guardian" id="dgNextMoveBtn" style="width:100%;text-align:right;color:inherit"><span class="orb">${next.icon}</span><span><b>NEXT BEST ACTION · ${esc(next.title)}</b><small>${esc(next.text)}</small></span></button>`;hero.insertAdjacentElement('afterend',box);$('#dgNextMoveBtn').onclick=()=>{if(readinessScore()<52)openCoachWith('ה־Readiness שלי נמוך. תחליט אם נכון לי Recovery, מנוחה או אימון מקוצר היום.');else buildToday()}}
 function dgNetworkBanner(){let el=$('#dgNetworkState');if(!el){el=document.createElement('div');el.id='dgNetworkState';el.className='dg-network';document.body.appendChild(el)}return el}
-let dgNetworkTimer;
-function dgShowNetwork(online){const el=dgNetworkBanner();el.className=`dg-network show ${online?'online':'offline'}`;el.textContent=online?'● חזרת לרשת · מסנכרן זיכרון':'● Offline · הזיכרון המקומי ממשיך לעבוד';clearTimeout(dgNetworkTimer);dgNetworkTimer=setTimeout(()=>el.classList.remove('show'),online?2600:4200)}
+let dgNetworkTimer;function dgShowNetwork(online){const el=dgNetworkBanner();el.className=`dg-network show ${online?'online':'offline'}`;el.textContent=online?'● חזרת לרשת · מסנכרן זיכרון':'● Offline · הזיכרון המקומי ממשיך לעבוד';clearTimeout(dgNetworkTimer);dgNetworkTimer=setTimeout(()=>el.classList.remove('show'),online?2600:4200)}
 window.addEventListener('online',()=>{dgShowNetwork(true);try{dgCloudBoot()}catch{}});window.addEventListener('offline',()=>dgShowNetwork(false));
-
-async function dgLiveHealth(){
- const out={network:navigator.onLine,pwa:!!navigator.serviceWorker?.controller,cloud:false,cloudEncrypted:false,ai:false,aiFreeOnly:false};
- try{const c=await fetch(DG_CLOUD_URL,{cache:'no-store'}),j=await c.json();out.cloud=!!j.ok}catch{}
- try{const a=await fetch(DG_CLOUD_COACH_URL,{cache:'no-store'}),j=await a.json();out.ai=!!j.ok;out.aiFreeOnly=!!j.freeOnly}catch{}
- try{out.cloudEncrypted=!!dgCloudMeta()?.encrypted}catch{}
- return out;
-}
+async function dgLiveHealth(){const out={network:navigator.onLine,pwa:!!navigator.serviceWorker?.controller,cloud:false,cloudEncrypted:false,ai:false,aiFreeOnly:false};try{const c=await fetch(DG_CLOUD_URL,{cache:'no-store'}),j=await c.json();out.cloud=!!j.ok}catch{}try{const a=await fetch(DG_CLOUD_COACH_URL,{cache:'no-store'}),j=await a.json();out.ai=!!j.ok;out.aiFreeOnly=!!j.freeOnly}catch{}try{out.cloudEncrypted=!!dgCloudMeta()?.encrypted}catch{}return out}
 function dgHealthRow(label,value,tone=''){return`<div class="system-row"><div><b>${label}</b><small>${value.detail||''}</small></div><span class="badge ${tone}">${value.label}</span></div>`}
-async function dgRenderHealthCard(){
- const s=$('#screen-more');if(!s||s.querySelector('#dgHealthV7'))return;
- const card=document.createElement('div');card.id='dgHealthV7';card.className='card system-card';card.style.marginTop='14px';card.innerHTML=`<div class="section-head" style="margin-top:0"><div><h2>System Health</h2><small>בדיקה אמיתית של שכבות המוצר</small></div><span class="badge">7.0</span></div><div id="dgHealthRows"><div class="system-row"><div><b>בודק מערכת…</b><small>Cloud · AI · PWA · Encryption</small></div><span class="badge">…</span></div></div><button class="secondary" id="dgHealthAgain" style="margin-top:9px">בדוק עכשיו</button>`;s.appendChild(card);
- async function run(){const rows=$('#dgHealthRows');if(!rows)return;rows.innerHTML='<div class="system-row"><div><b>מריץ בדיקות…</b><small>לא מסתמך רק על סטטוס שמור</small></div><span class="badge">LIVE</span></div>';const h=await dgLiveHealth(),configured=await dgCheckAIConfigured(true);rows.innerHTML=dgHealthRow('מצב עלויות',{label:'0$ LOCK',detail:'Free Router בלבד · אין fallback בתשלום'})+dgHealthRow('Cloud Memory',{label:h.cloud?'ONLINE':'LOCAL',detail:h.cloudEncrypted?'AES‑GCM מוצפן לפני העלאה':'ממתין לסנכרון מוצפן'})+dgHealthRow('AI בענן',{label:configured&&h.ai&&h.aiFreeOnly?'FREE LIVE':'LOCAL READY',detail:configured?'OpenRouter Free Router + Memory fallback':'Memory Engine פעיל; אפשר להוסיף OpenRouter Free'})+dgHealthRow('PWA',{label:h.pwa?'INSTALLED/RUNNING':'WEB READY',detail:h.pwa?'Service Worker שולט באפליקציה':'אפשר להתקין למסך הבית'})+dgHealthRow('רשת',{label:h.network?'ONLINE':'OFFLINE',detail:h.network?'סנכרון ענן זמין':'העבודה המקומית נשמרת ותסתנכרן בהמשך'});}
- $('#dgHealthAgain').onclick=run;run();
-}
-
-const dgRenderHomeV7=renderHome;renderHome=function(){dgRenderHomeV7();setTimeout(dgEnhanceHomeV7,80)};
-const dgRenderMoreV7=renderMore;renderMore=function(){dgRenderMoreV7();setTimeout(dgRenderHealthCard,90)};
-
-// Premium tactile feedback without changing workout logic.
+async function dgRenderHealthCard(){const s=$('#screen-more');if(!s||s.querySelector('#dgHealthV7'))return;const card=document.createElement('div');card.id='dgHealthV7';card.className='card system-card';card.style.marginTop='14px';card.innerHTML=`<div class="section-head" style="margin-top:0"><div><h2>System Health</h2><small>בדיקה אמיתית של שכבות המוצר</small></div><span class="badge">7.1</span></div><div id="dgHealthRows"><div class="system-row"><div><b>בודק מערכת…</b><small>Cloud · AI · PWA · Encryption</small></div><span class="badge">…</span></div></div><button class="secondary" id="dgHealthAgain" style="margin-top:9px">בדוק עכשיו</button>`;s.appendChild(card);async function run(){const rows=$('#dgHealthRows');if(!rows)return;rows.innerHTML='<div class="system-row"><div><b>מריץ בדיקות…</b><small>לא מסתמך רק על סטטוס שמור</small></div><span class="badge">LIVE</span></div>';const h=await dgLiveHealth(),configured=await dgCheckAIConfigured(true);rows.innerHTML=dgHealthRow('מצב עלויות',{label:'0$ LOCK',detail:'Free Router בלבד · אין fallback בתשלום'})+dgHealthRow('Cloud Memory',{label:h.cloud?'ONLINE':'LOCAL',detail:h.cloudEncrypted?'AES‑GCM מוצפן לפני העלאה':'ממתין לסנכרון מוצפן'})+dgHealthRow('AI בענן',{label:configured&&h.ai&&h.aiFreeOnly?'FREE LIVE':'LOCAL READY',detail:configured?'OpenRouter Free Router + Memory fallback':'Memory Engine פעיל; חיבור OpenRouter Free בלחיצה אחת'})+dgHealthRow('PWA',{label:h.pwa?'INSTALLED/RUNNING':'WEB READY',detail:h.pwa?'Service Worker שולט באפליקציה':'אפשר להתקין למסך הבית'})+dgHealthRow('רשת',{label:h.network?'ONLINE':'OFFLINE',detail:h.network?'סנכרון ענן זמין':'העבודה המקומית נשמרת ותסתנכרן בהמשך'});}$('#dgHealthAgain').onclick=run;run()}
+const dgRenderHomeV7=renderHome;renderHome=function(){dgRenderHomeV7();setTimeout(dgEnhanceHomeV7,80)};const dgRenderMoreV7=renderMore;renderMore=function(){dgRenderMoreV7();setTimeout(dgRenderHealthCard,90)};
 document.addEventListener('click',e=>{const b=e.target.closest('button,.action,.dock-item');if(!b)return;try{if(navigator.vibrate&&!matchMedia('(prefers-reduced-motion: reduce)').matches)navigator.vibrate(7)}catch{}},{capture:true});
-
-// Accessibility + mobile polish.
 try{$('#toast')?.setAttribute('aria-live','polite');document.querySelector('main')?.setAttribute('aria-live','off')}catch{}
 if('serviceWorker'in navigator){navigator.serviceWorker.addEventListener('controllerchange',()=>{try{toast('Athlete OS עודכן לגרסה החדשה')}catch{}})}
 setTimeout(()=>{try{renderCurrent();dgEnhanceHomeV7()}catch{}},3200);
