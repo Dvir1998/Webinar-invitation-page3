@@ -1,0 +1,20 @@
+/* Dvir Gym AI 6.1 — 2027 visual polish */
+:root{--glow-cyan:0 0 48px #58e8ff20;--glow-violet:0 0 52px #997cff20}
+body{background:radial-gradient(circle at 15% -8%,#203252 0,#0a0e16 31%,#06080d 72%) fixed}
+.topbar{border-bottom:1px solid #ffffff0b;background:linear-gradient(180deg,#080c13e8,#080c1399 72%,transparent);padding-bottom:13px}
+.brand strong{letter-spacing:.045em;text-shadow:0 0 26px #57e8ff20}.brand small{letter-spacing:.22em}
+.card{box-shadow:0 18px 70px #0006,inset 0 1px 0 #ffffff0a}.hero{box-shadow:0 28px 90px #0008,var(--glow-cyan)}
+.hero h1{letter-spacing:-.035em}.accent{filter:drop-shadow(0 0 18px #57e8ff30)}
+.primary,.cta-main{transition:transform .16s ease,filter .16s ease,box-shadow .16s ease;box-shadow:0 12px 34px #57e8ff22}.primary:active,.cta-main:active{transform:scale(.982);filter:brightness(.93)}
+.action,.chip,.dock-item,.icon-btn,.secondary,.ghost{transition:transform .15s ease,border-color .15s ease,background .15s ease}.action:active,.chip:active,.dock-item:active,.icon-btn:active,.secondary:active,.ghost:active{transform:scale(.975)}
+.ai-orb{filter:saturate(1.12);box-shadow:0 0 75px #57e8ff35,0 0 120px #997cff1d}.ai-orb:not(.offline){animation:dgOrb 3.4s ease-in-out infinite}@keyframes dgOrb{50%{transform:translateY(-3px) scale(1.035);filter:saturate(1.25) brightness(1.08)}}
+.machine-sprite,.workout-sprite{background-color:#111824;filter:saturate(1.04) contrast(1.02)}.exercise-photo{box-shadow:inset 0 -60px 70px #05070aa8}.photo-tag{backdrop-filter:blur(16px)}
+.set-row input{font-variant-numeric:tabular-nums;font-weight:750}.set-row button.done{box-shadow:0 0 24px #a8ff6745}
+.rest-bubble{box-shadow:0 18px 60px #000a,0 0 50px #57e8ff26}.rest-bubble b{font-variant-numeric:tabular-nums}
+.dock{box-shadow:0 24px 80px #000b,inset 0 1px 0 #ffffff0c}.dock-item.active{box-shadow:0 8px 28px #57e8ff1d}
+.dg-net{position:absolute;left:54px;top:15px;padding:4px 7px;border:1px solid #a8ff6735;border-radius:999px;background:#a8ff670d;color:#a8ff67;font:800 7px/1 system-ui;letter-spacing:.11em}.dg-net.offline{color:#ffc66b;border-color:#ffc66b35;background:#ffc66b0d}
+.status-line:not(.off) i{animation:dgStatus 1.8s ease-in-out infinite}@keyframes dgStatus{50%{box-shadow:0 0 18px var(--lime);transform:scale(1.25)}}
+input,textarea,select{font-size:16px!important}button{min-height:42px;touch-action:manipulation}.set-row button{min-height:38px}
+@media(max-width:390px){.app-shell{padding-left:10px;padding-right:10px}.hero h1{font-size:28px}.action-grid{gap:7px}.card{border-radius:21px}.dg-net{display:none}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.001ms!important}}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
