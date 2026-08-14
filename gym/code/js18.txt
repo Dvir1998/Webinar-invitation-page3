@@ -1,0 +1,32 @@
+/* Dvir Gym AI 6.1 — resilient offline agent */
+function dgDateOffset(offset=0){const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()+offset);return dayKey(d)}
+function dgMealsOn(offset=0){const k=dgDateOffset(offset);return S.meals.filter(m=>dayKey(m.ts)===k).sort((a,b)=>a.ts-b.ts)}
+function dgWorkoutsOn(offset=0){const k=dgDateOffset(offset);return S.logs.filter(w=>dayKey(w.end||w.finishedAt||w.ts||w.createdAt)===k)}
+function dgMealSummary(arr){if(!arr.length)return'אין ארוחות מתועדות.';const p=Math.round(arr.reduce((a,m)=>a+(+m.protein||+m.pro||0),0)),c=Math.round(arr.reduce((a,m)=>a+(+m.calories||+m.cal||0),0));return `${arr.map(m=>m.description).join(' · ')}. סה״כ מתועד: בערך ${p} גרם חלבון ו־${c||'—'} קק״ל.`}
+function dgWorkoutSummary(arr){if(!arr.length)return'אין אימון מתועד.';return arr.map(w=>`${w.title||w.type||'אימון'} (${w.location==='home'?'בית':'מכון'}, ${(w.exercises||[]).reduce((a,e)=>a+(e.results||[]).filter(r=>r.done).length,0)} סטים)`).join(' · ')}
+function dgUpdateReadinessFromText(q){let changed=false;if(/עייף מאוד|מותש|אין לי כוח/.test(q)){S.readiness.energy=2;changed=true}else if(/עייף/.test(q)){S.readiness.energy=Math.min(S.readiness.energy,3);changed=true}if(/ישנתי גרוע|לא ישנתי|שינה גרועה/.test(q)){S.readiness.sleep=2;changed=true}if(/תפוס מאוד|כאבים בשרירים/.test(q)){S.readiness.soreness=4;changed=true}if(/לחוץ מאוד|סטרס גבוה/.test(q)){S.readiness.stress=4;changed=true}if(changed)save();return changed}
+function dgWeeklyPlanText(){const names=['היום','מחר','יום 3','יום 4','יום 5','יום 6','יום 7'],seq=[['Upper A','כוח'],['Lower A','כוח'],['Recovery','מנוחה'],['Upper B','כוח'],['Lower B','כוח'],['Recovery','מנוחה'],['Recovery','מנוחה']];if(S.profile.days>=5&&readinessScore()>=75)seq[5]=['Weak Point','אופציונלי קצר'];return seq.map((x,i)=>`${names[i]}: ${x[0]} · ${x[1]}`).join('\n')}
+function dgRemainingNutrition(){const t=nutritionTargets(),x=mealTotals();return{protein:Math.max(0,Math.round(t.protein-x.protein)),calories:Math.max(0,Math.round(t.calories-x.calories)),targets:t,done:x}}
+
+function localCoach(message){
+ const raw=String(message||'').trim(),q=raw.toLowerCase();dgUpdateReadinessFromText(q);
+ const mins=q.match(/(\d{2,3})\s*(?:דקות|דק|minutes?)/);if(mins){S.duration=clamp(+mins[1],20,120);save()}
+ if(/כאב חד|סחרחורת|עילפון|קוצר נשימה חריג|כאב בחזה/.test(q))return{reply:'אל תמשיך אימון כבד עם הסימפטום הזה. עצור והערך את המצב. כאב בחזה, עילפון, קוצר נשימה חריג או החמרה משמעותית מצריכים הערכה רפואית מתאימה.'};
+ if(q.includes('מה אכלתי אתמול'))return{reply:'אתמול: '+dgMealSummary(dgMealsOn(-1))};
+ if(q.includes('מה אכלתי היום'))return{reply:'היום: '+dgMealSummary(dgMealsOn(0))};
+ if((q.includes('מה עשיתי')||q.includes('איזה אימון'))&&q.includes('אתמול'))return{reply:'אתמול: '+dgWorkoutSummary(dgWorkoutsOn(-1))};
+ if((q.includes('מה עשיתי')||q.includes('איזה אימון'))&&q.includes('היום')&&dgWorkoutsOn(0).length)return{reply:'היום: '+dgWorkoutSummary(dgWorkoutsOn(0))};
+ if(q.includes('כמה חלבון')){const r=dgRemainingNutrition();return{reply:`היעד היומי שלך כרגע הוא ${r.targets.protein} גרם. לפי מה שתיעדת אכלת בערך ${Math.round(r.done.protein)} גרם, ולכן נשארו בערך ${r.protein} גרם.`}}
+ if(q.includes('כמה קלוריות')||q.includes('קלוריות נשאר')){const r=dgRemainingNutrition();return{reply:`היעד המשוער שלך כרגע הוא ${r.targets.calories} קק״ל. תיעדת בערך ${Math.round(r.done.calories)} קק״ל, ולכן נשארו בערך ${r.calories} קק״ל. זו הערכה, לא מדידה מעבדתית.`}}
+ if(q.includes('תבנה לי שבוע')||q.includes('בנה לי שבוע')||q.includes('תוכנית שבוע'))return{reply:`זו ברירת המחדל שאני ממליץ עליה לפי המטרה וההתאוששות שלך:\n${dgWeeklyPlanText()}\nאני לא ממליץ על כוח כבד כל יום; ההתאוששות היא חלק מהתוכנית.`};
+ if(q.includes('קריאטין'))return{reply:`קריאטין מונוהידראט: 3–5 גרם ביום, כל יום, אם אין לך מגבלה רפואית רלוונטית. התזמון פחות חשוב מהעקביות. ${S.daily.creatine?'סומן שכבר לקחת היום.':'עדיין לא סימנת שלקחת היום.'}`};
+ if(q.includes('אכלתי')||q.includes('שתיתי'))return{reply:'שמרתי את הדיווח בזיכרון התזונתי. אם לא כתבת כמויות או מאקרו, אני לא ממציא מספרים; אפשר להשלים אותם אחר כך.'};
+ if(q.includes('לאכול')||q.includes('אוכל')||q.includes('אחרי אימון'))return{reply:lastWorkoutHours()<3?postWorkoutAdvice():dailyFuelAdvice()};
+ if(q.includes('פספס')||q.includes('audit')||q.includes('מה חסר')||q.includes('לא עשיתי')){const c=weeklyCoverage(),d=deficits().slice(0,5).map(x=>`${MUSCLE_NAMES[x.k]} ${Math.round(c.sets[x.k])}/${TARGET_SETS[x.k]}`);return{reply:`ב־7 הימים האחרונים ביצעת ${workoutCountThisWeek()} אימוני כוח. כיסוי השרירים כרגע: ${d.join(', ')}. האימון הבא ייתן עדיפות לפערים הגדולים בלי להעמיס על שרירים שכבר קיבלו מספיק.`}}
+ if(q.includes('משקל')||q.includes('היקף')){const tr=bodyTrend(),m=S.measures[0];return{reply:`המשקל האחרון: ${S.weights[0]?.weight??S.profile.weight} ק״ג. ${tr?`המגמה המשוערת היא ${tr.weekly>0?'+':''}${tr.weekly.toFixed(2)} ק״ג לשבוע.`:'צריך עוד שקילות עקביות כדי לחשב מגמה.'} ${m?`מדידה אחרונה: מותן ${m.waist||'—'} ס״מ, חזה ${m.chest||'—'} ס״מ, זרוע ${m.arm||'—'} ס״מ.`:''}`}}
+ if(q.includes('אני עייף')||q.includes('ישנתי גרוע')||q.includes('תפוס')){const score=readinessScore(),w=localWorkout();return{reply:`עדכנתי את ה־Readiness מתוך מה שסיפרת. הציון כרגע ${score}/100. ${w.type==='recovery'?'אני מעדיף היום התאוששות ולא כוח כבד.':'אפשר להתאמן, אבל האימון המקומי יוריד נפח/יעלה RIR בהתאם.'}`,workout:q.includes('מה לעשות')?w:null}}
+ if(q.includes('אימון')||q.includes('היום')||q.includes('לעשות')){const w=localWorkout();return{reply:`בניתי ${w.title}. ${w.reason} יש לך ${S.duration} דקות ומיקום האימון הוא ${S.location==='home'?'בית':'מכון'}.`,workout:w}}
+ const r=dgRemainingNutrition(),w=localWorkout();return{reply:`אני עובד כרגע ב־Memory Engine המקומי. אני זוכר ${S.logs.length} אימונים ו־${S.meals.length} דיווחי אוכל. Readiness ${readinessScore()}/100; נשארו היום בערך ${r.protein} גרם חלבון. האימון הבא לפי המערכת: ${w.title}.`};
+}
+
+(function(){S.profile.days=clamp(+S.profile.days||4,2,5);save()})();
