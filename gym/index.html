@@ -3,15 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<meta name="theme-color" content="#06080d">
+<meta name="theme-color" content="#05070b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="description" content="Dvir Gym AI — מאמן כושר ותזונה אישי עם זיכרון, AI, אימונים, תזונה והתקדמות">
-<title>Dvir Gym AI — Athlete OS</title>
-<link rel="manifest" href="manifest.json">
+<meta name="description" content="Dvir Gym AI — Athlete OS: מאמן כושר ותזונה אישי עם זיכרון מוצפן, AI חינמי, אימונים, תזונה והתקדמות">
+<meta name="application-name" content="Dvir Gym AI">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Dvir Gym AI — Athlete OS 7</title>
+<link rel="manifest" href="manifest.json?v=7.0.0">
 <link rel="icon" href="assets/icon-192.png">
 <link rel="apple-touch-icon" href="assets/icon-192.png">
-<style>html,body{background:#06080d;color:#fff;margin:0;min-height:100%}body::before{content:"DVIR GYM AI · LOADING";position:fixed;inset:0;display:grid;place-items:center;font:700 12px system-ui;letter-spacing:2px;color:#7f8b9b;background:#06080d;z-index:99999}body.ready::before{display:none}</style>
+<style>html,body{background:#05070b;color:#fff;margin:0;min-height:100%}body::before{content:"DVIR GYM AI · ATHLETE OS 7";position:fixed;inset:0;display:grid;place-items:center;font:800 12px system-ui;letter-spacing:2px;color:#8d99aa;background:radial-gradient(circle at 50% 25%,#101a25,#05070b 55%);z-index:99999}body.ready::before{display:none}</style>
 </head>
 <body>
 <div class="ambient a1"></div><div class="ambient a2"></div><div class="noise"></div>
@@ -36,7 +38,6 @@
   <button class="dock-item" data-screen="more"><span>•••</span><b>עוד</b></button>
 </nav>
 </div>
-
 <dialog id="profileDialog" class="sheet-dialog"><div id="profileContent"></div></dialog>
 <dialog id="workoutDialog" class="full-dialog"><div id="workoutContent"></div></dialog>
 <dialog id="mealDialog" class="sheet-dialog"><div id="mealContent"></div></dialog>
@@ -48,15 +49,15 @@
 <input id="coachPhotoInput" type="file" accept="image/*" capture="environment" hidden>
 <input id="progressPhotoInput" type="file" accept="image/*" capture="environment" hidden>
 <input id="importInput" type="file" accept="application/json" hidden>
-<div id="toast" class="toast" role="status"></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 <div id="restBubble" class="rest-bubble hidden"><div><small>REST</small><b id="restClock">90</b></div><button id="skipRest">דלג</button></div>
 <script>
 (async()=>{try{
- const css=(await Promise.all(Array.from({length:4},(_,k)=>k+1).map(i=>fetch(`code/css${i}.txt?v=6.5.0`).then(r=>{if(!r.ok)throw Error('CSS '+r.status);return r.text()})))).join('');
+ const css=(await Promise.all(Array.from({length:5},(_,k)=>k+1).map(i=>fetch(`code/css${i}.txt?v=7.0.0`).then(r=>{if(!r.ok)throw Error('CSS '+r.status);return r.text()})))).join('');
  const st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
- const js=(await Promise.all(Array.from({length:22},(_,k)=>k+1).map(i=>fetch(`code/js${i}.txt?v=6.5.0`).then(r=>{if(!r.ok)throw Error('JS '+r.status);return r.text()})))).join('');
+ const js=(await Promise.all(Array.from({length:23},(_,k)=>k+1).map(i=>fetch(`code/js${i}.txt?v=7.0.0`).then(r=>{if(!r.ok)throw Error('JS '+r.status);return r.text()})))).join('');
  const sc=document.createElement('script');sc.textContent=js;document.body.appendChild(sc);document.body.classList.add('ready');
-}catch(e){document.body.innerHTML=`<div style="min-height:100vh;display:grid;place-items:center;background:#06080d;color:white;font-family:system-ui;text-align:center;padding:24px"><div><h2>לא הצלחתי לטעון את Athlete OS</h2><p style="color:#94a0b0">רענן את הדף · ${String(e.message||e)}</p></div></div>`}})();
+}catch(e){document.body.innerHTML=`<div style="min-height:100vh;display:grid;place-items:center;background:#05070b;color:white;font-family:system-ui;text-align:center;padding:24px"><div><h2>לא הצלחתי לטעון את Athlete OS</h2><p style="color:#94a0b0">רענן את הדף · ${String(e.message||e)}</p><button onclick="location.reload()" style="padding:12px 18px;border:0;border-radius:14px;font-weight:800">נסה שוב</button></div></div>`}})();
 </script>
 </body>
 </html>
