@@ -1,0 +1,48 @@
+/* Dvir Gym AI 6.3 — Secure Cloud AI */
+const DG_AI_SETUP_URL='https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/ai-key-setup';
+const DG_CLOUD_COACH_URL='https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/coach';
+let dgAiConfigured=false,dgAiStatusCheckedAt=0;
+
+async function dgKeyVault(action='status',apiKey=''){
+ const c=new AbortController(),t=setTimeout(()=>c.abort(),20000);
+ try{const r=await fetch(DG_AI_SETUP_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,token:dgCloudToken(),apiKey}),signal:c.signal});const j=await r.json().catch(()=>({}));if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));return j}finally{clearTimeout(t)}
+}
+async function dgCheckAIConfigured(force=false){
+ if(!force&&Date.now()-dgAiStatusCheckedAt<30000)return dgAiConfigured;dgAiStatusCheckedAt=Date.now();
+ try{const j=await dgKeyVault('status');dgAiConfigured=!!j.configured;localStorage.setItem('dvirGymAiConfigured',dgAiConfigured?'1':'0');return dgAiConfigured}catch{dgAiConfigured=localStorage.getItem('dvirGymAiConfigured')==='1';return dgAiConfigured}
+}
+
+callAI=async function(message,imageData=null){
+ const configured=await dgCheckAIConfigured();if(!configured)throw new Error('ai_not_configured');
+ const c=new AbortController(),timer=setTimeout(()=>c.abort(),50000);
+ try{
+  const r=await fetch(DG_CLOUD_COACH_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:dgCloudToken(),message,imageData,history:S.chat.slice(-14),memory:coachMemory()}),signal:c.signal});
+  const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||('Cloud AI '+r.status));return j;
+ }finally{clearTimeout(timer)}
+};
+
+checkAIHealth=async function(){
+ const els=[$('#homeAiStatus'),$('#coachStatus')].filter(Boolean);if(!els.length)return;
+ const configured=await dgCheckAIConfigured(true),recent=S.ai?.lastOk&&Date.now()-S.ai.lastOk<30*60e3;
+ els.forEach(e=>{e.classList.toggle('off',!configured);const sp=e.querySelector('span');if(sp)sp.textContent=configured?(recent?`AI LIVE · ${S.ai.lastModel||'OpenAI'}`:'Cloud AI ready · OpenAI'):'Memory Engine · Cloud AI setup needed'});
+};
+
+async function dgActivateAI(){
+ const input=$('#dgOpenAIKey'),btn=$('#dgActivateAI');if(!input||!btn)return;const key=input.value.trim();if(key.length<30){toast('הדבק מפתח OpenAI API תקין');return}
+ btn.disabled=true;btn.textContent='בודק ומצפין…';
+ try{await dgKeyVault('set',key);input.value='';dgAiConfigured=true;localStorage.setItem('dvirGymAiConfigured','1');toast('✦ Cloud AI הופעל בהצלחה');renderMore();setTimeout(checkAIHealth,100)}catch(e){toast(String(e).includes('openai_key_rejected')?'OpenAI דחה את המפתח · בדוק שהוא פעיל':'לא הצלחתי להפעיל את המפתח כרגע');btn.disabled=false;btn.textContent='הפעל Cloud AI'}
+}
+async function dgDeleteAI(){if(!confirm('למחוק את מפתח ה־AI מהכספת? Memory Engine ימשיך לעבוד.'))return;try{await dgKeyVault('delete');dgAiConfigured=false;localStorage.setItem('dvirGymAiConfigured','0');toast('מפתח ה־AI נמחק מהכספת');renderMore();setTimeout(checkAIHealth,100)}catch{toast('לא הצלחתי למחוק כרגע')}}
+
+function dgInjectAISetupCard(){
+ const s=$('#screen-more');if(!s||s.querySelector('#dgAiCloudCard'))return;
+ const card=document.createElement('div');card.id='dgAiCloudCard';card.className='card system-card';card.style.marginTop='14px';
+ card.innerHTML=dgAiConfigured?`<div class="section-head" style="margin-top:0"><div><h2>✦ Cloud AI</h2><small>OpenAI · Supabase Vault · Server-side</small></div><span class="badge">ACTIVE</span></div><div class="system-row"><div><b>Coach Intelligence</b><small>ה־API key נשמר מוצפן ב־Vault ואינו חוזר לדפדפן.</small></div><span style="color:var(--lime);font-weight:900">LIVE</span></div><button class="secondary" id="dgTestAI" style="margin-top:9px">בדוק שיחה אמיתית</button><button class="ghost" id="dgDeleteAI" style="margin-top:8px">הסר מפתח AI</button><p class="help">בבקשות AI נשלח ל־OpenAI ההקשר הדרוש: פרופיל, אימונים, תזונה, Readiness והיסטוריה רלוונטית.</p>`:`<div class="section-head" style="margin-top:0"><div><h2>✦ הפעל Cloud AI</h2><small>חיבור מאובטח ל־OpenAI דרך Supabase Vault</small></div><span class="badge">SETUP</span></div><p class="help">הדבק כאן API key של OpenAI פעם אחת. הוא נשלח ישירות לשרת ב־HTTPS, נבדק מול OpenAI ונשמר מוצפן ב־Supabase Vault. הוא לא נשמר ב־localStorage ולא נכנס לקוד האתר.</p><div class="field"><label>OpenAI API Key</label><input id="dgOpenAIKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-…"></div><button class="primary" id="dgActivateAI">הפעל Cloud AI</button><a class="secondary" style="display:block;text-align:center;margin-top:8px;text-decoration:none" href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">צור / נהל API key ב־OpenAI</a><p class="help" style="margin-top:9px">שימוש ב־OpenAI API מחויב בנפרד מחשבון ChatGPT בהתאם לחשבון ה־API שלך.</p>`;
+ s.appendChild(card);
+ if(dgAiConfigured){$('#dgTestAI').onclick=()=>{switchScreen('coach');setTimeout(()=>sendCoach('בדיקת Cloud AI: תן לי במשפט אחד את ה־Readiness שלי ואת הפעולה החשובה ביותר היום.'),80)};$('#dgDeleteAI').onclick=dgDeleteAI}else $('#dgActivateAI').onclick=dgActivateAI;
+}
+
+const dgRenderMoreCloud=renderMore;
+renderMore=function(){dgRenderMoreCloud();setTimeout(async()=>{await dgCheckAIConfigured();dgInjectAISetupCard()},15)};
+
+setTimeout(async()=>{await dgCheckAIConfigured(true);checkAIHealth()},2200);
