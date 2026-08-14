@@ -1,0 +1,61 @@
+/* Dvir Gym AI 6.1 — decision science layer */
+function readinessScore(){
+ const r=S.readiness||{},sleep=clamp(+r.sleep||3,1,5),energy=clamp(+r.energy||3,1,5),sore=clamp(+r.soreness||3,1,5),stress=clamp(+r.stress||3,1,5);
+ const weighted=(sleep*.30+energy*.30+(6-sore)*.22+(6-stress)*.18)/5*100;
+ return clamp(Math.round(weighted),20,100);
+}
+
+function inferMuscles(e){
+ const id=e.exerciseId||e.mi||'',n=String(e.name||'').toLowerCase(),out={};const add=(k,v=1)=>out[k]=(out[k]||0)+v;
+ if(id==='chest-press'||id==='home-pushup'||id==='home-floor-press'){add('chest',1);add('triceps',.5);add('shoulders',.2)}
+ else if(id==='shoulder-press'||id==='home-shoulder'){add('shoulders',1);add('triceps',.5)}
+ else if(id==='lat-pulldown'||id==='seated-row'||id==='lat-row-combo'||id==='home-pullup'||id==='home-db-row'){add('back',1);add('biceps',.5)}
+ else if(id==='preacher'||id==='home-curl'){add('biceps',1)}
+ else if(id==='leg-extension'){add('quads',1)}
+ else if(id==='leg-curl'){add('hamstrings',1)}
+ else if(id==='ab-crunch'||id==='home-legraise'){add('abs',1)}
+ else if(id==='home-goblet'||id==='home-lunge'){add('quads',1);add('glutes',.6)}
+ else if(id==='home-rdl'){add('hamstrings',1);add('glutes',.7)}
+ else if(id==='pec-rear'){if(/rear|delt/.test(n)){add('shoulders',1);add('back',.35)}else{add('chest',1);add('shoulders',.1)}}
+ else if(id==='assisted'){if(/dip/.test(n)){add('chest',1);add('triceps',.7)}else{add('back',1);add('biceps',.5)}}
+ else if(id==='hip'){if(/adduction|מקרב/.test(n))add('adductors',1);else add('glutes',1)}
+ else if(id==='smith'){if(/rdl|romanian/.test(n)){add('hamstrings',1);add('glutes',.7)}else if(/press/.test(n)){add('chest',1);add('triceps',.5);add('shoulders',.2)}else{add('quads',1);add('glutes',.6);add('adductors',.2)}}
+ else if(id==='cable'){if(/lateral/.test(n))add('shoulders',1);else if(/triceps|pushdown|extension/.test(n))add('triceps',1);else if(/curl/.test(n))add('biceps',1);else if(/row|pull/.test(n)){add('back',1);add('biceps',.4)}}
+ else{const info=exInfo(id);for(const m of info?.muscles||[])if(m!=='cardio')add(m,1)}
+ return out;
+}
+
+function nutritionTargets(){
+ const p=S.profile,w=Math.max(40,+p.weight||65),h=+p.height||165,a=+p.age||28;
+ const bmr=10*w+6.25*h-5*a+(p.sex==='female'?-161:5),fac={low:1.35,medium:1.5,high:1.65}[p.activity]||1.5,tdee=bmr*fac,tr=bodyTrend();
+ let delta=p.goal==='lean_gain'?Math.max(150,Math.min(260,w*3.2)):p.goal==='fat_loss'?-Math.max(250,Math.min(450,w*5.2)):0,adapt=0;
+ if(tr){const rate=tr.weekly/w;if(p.goal==='lean_gain'){if(rate<.0005)adapt=100;else if(rate>.003)adapt=-100}if(p.goal==='fat_loss'){if(rate>-.0025)adapt=-100;else if(rate<-.01)adapt=100}}
+ let calories=Math.round((tdee+delta+adapt)/10)*10;if(+p.manualCalories>0)calories=+p.manualCalories;
+ let protein=Math.round(w*(p.goal==='fat_loss'?2.0:1.8));if(+p.manualProtein>0)protein=+p.manualProtein;
+ const fat=Math.max(Math.round(w*.7),45),carbs=Math.max(80,Math.round((calories-protein*4-fat*9)/4));
+ return{bmr:Math.round(bmr),tdee:Math.round(tdee),calories,protein,fat,carbs,adapt,trend:tr?.weekly??null};
+}
+
+function localCoach(message){
+ const q=String(message||'').toLowerCase();
+ if(/כאב חד|סחרחורת|עילפון|קוצר נשימה חריג|כאב בחזה/.test(q))return{reply:'אל תמשיך אימון כבד עם הסימפטום הזה. עצור את האימון והערך את המצב; אם מדובר בכאב בחזה, עילפון, קוצר נשימה חריג או תסמין משמעותי — פנה להערכה רפואית מתאימה.'};
+ if(q.includes('קריאטין'))return{reply:`אם אתה בריא ואין לך הנחיה רפואית אחרת, ברירת המחדל הפרקטית היא קריאטין מונוהידראט 3–5 גרם ביום, כל יום. התזמון פחות חשוב מהעקביות. ${S.daily.creatine?'כבר סימנת שלקחת היום.':'עדיין לא סימנת שלקחת היום.'}`};
+ if(q.includes('לאכול')||q.includes('אוכל')||q.includes('אחרי אימון'))return{reply:lastWorkoutHours()<3?postWorkoutAdvice():dailyFuelAdvice()};
+ if(q.includes('פספס')||q.includes('audit')||q.includes('שבוע')){const c=weeklyCoverage(),d=deficits().slice(0,4).map(x=>`${MUSCLE_NAMES[x.k]} ${Math.round(c.sets[x.k])}/${TARGET_SETS[x.k]}`);return{reply:`ב־7 הימים האחרונים ביצעת ${workoutCountThisWeek()} אימוני כוח. לפי סטים אפקטיביים, הפערים הגדולים כרגע: ${d.join(', ')}. שרירים מסייעים מקבלים עכשיו קרדיט חלקי, כדי שלא נחשוב בטעות שהנפח שלהם מלא.`}}
+ if(q.includes('משקל')||q.includes('היקף')){const tr=bodyTrend(),m=S.measures[0];return{reply:`המשקל האחרון: ${S.weights[0]?.weight??S.profile.weight} ק״ג. ${tr?`המגמה היא בערך ${tr.weekly>0?'+':''}${tr.weekly.toFixed(2)} ק״ג לשבוע.`:'עדיין אין מספיק שקילות לכיול אמין.'} ${m?`היקף מותן ${m.waist||'—'} ס״מ וחזה ${m.chest||'—'} ס״מ.`:''}`}}
+ if(q.includes('אימון')||q.includes('היום')||q.includes('לעשות')){const w=localWorkout();return{reply:`בניתי ${w.title}. ${w.reason}`,workout:w}}
+ return{reply:'Cloud AI לא זמין כרגע, אבל Decision Engine המקומי עדיין משתמש ב־Readiness, באימונים, באוכל, במשקל ובהיקפים שלך. שאל אותי על האימון היום, תזונה, קריאטין, מה חסר השבוע או מגמת ההתקדמות.'};
+}
+
+function nudges(){
+ const a=[],t=nutritionTargets(),x=mealTotals(),h=new Date().getHours(),score=readinessScore();
+ if(!S.profile.complete)a.push({tone:'hot',title:'המאמן צריך להכיר אותך טוב יותר',text:'השלם Athlete Profile כדי שהחלטות האימון והתזונה יהיו אישיות.',action:'profile'});
+ if(score<50)a.push({tone:'hot',title:'Readiness נמוך היום',text:'המערכת תעדיף התאוששות או נפח מופחת במקום לדחוף אימון כבד בכוח.',action:'audit'});
+ if(h>=12&&!S.meals.some(m=>dayKey(m.ts)===dayKey()))a.push({tone:'warn',title:'אין עדיין תיעוד אוכל מהיום',text:'בלי נתוני אוכל ההמלצה התזונתית פחות מדויקת.',action:'meal'});
+ if(h>=19&&x.protein<t.protein*.7)a.push({tone:'hot',title:'פער חלבון לקראת סוף היום',text:`לפי התיעוד חסרים בערך ${Math.max(0,Math.round(t.protein-x.protein))} גרם חלבון.`,action:'fuel'});
+ if(S.profile.creatine&&!S.daily.creatine&&h>=18)a.push({tone:'warn',title:'קריאטין עדיין לא סומן היום',text:'העקביות היומית חשובה יותר מהשעה שבה לוקחים אותו.',action:'fuel'});
+ if(new Date().getDay()>=3&&workoutCountThisWeek()<S.profile.days)a.push({tone:'warn',title:'השבוע עדיין לא סגור',text:`בוצעו ${workoutCountThisWeek()}/${S.profile.days} אימוני כוח. האימון הבא יסגור פערים בלי נפח מיותר.`,action:'audit'});
+ const last=lastWorkout();if(last&&Date.now()-(last.end||last.ts||last.createdAt)<3*36e5&&(!recentMeals(1)[0]||recentMeals(1)[0].ts<(last.end||last.ts||last.createdAt)))a.push({tone:'good',title:'סיימת אימון — עכשיו התאוששות',text:postWorkoutAdvice(),action:'fuel'});
+ const w=S.weights[0];if(!w||Date.now()-w.ts>8*864e5)a.push({tone:'warn',title:'עבר זמן מאז השקילה',text:'שקילה שבועית עקבית עוזרת לכייל את התזונה לפי מגמה.',action:'weigh'});
+ return a.slice(0,4);
+}
