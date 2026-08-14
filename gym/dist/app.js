@@ -1,0 +1,830 @@
+/* Dvir Gym AI Athlete OS — generated production JS. Do not edit directly. */
+'use strict';
+const VERSION='6.0.0';
+const STORE='dvirAthleteOS_v6';
+const LEGACY=['dvirAthleteLiveV1','dvirGymAthleteOSV4','dvirGym2027V3'];
+const AI_BASE='https://dvir-gym-athlete-ai-dvirs-projects-b157a454.vercel.app';
+const SPOTIFY_HE='https://open.spotify.com/playlist/0ykVDSWEiFkYm6BdIsE3j6?utm_source=openai&utm_medium=chatgpt&go=1&nap_web=1&request_id=ee50a7d6-9be3-4d6b-ad57-3eb33cda21a1&nl=spotify%3Anl%3ACAASEO5Qp9ab401rrVc%2BszzaIaEaGDk6MHlrVkRTV0VpRmtZbTZCZElzRTNqNiADMAPgAzXoA5np6v7%2FM%2FADoAQ%3D';
+const SPOTIFY_EN='https://open.spotify.com/playlist/0ttZE7epVt4aJByM9fEzez?utm_source=openai&utm_medium=chatgpt&go=1&nap_web=1&request_id=ddc11b8d-b34e-4d1e-9323-1c90a4454517&nl=spotify%3Anl%3ACAASEN3BG42zTk0ekyMckKRFRRcaGDk6MHR0WkU3ZXBWdDRhSkJ5TTlmRXpleiADMAPgAzXoA5aK6%2F7%2FM%2FADoAQ%3D';
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const nowDay=()=>new Date().toISOString().slice(0,10), fmtDate=(ts,opt={day:'2-digit',month:'2-digit',year:'numeric'})=>new Date(ts).toLocaleDateString('he-IL',opt), fmtTime=ts=>new Date(ts).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)), sum=a=>a.reduce((x,y)=>x+y,0), avg=a=>a.length?sum(a)/a.length:0;
+const haptic=(p=18)=>{try{navigator.vibrate?.(p)}catch{}};
+let toastTimer;function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.classList.remove('show'),2600)}
+function dayKey(ts=Date.now()){const d=new Date(ts),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),da=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${da}`}
+
+let machineSprite='';
+async function loadMachineSprite(){
+ try{machineSprite='data:image/webp;base64,'+(await Promise.all(Array.from({length:7},(_,i)=>fetch(`assets/sprite${i+1}.txt?v=6`).then(r=>{if(!r.ok)throw Error(r.status);return r.text()})))).join('')}
+ catch(e){console.warn('machine sprite unavailable',e);machineSprite=''}
+}
+function photoStyle(i){const c=i%4,r=Math.floor(i/4);return machineSprite?`background-image:url(${machineSprite});background-size:400% 500%;background-position:${c*33.333}% ${r*25}%;background-repeat:no-repeat`:''}
+function machineVisual(m,cls='machine-sprite'){return `<div class="${cls}" role="img" aria-label="${esc(m.simple)}" style="${photoStyle(m.photoIndex||0)}"></div>`}
+
+const MACHINES=[
+{id:'lat-pulldown',simple:'המכשיר שמושכים מלמעלה',pro:'Lat Pulldown',cat:'גב',muscles:['back','biceps'],img:'assets/machines/lat-pulldown.webp',setup:'כוון את כרית הירכיים כך שתייצב אותך. אחיזה מעט רחבה מהכתפיים.',cue:'משוך מרפקים לכיוון הכיסים והבא את הידית לחזה העליון. אל תמשוך מאחורי הראש.',mistake:'אל תהפוך את התנועה לנדנוד של כל הגוף.'},
+{id:'leg-extension',simple:'המכשיר שמיישרים בו ברכיים',pro:'Leg Extension',cat:'רגליים',muscles:['quads'],img:'assets/machines/leg-extension.webp',setup:'ציר המכונה בערך מול הברך והכרית מעל הקרסול.',cue:'יישר בשליטה, עצור קצר למעלה וחזור לאט.',mistake:'אל תבעט במהירות ואל תרים את האגן מהמושב.'},
+{id:'pec-rear',simple:'פרפר / כתף אחורית',pro:'Pec Fly / Rear Delt',cat:'חזה · כתפיים',muscles:['chest','shoulders'],img:'assets/machines/pec-rear.webp',setup:'בחר מצב Pec Fly לחזה או Rear Delt לכתף אחורית. כוון מושב כך שהידיות בגובה מתאים.',cue:'בחזה: סגור ידיים בקשת. בכתף אחורית: פתח מרפקים לצדדים תוך שמירת חזה יציב.',mistake:'אל תעמיס משקל שמקצר את הטווח.'},
+{id:'lat-row-combo',simple:'משיכה עליונה / חתירה משולבת',pro:'Lat Pulldown / Seated Row Combo',cat:'גב',muscles:['back','biceps'],img:'assets/machines/lat-row-combo.webp',setup:'בחר את התחנה לפי האיור: משיכה מלמעלה או חתירה אופקית.',cue:'שמור חזה יציב והניע דרך המרפקים.',mistake:'אל תמשוך רק עם כפות הידיים.'},
+{id:'hip',simple:'המכשיר שפותחים וסוגרים בו רגליים',pro:'Hip Abduction / Adduction',cat:'רגליים',muscles:['glutes','adductors'],img:'assets/machines/hip.webp',setup:'כוון את כריות הירך והטווח כך שהתחלה נוחה.',cue:'פתח או סגור בשליטה בלי תנופה.',mistake:'אל תקרוס קדימה כדי להשלים חזרות.'},
+{id:'seated-row',simple:'המכשיר שמושכים אל הבטן',pro:'Seated Row',cat:'גב',muscles:['back','biceps'],img:'assets/machines/seated-row.webp',setup:'התאם מושב/כרית חזה כך שתוכל להגיע לידיות בלי לעגל גב.',cue:'משוך מרפקים לאחור, השהה רגע וסיים בלי להרים כתפיים.',mistake:'אל תזרוק את הגב לאחור בכל חזרה.'},
+{id:'ab-crunch',simple:'מכונת כפיפות בטן',pro:'Abdominal Crunch',cat:'בטן',muscles:['abs'],img:'assets/machines/ab-crunch.webp',setup:'כוון מושב וטווח כך שהידיות נוחות ועמוד השדרה מתחיל ניטרלי.',cue:'קרב צלעות לאגן. חשוב על כיפוף גו, לא משיכה בידיים.',mistake:'אל תהפוך את התרגיל ללחיצה של הידיים.'},
+{id:'leg-curl',simple:'המכשיר שמכופפים בו ברכיים',pro:'Seated Leg Curl',cat:'רגליים',muscles:['hamstrings'],img:'assets/machines/leg-curl.webp',setup:'ציר המכונה מול הברך, כרית מעל הקרסול וירכיים מקובעות.',cue:'כופף עד לטווח נוח וחזור לאט.',mistake:'אל תנתק את הירכיים מהמושב.'},
+{id:'shoulder-press',simple:'המכשיר שדוחפים מעל הראש',pro:'Shoulder Press',cat:'כתפיים',muscles:['shoulders','triceps'],img:'assets/machines/shoulder-press.webp',setup:'כוון מושב כך שהידיות מתחילות בערך בגובה הכתפיים.',cue:'דחוף למעלה בשליטה ושמור צלעות ואגן יציבים.',mistake:'אל תקשת את הגב כדי לסיים חזרה.'},
+{id:'chest-press',simple:'המכשיר שדוחפים קדימה',pro:'Chest Press',cat:'חזה',muscles:['chest','triceps'],img:'assets/machines/chest-press.webp',setup:'כוון מושב כך שהידיות בערך בגובה אמצע החזה. שכמות מעט אחורה.',cue:'דחוף קדימה תוך שמירת החזה פתוח והמרפקים במסלול נוח.',mistake:'אל תרים כתפיים ואל תנתק שכמות בצורה אגרסיבית.'},
+{id:'smith',simple:'המוט שנע על מסילה',pro:'Smith Machine',cat:'רגליים · חזה',muscles:['quads','hamstrings','glutes','chest'],img:'assets/machines/smith.webp',setup:'למד קודם את מנגנון הנעילה ואת גובה הסטופרים. התאם מיקום רגליים לתרגיל.',cue:'מסילה קבועה דורשת למצוא עמידה שמתאימה לך; אל תכפה טווח לא נוח.',mistake:'אל תעמיס לפני שאתה בטוח בנעילה ובמסלול.'},
+{id:'preacher',simple:'ספסל ליד קדמית עם המוט המעוקל',pro:'Preacher Curl',cat:'ידיים',muscles:['biceps'],img:'assets/machines/preacher.webp',setup:'בית שחי קרוב לחלק העליון של הכרית והזרועות נתמכות.',cue:'כופף מרפקים בלי להרים כתפיים. עצור לפני איבוד שליטה בתחתית.',mistake:'אל תנתק את הזרוע מהכרית כדי לזרוק את המשקל.'},
+{id:'cable',simple:'תחנת הכבלים הגדולה',pro:'Cable Station',cat:'רב־תכליתי',muscles:['back','shoulders','biceps','triceps','chest'],img:'assets/machines/cable.webp',setup:'בחר גובה כבל ואביזר לפי התרגיל. וודא שהפין יושב היטב.',cue:'שמור על מתח רציף ושליטה.',mistake:'אל תשתמש בתנופה רק כי הכבל מאפשר.'},
+{id:'assisted',simple:'המכונה למתח ודיפס עם עזרה',pro:'Assisted Pull-up / Dip',cat:'גב · חזה · ידיים',muscles:['back','biceps','chest','triceps'],img:'assets/machines/assisted.webp',setup:'בחר סיוע: יותר משקל במכונה = יותר עזרה. עלה בזהירות לפלטפורמה.',cue:'במתח משוך מרפקים למטה; בדיפס שמור כתפיים בשליטה.',mistake:'התקדמות כאן לרוב פירושה פחות סיוע לאורך זמן.'},
+{id:'treadmill',simple:'הליכון',pro:'Treadmill',cat:'אירובי',muscles:['cardio'],img:'assets/machines/treadmill.webp',setup:'התחל לאט ורק אז העלה מהירות/שיפוע.',cue:'לחימום לפני כוח מספיק קצב קל 5–8 דקות.',mistake:'אל תתיש רגליים לפני אימון כוח כבד.'},
+{id:'elliptical',simple:'אליפטיקל',pro:'Elliptical',cat:'אירובי',muscles:['cardio'],img:'assets/machines/elliptical.webp',setup:'עמוד זקוף והתחל בהתנגדות קלה.',cue:'מתאים לחימום או אירובי מתון.',mistake:'אירובי אינו תחליף לעומס מתקדם לבניית שריר.'},
+{id:'stair',simple:'מדרגות',pro:'Stair Climber',cat:'אירובי',muscles:['cardio','quads','glutes'],img:'assets/machines/stair.webp',setup:'התחל בקצב נמוך והחזק ידיות רק ליציבות.',cue:'צעדים יציבים, גוף גבוה.',mistake:'לא לבצע נפח עצים לפני אימון רגליים אם המטרה היא ביצועי כוח.'},
+{id:'recumbent',simple:'אופניים עם משענת',pro:'Recumbent Bike',cat:'אירובי',muscles:['cardio'],img:'assets/machines/recumbent.webp',setup:'כוון מרחק מושב כך שהברך נשארת מעט כפופה בסוף הדחיפה.',cue:'מעולה לחימום קל או התאוששות.',mistake:'אל תדחוף התנגדות גבוהה לפני אימון רגליים.'},
+{id:'rower',simple:'מכונת חתירה ארוכה',pro:'Rower',cat:'אירובי',muscles:['cardio','back','legs'],img:'assets/machines/rower.webp',setup:'חגור כפות רגליים והתחל התנגדות מתונה.',cue:'רגליים → גוף → ידיים; בחזרה ידיים → גוף → רגליים.',mistake:'אל תמשוך רק בידיים.'},
+{id:'bike',simple:'אופני כושר',pro:'Upright Bike',cat:'אירובי',muscles:['cardio'],img:'assets/machines/bike.webp',setup:'כוון מושב כך שהברך מעט כפופה בתחתית הסיבוב.',cue:'חימום קל 5–8 דקות מספיק לרוב אימוני הכוח.',mistake:'אל תשרוף את הרגליים לפני סטים כבדים.'}
+];
+MACHINES.forEach((m,i)=>m.photoIndex=i);
+const machineMap=Object.fromEntries(MACHINES.map(x=>[x.id,x]));
+const HOME_EX=[
+{id:'home-pushup',simple:'שכיבות סמיכה',pro:'Push-up',cat:'חזה',muscles:['chest','triceps'],emoji:'⬆',setup:'כפות ידיים מעט רחבות מהכתפיים, גוף בקו אחד.',cue:'חזה לכיוון הרצפה, גוף יחידה אחת.'},
+{id:'home-pullup',simple:'מתח',pro:'Pull-up',cat:'גב',muscles:['back','biceps'],emoji:'↥',setup:'אחיזה יציבה במוט והתחלה מזרועות ארוכות.',cue:'מרפקים לכיסים, בלי בעיטה.'},
+{id:'home-db-row',simple:'חתירה עם משקולת',pro:'Dumbbell Row',cat:'גב',muscles:['back','biceps'],emoji:'↤',setup:'תמוך ביד או ברך ושמור גב ניטרלי.',cue:'משוך מרפק לכיוון האגן.'},
+{id:'home-floor-press',simple:'לחיצת חזה על הרצפה',pro:'Dumbbell Floor Press',cat:'חזה',muscles:['chest','triceps'],emoji:'⇧',setup:'שכב על הגב, מרפקים בזווית נוחה.',cue:'דחוף למעלה בשליטה.'},
+{id:'home-shoulder',simple:'לחיצת כתפיים עם משקולות',pro:'Dumbbell Shoulder Press',cat:'כתפיים',muscles:['shoulders','triceps'],emoji:'↑',setup:'שב/עמוד זקוף, משקולות בגובה כתף.',cue:'דחוף בלי לקשת גב.'},
+{id:'home-lateral',simple:'הרחקת כתפיים',pro:'Dumbbell Lateral Raise',cat:'כתפיים',muscles:['shoulders'],emoji:'↔',setup:'משקולות קלות לצד הגוף, מרפק מעט כפוף.',cue:'הרם דרך המרפקים עד בערך גובה כתף.'},
+{id:'home-goblet',simple:'סקוואט עם משקולת',pro:'Goblet Squat',cat:'רגליים',muscles:['quads','glutes'],emoji:'▼',setup:'החזק משקולת מול החזה, כפות רגליים יציבות.',cue:'ברכיים בכיוון האצבעות וחזה גבוה.'},
+{id:'home-rdl',simple:'דדליפט רומני עם משקולות',pro:'Dumbbell RDL',cat:'רגליים',muscles:['hamstrings','glutes'],emoji:'⌁',setup:'משקולות קרובות לרגליים וברכיים מעט כפופות.',cue:'אגן לאחור וגב ניטרלי.'},
+{id:'home-lunge',simple:'מכרע לאחור',pro:'Reverse Lunge',cat:'רגליים',muscles:['quads','glutes'],emoji:'↙',setup:'צעד לאחור ארוך מספיק ליציבות.',cue:'דחוף דרך כל כף הרגל הקדמית.'},
+{id:'home-curl',simple:'כפיפת מרפקים',pro:'Dumbbell Curl',cat:'ידיים',muscles:['biceps'],emoji:'⌒',setup:'מרפקים לצד הגוף.',cue:'ללא תנופה.'},
+{id:'home-triceps',simple:'פשיטת מרפק מעל הראש',pro:'Overhead Triceps Extension',cat:'ידיים',muscles:['triceps'],emoji:'⇡',setup:'משקולת מעל הראש, מרפקים יחסית פנימה.',cue:'הזז בעיקר את האמה.'},
+{id:'home-legraise',simple:'הרמת רגליים בשכיבה',pro:'Lying Leg Raise',cat:'בטן',muscles:['abs'],emoji:'∠',setup:'שכב על הגב ושמור גב תחתון בשליטה.',cue:'בסוף גלגל מעט את האגן.'}
+];
+const homeMap=Object.fromEntries(HOME_EX.map(x=>[x.id,x]));
+const exInfo=id=>machineMap[id]||homeMap[id];
+const MUSCLE_NAMES={chest:'חזה',back:'גב',shoulders:'כתפיים',biceps:'בייספס',triceps:'טרייספס',quads:'ארבע־ראשי',hamstrings:'ירך אחורית',glutes:'גלוטס',adductors:'מקרבים',abs:'בטן',calves:'תאומים'};
+const TARGET_SETS={chest:10,back:12,shoulders:10,biceps:6,triceps:6,quads:8,hamstrings:8,glutes:6,abs:6};
+const TEMPLATES={
+ gym:{
+  upperA:[['chest-press','Chest Press',3,'6–10',120],['lat-pulldown','Lat Pulldown',3,'8–12',120],['seated-row','Seated Row',3,'8–12',100],['pec-rear','Pec Fly',2,'10–15',75],['shoulder-press','Shoulder Press',3,'8–12',100],['cable','Cable Lateral Raise',3,'12–20',60],['preacher','Preacher Curl',3,'8–12',75],['cable','Triceps Pushdown',3,'10–15',60]],
+  lowerA:[['smith','Smith Squat',3,'6–10',150],['leg-extension','Leg Extension',3,'10–15',90],['leg-curl','Seated Leg Curl',3,'8–12',100],['smith','Smith RDL',3,'8–12',120],['hip','Hip Adduction',2,'12–20',60],['ab-crunch','Ab Crunch',3,'10–15',60]],
+  upperB:[['assisted','Assisted Pull-up',3,'6–10',120],['seated-row','Seated Row',3,'8–12',100],['chest-press','Chest Press',3,'8–12',100],['pec-rear','Rear Delt Fly',3,'12–20',60],['cable','Cable Lateral Raise',3,'12–20',60],['preacher','Preacher Curl',3,'10–15',60],['cable','Overhead Triceps Extension',3,'10–15',60]],
+  lowerB:[['smith','Smith RDL',3,'6–10',150],['smith','Smith Squat',3,'8–12',130],['leg-curl','Seated Leg Curl',3,'10–15',90],['leg-extension','Leg Extension',2,'12–15',75],['hip','Hip Abduction',3,'12–20',60],['ab-crunch','Ab Crunch',3,'10–15',60]]
+ },
+ home:{
+  upperA:[['home-pushup','Push-up',4,'8–20',90],['home-pullup','Pull-up',3,'5–10',120],['home-db-row','Dumbbell Row',3,'8–12',90],['home-shoulder','Dumbbell Shoulder Press',3,'8–12',90],['home-lateral','Lateral Raise',3,'12–20',60],['home-curl','Dumbbell Curl',3,'10–15',60],['home-triceps','Overhead Triceps Extension',3,'10–15',60]],
+  lowerA:[['home-goblet','Goblet Squat',4,'8–15',120],['home-rdl','Dumbbell RDL',4,'8–12',120],['home-lunge','Reverse Lunge',3,'8–12',90],['home-legraise','Lying Leg Raise',3,'10–20',60]],
+  upperB:[['home-pullup','Pull-up',4,'5–10',120],['home-floor-press','Dumbbell Floor Press',4,'8–15',90],['home-db-row','Dumbbell Row',3,'8–12',90],['home-lateral','Lateral Raise',4,'12–20',60],['home-curl','Dumbbell Curl',3,'10–15',60],['home-triceps','Triceps Extension',3,'10–15',60]],
+  lowerB:[['home-rdl','Dumbbell RDL',4,'8–12',120],['home-goblet','Goblet Squat',4,'8–15',120],['home-lunge','Reverse Lunge',3,'8–12',90],['home-legraise','Lying Leg Raise',3,'10–20',60]]
+ }
+};
+function defaults(){return{
+ version:VERSION,
+ profile:{name:'דביר',age:28,sex:'male',height:165,weight:65,targetWeight:68,goal:'lean_gain',days:4,activity:'medium',experience:'beginner',priority:['chest','back','shoulders','biceps','triceps'],likes:'',dislikes:'',allergies:'',dietStyle:'הכול',wake:'08:00',sleep:'00:00',equipment:'משקולות, מוט מתח, חבל קפיצה',injuries:'ללא פציעות ידועות',manualCalories:'',manualProtein:'',creatine:true,complete:false},
+ readiness:{sleep:4,energy:4,soreness:2,stress:2},location:'gym',duration:60,
+ logs:[],meals:[],weights:[],measures:[],photos:[],chat:[],activeWorkout:null,
+ hydration:{date:nowDay(),cups:0},daily:{date:nowDay(),creatine:false,proteinChecked:false},
+ reminders:[
+  {id:'workout',name:'אימון כוח',time:'18:00',days:[0,1,3,5],on:false},
+  {id:'creatine',name:'קריאטין',time:'12:00',days:[0,1,2,3,4,5,6],on:false},
+  {id:'protein',name:'בדיקת חלבון',time:'20:30',days:[0,1,2,3,4,5,6],on:false},
+  {id:'weigh',name:'שקילה שבועית',time:'08:00',days:[0],on:false},
+  {id:'review',name:'סיכום שבוע עם המאמן',time:'19:30',days:[6],on:false},
+  {id:'sleep',name:'הכנה לשינה',time:'23:15',days:[0,1,2,3,4,5,6],on:false}
+ ],
+ prefs:{spotifyCustom:'',theme:'titanium'},installDismissed:false,dailyBrief:{date:'',text:''},ai:{lastOk:0,lastModel:'',lastError:''}
+}}
+function migrateLegacy(){
+ let old=null;for(const k of LEGACY){try{const v=localStorage.getItem(k);if(v){old=JSON.parse(v);break}}catch{}}
+ const d=defaults();if(!old)return d;
+ if(old.profile){d.profile={...d.profile,...old.profile};if(typeof old.profile.priority==='string')d.profile.priority=['chest','back','shoulders','biceps','triceps'];}
+ d.readiness={...d.readiness,...(old.ready||old.readiness||{})};if('sore'in d.readiness&&!('soreness'in (old.ready||{})))d.readiness.soreness=+d.readiness.sore||2;
+ d.location=old.location||d.location;d.duration=old.duration||d.duration;d.logs=old.logs||old.workoutLogs||[];d.meals=old.meals||old.mealLogs||[];d.weights=old.weights||old.bodyLogs||[];d.measures=old.measures||old.measurementLogs||[];d.chat=old.chat||[];d.reminders=old.reminders?.length?old.reminders:d.reminders;d.activeWorkout=old.active||old.activeWorkout||null;
+ return d;
+}
+function loadState(){try{const raw=localStorage.getItem(STORE);if(raw){const x=JSON.parse(raw),d=defaults();return{...d,...x,profile:{...d.profile,...(x.profile||{})},readiness:{...d.readiness,...(x.readiness||{})},prefs:{...d.prefs,...(x.prefs||{})},ai:{...d.ai,...(x.ai||{})},daily:{...d.daily,...(x.daily||{})},hydration:{...d.hydration,...(x.hydration||{})}}}}catch{}return migrateLegacy()}
+let S=loadState();
+function save(){S.version=VERSION;localStorage.setItem(STORE,JSON.stringify(S));syncRemindersToSW();updateBell();}
+function dailyReset(){const k=nowDay();if(S.daily.date!==k)S.daily={date:k,creatine:false,proteinChecked:false};if(S.hydration.date!==k)S.hydration={date:k,cups:0};save()}
+function goalName(g=S.profile.goal){return{lean_gain:'עלייה נקייה במסת שריר',fat_loss:'ירידה בשומן ושמירת שריר',recomp:'Recomposition'}[g]||'מטרה אישית'}
+function greet(){const h=new Date().getHours();return h<12?'בוקר טוב':h<18?'צהריים טובים':'ערב טוב'}
+function readinessScore(){const r=S.readiness;return clamp(Math.round((r.sleep*9+r.energy*9+(6-r.soreness)*6+(6-r.stress)*5)),30,100)}
+function weekLogs(days=7){const min=Date.now()-days*864e5;return S.logs.filter(w=>(w.end||w.finishedAt||w.ts||w.createdAt||0)>=min)}
+function workoutCountThisWeek(){return weekLogs(7).length}
+function totalDoneSets(logs=S.logs){let n=0;for(const w of logs)for(const e of w.exercises||[])n+=(e.results||[]).filter(x=>x.done).length;return n}
+function streak(){const days=[...new Set(S.logs.map(w=>dayKey(w.end||w.ts||w.createdAt)))].sort().reverse();if(!days.length)return 0;let c=0,d=new Date();for(let i=0;i<14;i++){const k=dayKey(d);if(days.includes(k)){c++;d.setDate(d.getDate()-1);continue}if(i===0){d.setDate(d.getDate()-1);continue}break}return c}
+function lastWorkout(){return S.logs[0]||null}
+function lastWorkoutHours(){const w=lastWorkout();return w?(Date.now()-(w.end||w.finishedAt||w.ts||0))/36e5:999}
+function bodyTrend(){const a=S.weights.filter(x=>+x.weight).slice(0,30).sort((x,y)=>x.ts-y.ts);if(a.length<5)return null;const cut=Math.max(2,Math.floor(a.length/3)),older=a.slice(0,cut),newer=a.slice(-cut),days=(newer.at(-1).ts-older[0].ts)/864e5;if(days<10)return null;return{old:avg(older.map(x=>+x.weight)),now:avg(newer.map(x=>+x.weight)),weekly:(avg(newer.map(x=>+x.weight))-avg(older.map(x=>+x.weight)))*7/days}}
+function nutritionTargets(){
+ const p=S.profile,w=+p.weight||65,h=+p.height||165,a=+p.age||28,bmr=10*w+6.25*h-5*a+(p.sex==='female'?-161:5),fac={low:1.35,medium:1.5,high:1.65}[p.activity]||1.5,tdee=bmr*fac;
+ let delta=p.goal==='lean_gain'?220:p.goal==='fat_loss'?-320:0,adapt=0,tr=bodyTrend();if(tr){if(p.goal==='lean_gain'){if(tr.weekly<.05)adapt=100;if(tr.weekly>.3)adapt=-100}if(p.goal==='fat_loss'){if(tr.weekly>-.05)adapt=-100;if(tr.weekly<-.7)adapt=100}}
+ let calories=Math.round((tdee+delta+adapt)/10)*10;if(+p.manualCalories>0)calories=+p.manualCalories;let protein=Math.round(w*(p.goal==='fat_loss'?2:1.8));if(+p.manualProtein>0)protein=+p.manualProtein;const fat=Math.round(w*.8),carbs=Math.max(80,Math.round((calories-protein*4-fat*9)/4));return{bmr:Math.round(bmr),tdee:Math.round(tdee),calories,protein,fat,carbs,adapt}
+}
+function mealTotals(key=nowDay()){return S.meals.filter(m=>dayKey(m.ts)===key).reduce((a,m)=>({calories:a.calories+(+m.calories||+m.cal||0),protein:a.protein+(+m.protein||+m.pro||0),carbs:a.carbs+(+m.carbs||+m.carb||0),fat:a.fat+(+m.fat||0)}),{calories:0,protein:0,carbs:0,fat:0})}
+function recentMeals(days=7){const min=Date.now()-days*864e5;return S.meals.filter(m=>m.ts>=min).sort((a,b)=>b.ts-a.ts)}
+function inferMuscles(e){const id=e.exerciseId||e.mi||'',name=String(e.name||'').toLowerCase(),info=exInfo(id),out={};const add=(k,v=1)=>out[k]=(out[k]||0)+v;if(info){for(const m of info.muscles||[])if(m!=='cardio')add(m)}
+ if(id==='pec-rear'&&name.includes('rear')){delete out.chest;add('shoulders',1);add('back',.3)}
+ if(id==='pec-rear'&&name.includes('pec')){out.chest=1;out.shoulders=.15}
+ if(id==='smith'){if(/rdl|romanian/.test(name)){out.hamstrings=1;out.glutes=.7;delete out.quads;delete out.chest}else if(/squat/.test(name)){out.quads=1;out.glutes=.7;delete out.chest;delete out.hamstrings}else if(/press/.test(name)){out.chest=1;out.triceps=.5;delete out.quads;delete out.hamstrings;delete out.glutes}}
+ if(id==='cable'){if(/lateral/.test(name))out.shoulders=1;if(/triceps/.test(name))out.triceps=1;if(/curl/.test(name))out.biceps=1}
+ if(id==='assisted'){if(/dip/.test(name)){out.chest=1;out.triceps=.7;delete out.back;delete out.biceps}else{out.back=1;out.biceps=.5}}
+ return out}
+function weeklyCoverage(){const c=Object.fromEntries(Object.keys(TARGET_SETS).map(k=>[k,0])),locations={gym:0,home:0};for(const w of weekLogs(7)){locations[w.location||'gym']=(locations[w.location||'gym']||0)+1;for(const e of w.exercises||[]){const st=(e.results||[]).filter(x=>x.done).length,m=inferMuscles(e);for(const[k,v]of Object.entries(m))if(k in c)c[k]+=st*v}}return{sets:c,locations}}
+function deficits(){const c=weeklyCoverage().sets;return Object.keys(TARGET_SETS).map(k=>({k,score:Math.max(0,TARGET_SETS[k]-c[k]),pct:c[k]/TARGET_SETS[k]})).sort((a,b)=>b.score-a.score)}
+function nextSplit(){
+ const recent=lastWorkout(),lastType=recent?.type;const seq=['upperA','lowerA','upperB','lowerB'];let base=seq[(Math.max(-1,seq.indexOf(lastType))+1)%4]||'upperA';const c=weeklyCoverage().sets;
+ const upperDef=(TARGET_SETS.chest-c.chest)+(TARGET_SETS.back-c.back)+(TARGET_SETS.shoulders-c.shoulders);const lowerDef=(TARGET_SETS.quads-c.quads)+(TARGET_SETS.hamstrings-c.hamstrings)+(TARGET_SETS.glutes-c.glutes);
+ if(workoutCountThisWeek()>=S.profile.days)return'recovery';if(lastWorkoutHours()<18||readinessScore()<45)return'recovery';
+ if(upperDef>lowerDef*1.35&&lastType?.startsWith('lower'))base=c.chest<c.back?'upperA':'upperB';if(lowerDef>upperDef*1.35&&lastType?.startsWith('upper'))base=c.quads<c.hamstrings?'lowerA':'lowerB';return base
+}
+function splitName(t){return{upperA:'Upper A · חזה + גב',upperB:'Upper B · גב + כתפיים',lowerA:'Lower A · רגליים קדמי',lowerB:'Lower B · שרשרת אחורית',recovery:'Recovery · התאוששות'}[t]||t}
+function localWorkout(){
+ const type=nextSplit(),loc=S.location,score=readinessScore();if(type==='recovery')return{id:'w_'+Date.now(),title:'Recovery Session',reason:score<45?'ה־Readiness נמוך. היום שומרים על התאוששות.':'השבוע כבר קיבל מספיק אימוני כוח או האימון האחרון קרוב מדי.',estimatedMinutes:25,type:'recovery',location:loc,createdAt:Date.now(),currentIndex:0,exercises:loc==='gym'?[{exerciseId:'treadmill',name:'הליכה קלה / שיפוע קל',sets:1,reps:'15–25 דקות',restSec:0,targetRIR:5,note:'קצב שמאפשר לדבר',results:[]}]:[{exerciseId:'home-legraise',name:'הליכה קלה + מוביליטי',sets:1,reps:'20–30 דקות',restSec:0,targetRIR:5,note:'בלי מאמץ עצים',results:[]}]};
+ const src=TEMPLATES[loc][type]||TEMPLATES[loc].upperA,max=S.duration<=30?4:S.duration<=45?5:S.duration<=60?7:8,low=score<65;let rows=src.slice(0,max).map((x,i)=>({exerciseId:x[0],name:x[1],sets:Math.max(2,x[2]-(low?1:0)),reps:x[3],restSec:x[4],targetRIR:low?3:2,note:'',order:i,results:[]}));
+ return{id:'w_'+Date.now(),title:splitName(type)+(loc==='home'?' · בית':' · מכון'),reason:`נבחר לפי הרוטציה, כיסוי השרירים השבועי ו־Readiness ${score}/100.`,estimatedMinutes:S.duration,type,location:loc,createdAt:Date.now(),currentIndex:0,exercises:rows}
+}
+function findLastExercise(e){for(const w of S.logs)for(const x of w.exercises||[])if((x.exerciseId||x.mi)===e.exerciseId&&String(x.name).toLowerCase()===String(e.name).toLowerCase())return x;return null}
+function repMax(str){const a=String(str).match(/(\d+)\s*[–-]\s*(\d+)/);return a?+a[2]:null}function repMin(str){const a=String(str).match(/(\d+)\s*[–-]\s*(\d+)/);return a?+a[1]:null}
+function progressionAdvice(e){const last=findLastExercise(e);if(!last)return{title:'Baseline חכם',text:'בחר עומס שמאפשר לסיים את הטווח עם בערך 1–3 חזרות ברזרבה. אל תרדוף אחרי מספר ביום הראשון.'};const done=(last.results||[]).filter(x=>x.done);if(!done.length)return{title:'Baseline',text:'בפעם הקודמת לא נשמרו סטים מלאים. היום תעד את כל הסטים ונבנה נקודת פתיחה.'};const hi=repMax(e.reps),lo=repMin(e.reps),reps=done.map(x=>+x.reps||0),rir=done.map(x=>Number.isFinite(+x.rir)?+x.rir:2),wt=done[0]?.weight||0,assisted=e.exerciseId==='assisted'&&/pull|dip/i.test(e.name);if(hi&&reps.every(r=>r>=hi)&&avg(rir)>=1.5)return{title:'מוכן להתקדמות',text:assisted?'נסה להפחית מדרגת סיוע קטנה, תוך שמירת הטווח והטכניקה.':`אם הטכניקה נשארה נקייה, נסה העלאה קטנה בעומס. ${wt?`העומס הקודם היה ${wt} ק״ג.`:''}`};if(lo&&reps.some(r=>r<lo))return{title:'אל תרדוף אחרי משקל',text:'לפחות סט אחד ירד מתחת לטווח. השאר את העומס או הפחת מעט ושפר את איכות החזרות.'};return{title:'Beat the logbook',text:`בפעם הקודמת: ${wt?wt+' ק״ג · ':''}${reps.join('/')}. שמור עומס ונסה להוסיף חזרה אחת בסך הכול או לשפר שליטה.`}}
+function postWorkoutAdvice(){const t=nutritionTargets(),x=mealTotals(),rp=Math.max(0,t.protein-x.protein),rc=Math.max(0,t.calories-x.calories),h=new Date().getHours(),last=recentMeals(1)[0],recent=last&&Date.now()-last.ts<3*36e5,p=Math.min(40,Math.max(25,rp||25));if(recent&&(+last.protein||+last.pro||0)>=25)return`אכלת חלבון משמעותי לא מזמן, לכן אין צורך להילחץ. בארוחה הבאה כוון לכ־${p} גרם חלבון והשלם את היעד היומי.`;if(h<11)return`אימון בוקר: ארוחה מלאה תעבוד מצוין — חלבון איכותי + פחמימה + פרי/ירקות. יעד מעשי עכשיו: בערך ${p} גרם חלבון.`;if(h<17)return`אימון צהריים: לך על ארוחה מלאה. נשארו לפי התיעוד בערך ${rp} גרם חלבון ו־${rc} קק״ל להיום. שלב חלבון איכותי ופחמימה להתאוששות.`;if(h<22)return`אימון ערב: בנה ארוחת ערב עם בערך ${p} גרם חלבון ופחמימה לפי מה שנשאר ביום. אין צורך בארוחה ענקית אם היעדים כמעט סגורים.`;return`אימון מאוחר: העדף משהו קל לעיכול עם בערך ${p} גרם חלבון, למשל יוגורט/קוטג׳/whey, והוסף פחמימה רק לפי מה שחסר לך ביום.`}
+function dailyFuelAdvice(){const t=nutritionTargets(),x=mealTotals(),count=S.meals.filter(m=>dayKey(m.ts)===nowDay()).length,h=new Date().getHours(),rp=Math.max(0,t.protein-x.protein),rc=Math.max(0,t.calories-x.calories);if(!count)return'עוד לא תיעדת אוכל היום. תעד לפחות את הארוחות המרכזיות כדי שההמלצה תהיה מבוססת על מה שבאמת אכלת.';if(rp<=15)return`החלבון כמעט סגור. נשארו בערך ${rc} קק״ל לפי התיעוד. עכשיו התמקד בשובע, ירקות ופחמימות/שומן לפי הצורך.`;if(h>=20)return`לקראת סוף היום נשארו בערך ${rp} גרם חלבון. כדאי לסגור את הפער בארוחה או נשנוש עשיר בחלבון.`;return`נשארו בערך ${rp} גרם חלבון ו־${rc} קק״ל לפי התיעוד. פזר את החלבון על הארוחות שנותרו.`}
+function nudges(){const a=[],t=nutritionTargets(),x=mealTotals(),h=new Date().getHours(),cov=weeklyCoverage().sets;if(!S.profile.complete)a.push({tone:'hot',title:'המאמן צריך להכיר אותך טוב יותר',text:'השלם את Athlete Profile כדי שהאימון והתזונה יותאמו למטרה, להעדפות ולשגרה שלך.',action:'profile'});if(h>=12&&!S.meals.some(m=>dayKey(m.ts)===nowDay()))a.push({tone:'warn',title:'אין עדיין זיכרון אוכל מהיום',text:'בלי תיעוד המערכת נאלצת לנחש. תעד לפחות את הארוחות המרכזיות.',action:'meal'});if(h>=19&&x.protein<t.protein*.7)a.push({tone:'hot',title:'פער חלבון לקראת סוף היום',text:`לפי התיעוד חסרים בערך ${Math.max(0,Math.round(t.protein-x.protein))} גרם חלבון.`,action:'fuel'});if(new Date().getDay()>=3&&workoutCountThisWeek()<S.profile.days)a.push({tone:'warn',title:'השבוע עדיין לא סגור',text:`בוצעו ${workoutCountThisWeek()}/${S.profile.days} אימוני כוח. האימון הבא ינסה לסגור חוסרים בלי להעמיס סתם.`,action:'audit'});const last=lastWorkout();if(last&&Date.now()-(last.end||last.ts||last.createdAt)<3*36e5&&(!recentMeals(1)[0]||recentMeals(1)[0].ts<(last.end||last.ts||last.createdAt)))a.push({tone:'good',title:'סיימת אימון — עכשיו התאוששות',text:postWorkoutAdvice(),action:'fuel'});const top=deficits()[0];if(top&&top.pct<.35&&workoutCountThisWeek()>=2)a.push({tone:'warn',title:`${MUSCLE_NAMES[top.k]} נשאר מאחור`,text:'ה־Weekly Audit מזהה פער משמעותי. המאמן ייתן לזה משקל בבניית האימון הבא.',action:'audit'});const w=S.weights[0];if(!w||Date.now()-w.ts>8*864e5)a.push({tone:'warn',title:'עבר זמן מאז השקילה',text:'שקילה שבועית עקבית עוזרת לכייל קלוריות לפי מגמה ולא לפי ניחוש.',action:'weigh'});return a.slice(0,4)}
+const PAGE_TITLES={home:'ATHLETE OS',coach:'COACH INTELLIGENCE',fuel:'FUEL INTELLIGENCE',progress:'PROGRESS LAB',more:'GYM TOOLKIT'};
+function switchScreen(name){$$('.screen').forEach(x=>x.classList.toggle('active',x.id===`screen-${name}`));$$('.dock-item').forEach(x=>x.classList.toggle('active',x.dataset.screen===name));$('#pageTitle').textContent=PAGE_TITLES[name]||'ATHLETE OS';if(name==='home')renderHome();if(name==='coach')renderCoach();if(name==='fuel')renderFuel();if(name==='progress')renderProgress();if(name==='more')renderMore();scrollTo({top:0,behavior:'smooth'})}
+function sliderRow(k,label){return`<label class="slider"><span>${label}</span><input data-ready="${k}" type="range" min="1" max="5" value="${S.readiness[k]}"><b>${S.readiness[k]}</b></label>`}
+function coverageHTML(){const c=weeklyCoverage().sets;return`<div class="coverage-grid">${Object.entries(TARGET_SETS).map(([k,t])=>{const v=Math.round(c[k]||0),pct=clamp(v/t*100,0,100);return`<div class="coverage"><header><b>${MUSCLE_NAMES[k]}</b><small>${v}/${t}</small></header><i><span style="width:${pct}%"></span></i></div>`}).join('')}</div>`}
+function renderHome(){const s=$('#screen-home'),t=nutritionTargets(),x=mealTotals(),score=readinessScore(),n=nudges(),plan=nextSplit();s.innerHTML=`
+<div class="card hero"><div class="hero-glow"></div><div class="hero-top"><div><div class="eyebrow">ATHLETE OS · ${S.location==='gym'?'GYM MODE':'HOME MODE'}</div><h1>${greet()}, ${esc(S.profile.name)}.<br><span class="accent">${esc(splitName(plan))}</span></h1><p>${esc(S.dailyBrief.text||'האפליקציה מחברת אימון, התאוששות, אוכל והתקדמות — ולא מתחילה מאפס בכל פעם.')}</p></div><div class="readiness" style="--score:${score}"><div><div><b>${score}</b><small>READINESS</small></div></div></div></div>
+<div class="stat-grid"><div class="stat"><small>אימונים השבוע</small><b>${workoutCountThisWeek()}/${S.profile.days}</b></div><div class="stat"><small>חלבון היום</small><b>${Math.round(x.protein)}/${t.protein}g</b></div><div class="stat"><small>מטרה</small><b>${S.profile.goal==='lean_gain'?'BUILD':S.profile.goal==='fat_loss'?'CUT':'RECOMP'}</b></div></div>
+<div class="mode-toggle"><button data-location="gym" class="${S.location==='gym'?'active':''}">🏋️ מכון</button><button data-location="home" class="${S.location==='home'?'active':''}">🏠 בית</button></div><button class="primary" id="buildToday" style="margin-top:10px">▶ בנה את האימון הכי נכון להיום</button></div>
+<div class="section-head"><div><h2>Agent Nudge</h2><small>המערכת יוזמת ולא רק מחכה</small></div><div id="homeAiStatus" class="status-line off"><i></i><span>בודק AI</span></div></div>
+<div class="nudge-stack">${n.length?n.map((z,i)=>`<div class="card nudge ${z.tone}"><small>PROACTIVE ${i+1}</small><b>${esc(z.title)}</b><p>${esc(z.text)}</p><button data-nudge="${z.action}">טפל בזה עכשיו</button></div>`).join(''):`<div class="card nudge good"><small>PROACTIVE</small><b>הכול במסלול</b><p>אין כרגע פער בולט. המשך לתעד כדי שהמערכת תישאר חכמה.</p></div>`}</div>
+<div class="section-head"><div><h2>Readiness Check</h2><small>העומס היום משתנה לפי הגוף</small></div><button id="askRecovery">נתח</button></div><div class="card readiness-card"><div class="mini-orb" style="--score:${score}"><div><div><b>${score}</b><small>READY</small></div></div></div><div class="slider-list">${sliderRow('sleep','שינה')}${sliderRow('energy','אנרגיה')}${sliderRow('soreness','תפיסות')}${sliderRow('stress','סטרס')}</div></div>
+<div class="section-head"><div><h2>Weekly Muscle Audit</h2><small>סטים שבוצעו ב־7 הימים האחרונים</small></div><button id="askAudit">AI Audit</button></div>${coverageHTML()}
+<div class="section-head"><div><h2>Quick Actions</h2><small>הדברים שאתה צריך במכון</small></div></div><div class="action-grid"><button class="action" data-action="coach"><em>✦</em><b>שאל את המאמן</b><small>הוא מקבל את כל הזיכרון שלך</small></button><button class="action" data-action="fuel"><em>◒</em><b>מה לאכול?</b><small>לפי השעה ומה שכבר אכלת</small></button><button class="action" data-action="reminders"><em>◉</em><b>תזכורות</b><small>${S.reminders.filter(r=>r.on).length} פעילות</small></button><button class="action" data-action="music"><em>♫</em><b>Gym Music</b><small>עברית + אנגלית</small></button></div>`;
+$$('[data-location]',s).forEach(b=>b.onclick=()=>{S.location=b.dataset.location;save();haptic();renderHome()});$$('[data-ready]',s).forEach(i=>i.oninput=()=>{S.readiness[i.dataset.ready]=+i.value;i.nextElementSibling.textContent=i.value;save()});$('#buildToday').onclick=buildToday;$('#askRecovery').onclick=()=>openCoachWith('תנתח את ה־Readiness שלי היום. האם לבצע אימון מלא, להוריד נפח או לנוח? תסביר לפי הנתונים שלי.');$('#askAudit').onclick=()=>openCoachWith('תעשה Audit מלא של 7 הימים האחרונים: אילו שרירים קיבלו מספיק עבודה, מה חסר, ומה האימון הבא הכי נכון.');$$('[data-action]',s).forEach(b=>b.onclick=()=>{const a=b.dataset.action;if(a==='coach')switchScreen('coach');if(a==='fuel')switchScreen('fuel');if(a==='reminders')openReminders();if(a==='music'){switchScreen('more');setTimeout(()=>$('#musicSection')?.scrollIntoView({behavior:'smooth'}),50)}});$$('[data-nudge]',s).forEach(b=>b.onclick=()=>handleNudge(b.dataset.nudge));setTimeout(checkAIHealth,50)}
+function handleNudge(a){if(a==='profile')openProfile();if(a==='meal')openMeal();if(a==='fuel')switchScreen('fuel');if(a==='audit')openCoachWith('תעשה לי Weekly Audit ותבנה את הפעולה הכי חשובה להיום.');if(a==='weigh')logWeight()}
+
+function coachMemory(){return{profile:S.profile,readiness:{...S.readiness,score:readinessScore()},location:S.location,duration:S.duration,nutritionTargets:nutritionTargets(),todayNutrition:mealTotals(),recentMeals:recentMeals(7).slice(0,50),recentWorkouts:S.logs.slice(0,14),weeklyCoverage:weeklyCoverage(),weights:S.weights.slice(0,20),measures:S.measures.slice(0,12),reminders:S.reminders,activeWorkout:S.activeWorkout,availableExercises:[...MACHINES.map(x=>({id:x.id,name:x.pro,simple:x.simple,location:'gym'})),...HOME_EX.map(x=>({id:x.id,name:x.pro,simple:x.simple,location:'home'}))],localTime:new Date().toISOString(),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||'Asia/Jerusalem'}}
+function captureReport(text){const q=String(text||'').trim(),l=q.toLowerCase();if(!q)return;if((l.includes('התאמנתי בבית')||l.includes('אימון בבית')))S.location='home';if((l.includes('התאמנתי במכון')||l.includes('בחדר כושר')))S.location='gym';const wm=l.match(/(?:שקלתי|משקל(?: שלי)?(?: הוא)?)[^\d]*(\d{2,3}(?:\.\d+)?)/);if(wm){const w=+wm[1];if(w>35&&w<250&&!S.weights.some(x=>Math.abs((+x.weight)-w)<.001&&Date.now()-x.ts<36e5)){S.profile.weight=w;S.weights.unshift({id:'bw_'+Date.now(),ts:Date.now(),weight:w,source:'chat'})}}if((l.includes('אכלתי')||l.includes('שתיתי'))&&!S.meals.some(m=>m.description===q&&Date.now()-m.ts<300000)){const pg=l.match(/(\d+(?:\.\d+)?)\s*(?:גרם|ג[׳']?)\s*חלבון/),cal=l.match(/(\d+)\s*(?:קלור|קק)/);S.meals.unshift({id:'meal_'+Date.now(),ts:Date.now(),description:q,protein:pg?+pg[1]:0,calories:cal?+cal[1]:0,carbs:0,fat:0,confidence:(pg||cal)?'manual-numbers':'text-only',source:'chat'})}save()}
+function applyAI(out){if(!out||typeof out!=='object')return;if(out.workout?.exercises?.length)S.activeWorkout=normalizeAIWorkout(out.workout);if(out.meal?.description){const m=out.meal;if(!S.meals.some(x=>x.description===m.description&&Date.now()-x.ts<300000))S.meals.unshift({id:'meal_'+Date.now(),ts:Date.now(),description:m.description,protein:+m.protein||0,calories:+m.calories||0,carbs:+m.carbs||0,fat:+m.fat||0,confidence:m.confidence||'rough',source:'ai'})}if(out.profilePatch)S.profile={...S.profile,...out.profilePatch};if(out.bodyEntry?.weight){const w=+out.bodyEntry.weight;if(w>35&&w<250){S.profile.weight=w;S.weights.unshift({id:'bw_'+Date.now(),ts:Date.now(),weight:w,source:'ai'})}}if(out.reminderSuggestion?.time){const r=out.reminderSuggestion,ex=S.reminders.find(x=>x.id===r.kind);if(ex)Object.assign(ex,{name:r.title||ex.name,time:r.time,days:Array.isArray(r.days)?r.days:ex.days,on:true})}if(out.servedBy){S.ai.lastOk=Date.now();S.ai.lastModel=out.servedBy;S.ai.lastError=''}save()}
+function normalizeAIWorkout(w){const exercises=(w.exercises||[]).filter(e=>exInfo(e.exerciseId)).slice(0,9).map((e,i)=>({exerciseId:e.exerciseId,name:e.name||exInfo(e.exerciseId).pro,sets:clamp(+e.sets||3,1,6),reps:String(e.reps||'8–12'),restSec:clamp(+e.restSec||90,0,240),targetRIR:clamp(+e.targetRIR||2,0,5),note:String(e.note||''),order:i,results:[]}));return{id:'w_'+Date.now(),title:w.title||'AI Workout',reason:w.reason||'נבנה לפי הזיכרון שלך',estimatedMinutes:+w.estimatedMinutes||S.duration,type:w.type||'full',location:w.location||S.location,createdAt:Date.now(),currentIndex:0,exercises}}
+async function callAI(message,imageData=null){const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),32000);try{const r=await fetch(AI_BASE+'/api/coach',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message,imageData,history:S.chat.slice(-14),memory:coachMemory()}),signal:ctrl.signal});clearTimeout(timer);if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}finally{clearTimeout(timer)}}
+function localCoach(message){const q=String(message||'').toLowerCase();if(q.includes('לאכול')||q.includes('אוכל')||q.includes('אחרי אימון'))return{reply:lastWorkoutHours()<3?postWorkoutAdvice():dailyFuelAdvice()};if(q.includes('פספס')||q.includes('audit')||q.includes('שבוע')){const d=deficits().slice(0,4).map(x=>`${MUSCLE_NAMES[x.k]} ${Math.round(weeklyCoverage().sets[x.k])}/${TARGET_SETS[x.k]}`);return{reply:`ב־7 הימים האחרונים ביצעת ${workoutCountThisWeek()} אימוני כוח. הפערים הגדולים כרגע: ${d.join(', ')}. המנוע המקומי ייתן להם משקל באימון הבא.`}}if(q.includes('משקל')||q.includes('היקף')){const tr=bodyTrend(),m=S.measures[0];return{reply:`המשקל האחרון: ${S.weights[0]?.weight??S.profile.weight} ק״ג. ${tr?`מגמה משוערת: ${tr.weekly>0?'+':''}${tr.weekly.toFixed(2)} ק״ג לשבוע.`:'עדיין אין מספיק שקילות למגמה.'} ${m?`מותן ${m.waist||'—'} ס״מ, חזה ${m.chest||'—'} ס״מ.`:'אין עדיין מדידת היקפים.'}`}}if(q.includes('אימון')||q.includes('היום')||q.includes('לעשות')){const w=localWorkout();return{reply:`בניתי ${w.title}. ${w.reason}`,workout:w}}return{reply:'הענן לא זמין כרגע, אבל Memory Engine עדיין מחזיק את האימונים, האוכל, המשקל וההיקפים. אפשר לשאול אותי על האימון היום, מה לאכול, מה פספסת השבוע או ההתקדמות.'}}
+async function sendCoach(text,imageData=null){text=String(text||'').trim();if(!text&&!imageData)return;captureReport(text);S.chat.push({role:'user',text:text||'📷 תמונה',ts:Date.now()});S.chat=S.chat.slice(-60);save();renderCoach(true);try{const out=await callAI(text||'נתח את התמונה בהקשר של הזיכרון שלי.',imageData);applyAI(out);S.chat.push({role:'assistant',text:out.reply||'קיבלתי.',ts:Date.now(),model:out.servedBy||''});if(out.achievement)toast('🏆 '+out.achievement)}catch(e){S.ai.lastError=String(e);const out=localCoach(text||'');applyAI(out);S.chat.push({role:'assistant',text:'⚡ Memory Engine\n'+out.reply,ts:Date.now(),offline:true})}S.chat=S.chat.slice(-60);save();renderCoach()}
+function renderCoach(thinking=false){const s=$('#screen-coach');s.innerHTML=`<div class="coach-shell"><div class="coach-hero"><div id="coachOrb" class="ai-orb ${S.ai.lastOk&&Date.now()-S.ai.lastOk<15*60e3?'':'offline'}"></div><h1>Coach Intelligence</h1><p>מקבל בכל הודעה את המטרה, האימונים, האוכל, ה־Readiness, המשקל, ההיקפים והמיקום שלך.</p><div id="coachStatus" class="status-line off" style="justify-content:center"><i></i><span>בודק חיבור</span></div></div><div class="chips"><button class="chip">מה האימון שלי היום?</button><button class="chip">מה לאכול עכשיו?</button><button class="chip">מה פספסתי השבוע?</button><button class="chip">תנתח את ההתקדמות שלי</button><button class="chip">יש לי רק 35 דקות</button></div><div class="messages" id="messages">${S.chat.length?S.chat.map(m=>`<div class="bubble ${m.role==='user'?'user':'ai'}">${esc(m.text)}</div>`).join(''):'<div class="bubble ai">אני המאמן שבתוך האפליקציה. אתה יכול לדבר איתי חופשי: “יש לי 40 דקות”, “אכלתי עכשיו…”, “אני תפוס בחזה”, “התאמנתי בבית”, או “מה פספסתי השבוע?”.</div>'}${thinking?'<div class="bubble ai"><span class="thinking"><i></i><i></i><i></i></span></div>':''}</div><div class="composer"><button id="voiceBtn">⌁</button><button id="coachPhotoBtn">◈</button><input id="coachInput" placeholder="דבר איתי חופשי..." autocomplete="off"><button class="send" id="coachSend">↑</button></div></div>`;requestAnimationFrame(()=>{const m=$('#messages');m.scrollTop=m.scrollHeight});$$('.chip',s).forEach(b=>b.onclick=()=>sendCoach(b.textContent));$('#coachSend').onclick=()=>{const i=$('#coachInput');const v=i.value;i.value='';sendCoach(v)};$('#coachInput').onkeydown=e=>{if(e.key==='Enter'){const v=e.target.value;e.target.value='';sendCoach(v)}};$('#coachPhotoBtn').onclick=()=>$('#coachPhotoInput').click();$('#voiceBtn').onclick=startVoice;setTimeout(checkAIHealth,60)}
+function openCoachWith(text){switchScreen('coach');setTimeout(()=>sendCoach(text),50)}
+async function checkAIHealth(){const els=[$('#homeAiStatus'),$('#coachStatus')].filter(Boolean);if(!els.length)return;try{const c=new AbortController(),t=setTimeout(()=>c.abort(),6000),r=await fetch(AI_BASE+'/api/health',{signal:c.signal,cache:'no-store'});clearTimeout(t);if(!r.ok)throw 0;const j=await r.json();const live=!!j.ok&&!!j.aiAuth;els.forEach(e=>{e.classList.toggle('off',!live);e.querySelector('span').textContent=live?`AI LIVE · ${S.ai.lastModel||'3-way fallback'}`:'Memory Engine · cloud warming'});if(live){S.ai.lastOk=Math.max(S.ai.lastOk,Date.now()-1000);save()}}catch{els.forEach(e=>{e.classList.add('off');e.querySelector('span').textContent='Memory Engine · offline-safe'})}}
+function startVoice(){const R=window.SpeechRecognition||window.webkitSpeechRecognition;if(!R){toast('זיהוי קולי לא זמין בדפדפן הזה');return}const r=new R();r.lang='he-IL';r.interimResults=false;r.onresult=e=>{const t=e.results[0][0].transcript;$('#coachInput').value=t;sendCoach(t)};r.onerror=()=>toast('לא הצלחתי לקלוט קול');r.start();toast('מקשיב...')}
+async function buildToday(){toast('מנתח את השבוע...');try{const out=await callAI(`בנה לי את האימון הכי נכון להיום. מיקום: ${S.location==='home'?'בית':'מכון'}. יש לי ${S.duration} דקות. Readiness ${readinessScore()}/100. בדוק מה כבר עשיתי ב־7 הימים האחרונים ומה חסר. המטרה: ${goalName()}.`);applyAI(out);if(!S.activeWorkout)S.activeWorkout=localWorkout();save();openWorkout()}catch{S.activeWorkout=localWorkout();save();toast('הענן לא ענה — Memory Engine בנה אימון מהזיכרון');openWorkout()}}
+function workoutInfo(e){return exInfo(e.exerciseId)||{simple:e.name,pro:e.name,muscles:[],setup:'',cue:'',mistake:''}}
+function openWorkout(){if(!S.activeWorkout)S.activeWorkout=localWorkout();save();$('#workoutDialog').showModal();renderWorkout()}
+function saveCurrentSetInputs(){const w=S.activeWorkout;if(!w)return;const e=w.exercises[w.currentIndex||0];if(!e)return;e.results=e.results||[];$$('[data-set-weight]').forEach(i=>{const n=+i.dataset.setWeight;e.results[n]=e.results[n]||{};e.results[n].weight=+i.value||0});$$('[data-set-reps]').forEach(i=>{const n=+i.dataset.setReps;e.results[n]=e.results[n]||{};e.results[n].reps=+i.value||0});$$('[data-set-rir]').forEach(i=>{const n=+i.dataset.setRir;e.results[n]=e.results[n]||{};e.results[n].rir=i.value===''?null:+i.value});save()}
+function setRow(e,n){const r=e.results?.[n]||{};return`<div class="set-row"><b>${n+1}</b><input inputmode="decimal" data-set-weight="${n}" placeholder="ק״ג" value="${r.weight??''}"><input inputmode="numeric" data-set-reps="${n}" placeholder="חזרות" value="${r.reps??''}"><input inputmode="decimal" data-set-rir="${n}" placeholder="RIR" value="${r.rir??''}"><button data-set-done="${n}" class="${r.done?'done':''}">✓</button></div>`}
+function renderWorkout(){const w=S.activeWorkout;if(!w)return;const i=w.currentIndex||0;if(i>=w.exercises.length){renderWorkoutSummary();return}const e=w.exercises[i],m=workoutInfo(e),p=progressionAdvice(e),home=!!homeMap[e.exerciseId];$('#workoutContent').innerHTML=`<div class="workout-top"><div class="workout-topline"><button class="close" id="closeWorkout">×</button><div><div class="eyebrow">${w.location==='home'?'HOME':'GYM'} · ${i+1}/${w.exercises.length}</div><b>${esc(w.title)}</b></div><button class="close" id="askCurrent">✦</button></div><div class="workout-progress"><i style="width:${i/w.exercises.length*100}%"></i></div></div>${home?`<div class="home-visual"><div>${m.emoji||'🏠'}<div style="font-size:9px;color:var(--muted);margin-top:8px">HOME EXERCISE</div></div></div>`:`<div class="exercise-photo">${machineVisual(m,'machine-sprite workout-sprite')}<div class="photo-tag">זה המכשיר שאתה מחפש</div></div>`}<div class="exercise-panel"><span class="tag">${esc((m.muscles||[]).map(x=>MUSCLE_NAMES[x]||x).join(' · ')||m.cat||'')}</span><h1>${esc(e.name||m.simple)}</h1><div class="sub">${esc(m.pro)} · ${esc(m.simple)}</div><div class="rx"><div><b>${e.sets}</b><small>SETS</small></div><div><b>${esc(e.reps)}</b><small>REPS</small></div><div><b>RIR ${e.targetRIR??2}</b><small>INTENSITY</small></div></div><div class="cue"><b>🎯 ${esc(m.cue||'בצע בשליטה ובטווח נוח.')}</b><div style="margin-top:5px;color:#c0cad6">${esc(m.setup||'')}</div>${m.mistake?`<div style="margin-top:5px;color:var(--muted)">⚠ ${esc(m.mistake)}</div>`:''}</div><div class="progression"><b style="color:var(--violet)">${esc(p.title)}</b><div style="margin-top:4px;color:#c5cdd8">${esc(p.text)}</div></div><div style="display:grid;grid-template-columns:28px 1fr 1fr .8fr 42px;gap:6px;margin:12px 0 5px;color:var(--muted);font-size:7px;text-align:center"><span>סט</span><span>ק״ג</span><span>חזרות</span><span>RIR</span><span>✓</span></div><div class="set-list">${Array.from({length:e.sets},(_,n)=>setRow(e,n)).join('')}</div><button class="ghost" id="swapExercise" style="margin-top:10px">החלף תרגיל</button><div class="workout-actions"><button class="secondary" id="prevExercise">הקודם</button><button class="primary" id="nextExercise">${i===w.exercises.length-1?'סיכום':'הבא'}</button></div></div>`;
+$('#closeWorkout').onclick=()=>{saveCurrentSetInputs();$('#workoutDialog').close()};$('#askCurrent').onclick=()=>{saveCurrentSetInputs();$('#workoutDialog').close();openCoachWith(`אני באמצע ${e.name}. תסתכל על ה־logbook וה־Readiness שלי ותגיד מה לעשות בסט הבא.`)};$$('[data-set-done]').forEach(b=>b.onclick=()=>{saveCurrentSetInputs();const n=+b.dataset.setDone;e.results=e.results||[];e.results[n]=e.results[n]||{};e.results[n].done=!e.results[n].done;save();haptic([30]);if(e.results[n].done&&e.restSec)startRest(e.restSec);renderWorkout()});$('#prevExercise').onclick=()=>{saveCurrentSetInputs();w.currentIndex=Math.max(0,i-1);save();renderWorkout()};$('#nextExercise').onclick=()=>{saveCurrentSetInputs();w.currentIndex=i+1;save();renderWorkout()};$('#swapExercise').onclick=()=>swapExercise(e)}
+function swapExercise(e){const muscles=Object.keys(inferMuscles(e)),pool=(S.location==='home'?HOME_EX:MACHINES).filter(x=>x.id!==e.exerciseId&&(x.muscles||[]).some(m=>muscles.includes(m))&&!x.muscles?.includes('cardio'));if(!pool.length){toast('לא מצאתי תחליף טוב');return}const cur=pool[0],old=e.name;e.exerciseId=cur.id;e.name=cur.pro;e.results=[];save();toast(`החלפתי ${old} ל־${cur.simple}`);renderWorkout()}
+function renderWorkoutSummary(){const w=S.activeWorkout,sets=w.exercises.reduce((a,e)=>a+(e.results||[]).filter(r=>r.done).length,0);$('#workoutContent').innerHTML=`<div class="onboard"><div class="onboard-logo"></div><div class="eyebrow" style="text-align:center">WORKOUT COMPLETE</div><h1>האימון שלך נשמר?</h1><p>${esc(w.title)} · ${sets} סטים בוצעו</p><div class="card onboard-card"><div class="section-head" style="margin-top:0"><div><h2>סיכום קצר</h2><small>${esc(w.reason||'')}</small></div></div><div class="big-stats"><div class="big-stat"><b>${sets}</b><small>SETS</small></div><div class="big-stat"><b>${w.estimatedMinutes||S.duration}</b><small>MIN</small></div><div class="big-stat"><b>${w.location==='home'?'בית':'מכון'}</b><small>LOCATION</small></div><div class="big-stat"><b>${readinessScore()}</b><small>READY</small></div></div></div><button class="primary" id="finishWorkout" style="margin-top:12px">סיים, שמור ועבור להתאוששות</button><button class="secondary" id="backWorkout" style="margin-top:8px">חזור לתרגילים</button></div>`;$('#backWorkout').onclick=()=>{w.currentIndex=Math.max(0,w.exercises.length-1);renderWorkout()};$('#finishWorkout').onclick=finishWorkout}
+function finishWorkout(){const w=S.activeWorkout;w.end=Date.now();w.finishedAt=w.end;S.logs.unshift(w);S.logs=S.logs.slice(0,300);S.activeWorkout=null;save();haptic([70,50,120]);$('#workoutDialog').close();toast('🏆 האימון נשמר בזיכרון');switchScreen('fuel');setTimeout(()=>{if(Notification.permission==='granted')navigator.serviceWorker?.ready.then(reg=>reg.showNotification('Dvir Gym AI',{body:'סיימת אימון. תעד מה אכלת כדי שהמאמן יסגור התאוששות.',icon:'assets/icon-192.png'})).catch(()=>{})},1000)}
+let restTimer=null;function startRest(sec){clearInterval(restTimer);let x=sec,$b=$('#restBubble');$b.classList.remove('hidden');$('#restClock').textContent=x;restTimer=setInterval(()=>{x--;$('#restClock').textContent=x;if(x<=0){clearInterval(restTimer);$b.classList.add('hidden');haptic([120,80,120]);toast('המנוחה הסתיימה') }},1000)}
+$('#skipRest').onclick=()=>{clearInterval(restTimer);$('#restBubble').classList.add('hidden')};
+function macroRow(label,val,target){const pct=clamp(val/(target||1)*100,0,100);return`<div class="macro-row"><span>${label}</span><i><span style="width:${pct}%"></span></i><b>${Math.round(val)}/${target}</b></div>`}
+function renderFuel(){const s=$('#screen-fuel'),t=nutritionTargets(),x=mealTotals(),pct=clamp(x.protein/t.protein*100,0,100),recent=recentMeals(7),after=lastWorkoutHours()<3;s.innerHTML=`<div class="card fuel-hero"><div class="eyebrow">FUEL INTELLIGENCE</div><h1 style="font-size:27px;margin:6px 0 3px">המאמן זוכר<br><span style="color:var(--lime)">מה אכלת.</span></h1><p class="help">יעדים הם נקודת פתיחה אדפטיבית. המשקל וההיקפים לאורך זמן קובעים אם צריך לשנות אותם.</p><div class="macro-wrap"><div class="macro-ring" style="--pct:${pct}"><div><div><b>${Math.round(x.protein)}g</b><small>PROTEIN TODAY</small></div></div></div><div class="macro-list">${macroRow('חלבון',x.protein,t.protein)}${macroRow('קלוריות',x.calories,t.calories)}${macroRow('פחמימה',x.carbs,t.carbs)}${macroRow('שומן',x.fat,t.fat)}</div></div></div>
+<div class="section-head"><div><h2>${after?'אחרי האימון עכשיו':'Fuel Coach'}</h2><small>${after?'לפי השעה ומה שכבר אכלת':'מה הדבר החשוב הבא'}</small></div><button id="askFoodAI">שאל AI</button></div><div class="card fuel-advice"><h3>${after?'🍽️ מה לאכול עכשיו':'🥗 מה חסר היום'}</h3><p>${esc(after?postWorkoutAdvice():dailyFuelAdvice())}</p></div>
+<div class="section-head"><div><h2>Quick Log</h2><small>כדי שהזיכרון יהיה שימושי</small></div></div><div class="action-grid"><button class="action" id="logMeal"><em>＋</em><b>תעד ארוחה</b><small>תיאור + מאקרו אם ידוע</small></button><button class="action" id="photoMeal"><em>◈</em><b>צלם אוכל</b><small>AI ינסה להעריך בזהירות</small></button><button class="action" id="waterAdd"><em>◌</em><b>מים</b><small>${S.hydration.cups} כוסות שתועדו</small></button><button class="action" id="creatineDone"><em>◆</em><b>קריאטין</b><small>${S.daily.creatine?'בוצע היום':'לא סומן היום'}</small></button></div>
+<div class="section-head"><div><h2>היום</h2><small>${S.meals.filter(m=>dayKey(m.ts)===nowDay()).length} ארוחות</small></div></div>${mealList(S.meals.filter(m=>dayKey(m.ts)===nowDay()).sort((a,b)=>b.ts-a.ts))}
+<div class="section-head"><div><h2>7 ימים אחרונים</h2><small>זה הזיכרון שה־AI מקבל</small></div></div>${mealList(recent.slice(0,16))}
+<div class="card system-card" style="margin-top:14px"><div class="system-row"><div><b>יעד קלורי משוער</b><small>TDEE ${t.tdee} · התאמה ${t.adapt>0?'+':''}${t.adapt}</small></div><span class="badge">${t.calories} kcal</span></div><div class="system-row"><div><b>חלבון יומי</b><small>ניתן לעקוף בפרופיל</small></div><span class="badge">${t.protein}g</span></div></div>`;$('#logMeal').onclick=()=>openMeal();$('#photoMeal').onclick=()=>$('#mealPhotoInput').click();$('#waterAdd').onclick=()=>{S.hydration.cups++;save();haptic();renderFuel()};$('#creatineDone').onclick=()=>{S.daily.creatine=!S.daily.creatine;save();haptic();renderFuel()};$('#askFoodAI').onclick=()=>openCoachWith(`תנתח את מה שאכלתי היום ואת 7 הימים האחרונים. המטרה שלי: ${goalName()}. ${after?'סיימתי אימון לאחרונה.':''} מה כדאי לאכול עכשיו ובהמשך היום?`) }
+function mealList(arr){if(!arr.length)return'<div class="empty">אין עדיין תיעוד</div>';return`<div class="meal-list">${arr.map(m=>`<div class="card meal"><div class="time">${fmtTime(m.ts)}</div><div><b>${esc(m.description)}</b><small>${fmtDate(m.ts,{day:'2-digit',month:'2-digit',weekday:'short'})} · ${esc(m.confidence||m.source||'')}</small></div><div class="macro"><strong>${Math.round(+m.protein||+m.pro||0)||'—'}g P</strong><span>${Math.round(+m.calories||+m.cal||0)||'—'} kcal</span></div></div>`).join('')}</div>`}
+function openMeal(prefill={}){$('#mealContent').innerHTML=`<div class="sheet"><div class="sheet-head"><div><div class="eyebrow">MEAL MEMORY</div><h2>מה אכלת?</h2></div><button class="close" onclick="mealDialog.close()">×</button></div><div class="field"><label>תיאור הארוחה</label><textarea id="mealDesc" placeholder="למשל: אורז, טונה, שתי ביצים וסלט">${esc(prefill.description||'')}</textarea></div><div class="form-grid"><div class="field"><label>חלבון (גרם)</label><input id="mealProtein" inputmode="decimal" value="${prefill.protein??''}"></div><div class="field"><label>קלוריות</label><input id="mealCalories" inputmode="numeric" value="${prefill.calories??''}"></div><div class="field"><label>פחמימה (גרם)</label><input id="mealCarbs" inputmode="decimal" value="${prefill.carbs??''}"></div><div class="field"><label>שומן (גרם)</label><input id="mealFat" inputmode="decimal" value="${prefill.fat??''}"></div></div><div class="field"><label>זמן</label><input id="mealTime" type="datetime-local" value="${toLocalInput(prefill.ts||Date.now())}"></div><button class="primary" id="saveMeal">שמור בזיכרון</button><button class="secondary" id="mealAskAI" style="margin-top:8px">תן ל־AI להעריך מהתיאור</button></div>`;$('#mealDialog').showModal();$('#saveMeal').onclick=()=>{const d=$('#mealDesc').value.trim();if(!d)return toast('כתוב מה אכלת');S.meals.unshift({id:'meal_'+Date.now(),ts:new Date($('#mealTime').value).getTime()||Date.now(),description:d,protein:+$('#mealProtein').value||0,calories:+$('#mealCalories').value||0,carbs:+$('#mealCarbs').value||0,fat:+$('#mealFat').value||0,confidence:'manual',source:'manual'});S.meals=S.meals.slice(0,500);save();$('#mealDialog').close();renderFuel();toast('הארוחה נשמרה')};$('#mealAskAI').onclick=()=>{const d=$('#mealDesc').value.trim();if(!d)return;$('#mealDialog').close();openCoachWith(`אכלתי: ${d}. אם אפשר, הערך בזהירות חלבון וקלוריות ושמור את הארוחה בזיכרון. אם חסרות כמויות, ציין שההערכה גסה.`)}}
+function toLocalInput(ts){const d=new Date(ts),p=n=>String(n).padStart(2,'0');return`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`}
+function weightChart(){const vals=S.weights.filter(x=>+x.weight).slice(0,24).sort((a,b)=>a.ts-b.ts);if(vals.length<2)return'<div class="empty">צריך לפחות שתי שקילות כדי לראות מגמה</div>';const ws=vals.map(x=>+x.weight),min=Math.min(...ws)-.3,max=Math.max(...ws)+.3,pts=vals.map((x,i)=>{const px=5+i*(90/(vals.length-1)),py=90-(+x.weight-min)/(max-min)*76;return`${px},${py}`}).join(' ');return`<div class="chart"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><defs><linearGradient id="wg" x1="0" x2="1"><stop offset="0" stop-color="#9b7cff"/><stop offset=".5" stop-color="#55e7ff"/><stop offset="1" stop-color="#adff6b"/></linearGradient></defs><line x1="5" y1="90" x2="95" y2="90" stroke="#ffffff14" stroke-width=".8"/><polyline points="${pts}" fill="none" stroke="url(#wg)" stroke-width="2" vector-effect="non-scaling-stroke"/><circle cx="${pts.split(' ').at(-1).split(',')[0]}" cy="${pts.split(' ').at(-1).split(',')[1]}" r="2.6" fill="#adff6b"/></svg></div><div style="display:flex;justify-content:space-between;color:var(--muted);font-size:8px"><span>${ws[0].toFixed(1)} ק״ג</span><span>${ws.at(-1).toFixed(1)} ק״ג</span></div>`}
+function prCount(){const best={};for(const w of S.logs)for(const e of w.exercises||[])for(const r of e.results||[])if(r.done&&+r.weight){const key=e.name,val=(+r.weight)*(1+(+r.reps||0)/30);best[key]=Math.max(best[key]||0,val)}return Object.keys(best).length}
+function latestMeasure(){return S.measures[0]||{}}
+function timelineHTML(){const arr=S.logs.slice(0,14);if(!arr.length)return'<div class="empty">עוד אין אימונים שמורים</div>';return`<div class="timeline">${arr.map(w=>{const st=(w.exercises||[]).reduce((a,e)=>a+(e.results||[]).filter(r=>r.done).length,0);return`<div class="card timeline-item"><header><div><b>${esc(w.title||splitName(w.type))}</b><small>${w.location==='home'?'🏠 בית':'🏋️ מכון'} · ${st} סטים</small></div><small>${fmtDate(w.end||w.ts||w.createdAt,{day:'2-digit',month:'2-digit',weekday:'short'})}</small></header></div>`}).join('')}</div>`}
+function renderProgress(){const s=$('#screen-progress'),m=latestMeasure(),tr=bodyTrend();s.innerHTML=`<div class="card progress-hero"><div class="eyebrow">PROGRESS LAB</div><h1 style="font-size:27px;margin:6px 0 8px">מגמה, לא<br><span style="color:var(--cyan)">תחושה.</span></h1><div class="big-stats"><div class="big-stat"><b>${S.logs.length}</b><small>אימונים</small></div><div class="big-stat"><b>${totalDoneSets()}</b><small>סטים</small></div><div class="big-stat"><b>${prCount()}</b><small>תרגילים</small></div><div class="big-stat"><b>${streak()}</b><small>רצף ימים</small></div></div></div>
+<div class="section-head"><div><h2>משקל גוף</h2><small>${tr?`קצב משוער ${tr.weekly>0?'+':''}${tr.weekly.toFixed(2)} ק״ג/שבוע`:'עוד אין מספיק נתונים למגמה'}</small></div><button id="logWeight">שקילה</button></div><div class="card chart-card">${weightChart()}</div>
+<div class="section-head"><div><h2>היקפים</h2><small>אותם תנאים ואותה נקודת מדידה</small></div><button id="logMeasure">עדכן</button></div><div class="measure-grid">${[['chest','חזה'],['waist','מותן'],['arm','זרוע'],['shoulders','כתפיים'],['thigh','ירך'],['hips','אגן']].map(([k,l])=>`<div class="measure-card"><small>${l}</small><b>${m[k]?m[k]+' ס״מ':'—'}</b></div>`).join('')}</div>
+<div class="section-head"><div><h2>תמונות התקדמות</h2><small>נשמרות מקומית במכשיר</small></div><button id="addProgressPhoto">צלם</button></div><div id="progressPhotoGrid" class="photo-grid"><div class="empty" style="grid-column:1/-1">טוען תמונות...</div></div>
+<div class="section-head"><div><h2>Weekly Audit</h2><small>האם כל הגוף קיבל עבודה</small></div><button id="progressAudit">AI</button></div>${coverageHTML()}
+<div class="section-head"><div><h2>יומן אימונים</h2><small>האחרונים ראשונים</small></div></div>${timelineHTML()}`;$('#logWeight').onclick=logWeight;$('#logMeasure').onclick=openMeasure;$('#addProgressPhoto').onclick=()=>$('#progressPhotoInput').click();$('#progressAudit').onclick=()=>openCoachWith('תנתח את ההתקדמות שלי: משקל, היקפים, תדירות אימונים וכיסוי שרירים. מה היית משנה כרגע?');loadProgressPhotos()}
+function logWeight(){const cur=prompt('מה המשקל עכשיו בק״ג?',String(S.profile.weight||''));if(cur===null)return;const w=+cur;if(!(w>35&&w<250))return toast('משקל לא תקין');S.profile.weight=w;S.weights.unshift({id:'bw_'+Date.now(),ts:Date.now(),weight:w,source:'manual'});S.weights=S.weights.slice(0,150);save();renderProgress();toast('השקילה נשמרה')}
+function openMeasure(){const m=latestMeasure();$('#measureContent').innerHTML=`<div class="sheet"><div class="sheet-head"><div><div class="eyebrow">BODY MEASUREMENTS</div><h2>מדידת היקפים</h2></div><button class="close" onclick="measureDialog.close()">×</button></div><p class="help">מגמה לאורך זמן חשובה יותר ממדידה אחת. נסה למדוד באותו זמן ובאותם תנאים.</p><div class="form-grid">${[['chest','חזה'],['waist','מותן'],['arm','זרוע'],['shoulders','כתפיים'],['thigh','ירך'],['hips','אגן']].map(([k,l])=>`<div class="field"><label>${l} (ס״מ)</label><input data-measure="${k}" inputmode="decimal" value="${m[k]??''}"></div>`).join('')}</div><button class="primary" id="saveMeasures">שמור מדידה</button></div>`;$('#measureDialog').showModal();$('#saveMeasures').onclick=()=>{const x={id:'m_'+Date.now(),ts:Date.now()};$$('[data-measure]').forEach(i=>x[i.dataset.measure]=+i.value||0);S.measures.unshift(x);S.measures=S.measures.slice(0,100);save();$('#measureDialog').close();renderProgress();toast('ההיקפים נשמרו')}}
+function renderMore(){const s=$('#screen-more');s.innerHTML=`<div class="card hero" style="margin-top:12px"><div class="eyebrow">GYM TOOLKIT</div><h1 style="font-size:27px">כל מה שאתה צריך<br><span class="accent">במקום אחד.</span></h1><p>מכשירים, מוזיקה, תזכורות, התקנה, גיבוי וסטטוס מערכת.</p></div>
+<div id="musicSection" class="section-head"><div><h2>Gym Music</h2><small>שני מצבי אימון קבועים</small></div></div><div class="tool-grid"><button class="card music-card he" id="musicHe"><em>🇮🇱</em><h3>Israeli Strength</h3><p>פלייליסט אימון כוח ישראלי מ־Spotify</p></button><button class="card music-card en" id="musicEn"><em>⚡</em><h3>Strength Training</h3><p>פלייליסט כוח בינלאומי מ־Spotify</p></button></div><div class="field"><label>פלייליסט אישי משלך (Spotify)</label><input id="customSpotify" placeholder="הדבק קישור Spotify" value="${esc(S.prefs.spotifyCustom||'')}"></div>
+<div class="section-head"><div><h2>המכשירים במכון שלך</h2><small>20 התמונות שצילמת</small></div></div><input id="machineSearch" class="machine-search" placeholder="חפש: חזה, גב, משיכה, רגליים..."><div id="machineGrid" class="machine-grid"></div>
+<div class="section-head"><div><h2>מערכת</h2><small>Production health</small></div></div><div class="card system-card"><div class="system-row"><div><b>Coach Intelligence</b><small id="sysModel">בודק...</small></div><span id="sysAiBadge" class="badge warn">CHECK</span></div><div class="system-row"><div><b>Memory Engine</b><small>localStorage + IndexedDB photos</small></div><span class="badge">READY</span></div><div class="system-row"><div><b>PWA</b><small>Offline cache + install mode</small></div><span class="badge">READY</span></div><div class="system-row"><div><b>Version</b><small>Production</small></div><span class="badge">v${VERSION}</span></div></div>
+<div class="section-head"><div><h2>כלים</h2><small>שליטה מלאה על הנתונים</small></div></div><div class="action-grid"><button class="action" id="openReminder"><em>◉</em><b>Reminder Center</b><small>אימון, חלבון, שקילה ושינה</small></button><button class="action" id="installApp"><em>⬡</em><b>התקן כאפליקציה</b><small>מסך הבית + standalone</small></button><button class="action" id="exportData"><em>⇩</em><b>ייצוא גיבוי</b><small>כל הזיכרון לקובץ JSON</small></button><button class="action" id="importData"><em>⇧</em><b>ייבוא גיבוי</b><small>שחזור בטלפון אחר</small></button></div>`;renderMachineGrid(MACHINES);$('#machineSearch').oninput=e=>{const q=e.target.value.trim().toLowerCase();renderMachineGrid(MACHINES.filter(m=>[m.simple,m.pro,m.cat,...m.muscles.map(x=>MUSCLE_NAMES[x]||x)].join(' ').toLowerCase().includes(q)))};$('#musicHe').onclick=()=>window.open(SPOTIFY_HE,'_blank','noopener');$('#musicEn').onclick=()=>window.open(SPOTIFY_EN,'_blank','noopener');$('#customSpotify').onchange=e=>{S.prefs.spotifyCustom=e.target.value.trim();save()};$('#customSpotify').onkeydown=e=>{if(e.key==='Enter'&&e.target.value.trim())window.open(e.target.value.trim(),'_blank','noopener')};$('#openReminder').onclick=openReminders;$('#installApp').onclick=installApp;$('#exportData').onclick=exportData;$('#importData').onclick=()=>$('#importInput').click();checkSystemPanel()}
+function renderMachineGrid(arr){const g=$('#machineGrid');if(!g)return;g.innerHTML=arr.map(m=>`<button class="card machine-card" data-machine="${m.id}">${machineVisual(m,'machine-sprite card-sprite')}<div class="body"><b>${esc(m.simple)}</b><small>${esc(m.pro)} · ${esc(m.cat)}</small></div></button>`).join('');$$('[data-machine]',g).forEach(b=>b.onclick=()=>openMachine(b.dataset.machine))}
+function openMachine(id){const m=machineMap[id];if(!m)return;$('#machineContent').innerHTML=`<div style="height:44vh;min-height:280px;position:relative">${machineVisual(m,'machine-sprite modal-sprite')}<button class="close" style="position:absolute;top:12px;left:12px" onclick="machineDialog.close()">×</button></div><div class="sheet"><div class="eyebrow">MACHINE GUIDE</div><h2 style="margin:5px 0">${esc(m.simple)}</h2><p class="help">${esc(m.pro)} · ${esc(m.cat)}</p><div class="card nudge good"><b>איך מכוונים</b><p>${esc(m.setup)}</p></div><div class="card nudge" style="margin-top:8px"><b>איך מבצעים</b><p>${esc(m.cue)}</p></div><div class="card nudge warn" style="margin-top:8px"><b>טעות נפוצה</b><p>${esc(m.mistake)}</p></div><button class="primary" id="machineAsk" style="margin-top:10px">שאל את ה־AI על המכשיר</button></div>`;$('#machineDialog').showModal();$('#machineAsk').onclick=()=>{$('#machineDialog').close();openCoachWith(`אני עומד מול ${m.pro} (${m.simple}). תסביר לי בקצרה איך לכוון אותו ומה לעשות עליו לפי התוכנית שלי.`)}}
+async function checkSystemPanel(){try{const r=await fetch(AI_BASE+'/api/health',{cache:'no-store'});const j=await r.json();if(!r.ok||!j.ok)throw 0;$('#sysAiBadge').textContent=j.aiAuth?'LIVE':'WARM';$('#sysAiBadge').classList.toggle('warn',!j.aiAuth);$('#sysModel').textContent=j.aiAuth?`${j.primary} + 2 fallbacks`:'Backend online · AI auth warming'}catch{$('#sysAiBadge').textContent='LOCAL';$('#sysAiBadge').classList.add('warn');$('#sysModel').textContent='Memory Engine פעיל; הענן לא זמין כרגע'}}
+function openReminders(){const names=['א','ב','ג','ד','ה','ו','ש'];$('#reminderContent').innerHTML=`<div class="sheet"><div class="sheet-head"><div><div class="eyebrow">REMINDER CENTER</div><h2>שהאפליקציה תיזום</h2></div><button class="close" onclick="reminderDialog.close()">×</button></div><p class="help">באנדרואיד מותקן PWA יכול לקבל התראות כשהמערכת מאפשרת. לתזמון מדויק גם כשהאפליקציה סגורה, ייצוא ליומן הטלפון הוא שכבת גיבוי אמינה.</p>${S.reminders.map(r=>`<div class="card" style="padding:12px;margin:8px 0"><div style="display:flex;justify-content:space-between;align-items:center"><div><b style="font-size:11px">${esc(r.name)}</b><small style="display:block;color:var(--muted);font-size:8px">${r.days.map(d=>names[d]).join(' · ')}</small></div><input type="checkbox" data-rem-on="${r.id}" ${r.on?'checked':''}></div><input data-rem-time="${r.id}" type="time" value="${r.time}" style="width:100%;margin-top:9px;border:1px solid var(--line);background:#0a0f17;color:#fff;border-radius:13px;padding:9px"></div>`).join('')}<button class="primary" id="allowNotify">אפשר התראות</button><button class="secondary" id="calendarExport" style="margin-top:8px">הוסף תזכורות פעילות ליומן</button></div>`;$('#reminderDialog').showModal();$$('[data-rem-on]').forEach(i=>i.onchange=()=>{S.reminders.find(r=>r.id===i.dataset.remOn).on=i.checked;save()});$$('[data-rem-time]').forEach(i=>i.onchange=()=>{S.reminders.find(r=>r.id===i.dataset.remTime).time=i.value;save()});$('#allowNotify').onclick=requestNotifications;$('#calendarExport').onclick=exportICS}
+async function requestNotifications(){if(!('Notification'in window))return toast('התראות אינן נתמכות בדפדפן הזה');const p=await Notification.requestPermission();if(p==='granted'){toast('התראות הופעלו');await syncRemindersToSW(true)}else toast('ההרשאה לא אושרה')}
+function nextDateForDay(day,h,m){const d=new Date();d.setSeconds(0,0);for(let i=0;i<8;i++){if(d.getDay()===day){const x=new Date(d);x.setHours(h,m,0,0);if(x>Date.now())return x}d.setDate(d.getDate()+1)}return d}
+function icsDate(d){const p=n=>String(n).padStart(2,'0');return`${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}T${p(d.getHours())}${p(d.getMinutes())}00`}
+function exportICS(){const dayCodes=['SU','MO','TU','WE','TH','FR','SA'];const events=[];for(const r of S.reminders.filter(x=>x.on)){const[h,m]=r.time.split(':').map(Number),start=nextDateForDay(r.days[0],h,m),by=r.days.map(d=>dayCodes[d]).join(',');events.push(`BEGIN:VEVENT\nUID:${r.id}-${Date.now()}@dvirgym\nDTSTART:${icsDate(start)}\nRRULE:FREQ=WEEKLY;BYDAY=${by}\nSUMMARY:${r.name}\nBEGIN:VALARM\nTRIGGER:-PT0M\nACTION:DISPLAY\nDESCRIPTION:${r.name}\nEND:VALARM\nEND:VEVENT`)}const data=`BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Dvir Gym AI//Athlete OS//HE\n${events.join('\n')}\nEND:VCALENDAR`,a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'text/calendar'}));a.download='dvir-gym-reminders.ics';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
+function updateBell(){const dot=$('#bellDot');if(dot)dot.classList.toggle('on',S.reminders.some(r=>r.on))}
+async function syncRemindersToSW(registerPeriodic=false){try{const reg=await navigator.serviceWorker?.ready;if(!reg)return;const msg={type:'SET_REMINDERS',reminders:S.reminders,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||'Asia/Jerusalem'};reg.active?.postMessage(msg);if(registerPeriodic&&'periodicSync'in reg){try{await reg.periodicSync.register('dvir-reminders',{minInterval:15*60*1000})}catch{}}}catch{}}
+let deferredInstall=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e});async function installApp(){if(deferredInstall){deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;return}toast('ב־Chrome: תפריט ⋮ → הוספה למסך הבית / התקנת אפליקציה')}
+function exportData(){const payload={exportedAt:new Date().toISOString(),version:VERSION,state:S};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));a.download=`dvir-gym-backup-${nowDay()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
+async function importDataFile(file){try{const x=JSON.parse(await file.text()),state=x.state||x;if(!state.profile||!Array.isArray(state.logs))throw 0;S={...defaults(),...state,profile:{...defaults().profile,...state.profile},readiness:{...defaults().readiness,...state.readiness}};save();renderCurrent();toast('הגיבוי שוחזר')}catch{toast('קובץ הגיבוי לא תקין')}}
+function openProfile(){const p=S.profile,t=nutritionTargets();$('#profileContent').innerHTML=`<div class="sheet"><div class="sheet-head"><div><div class="eyebrow">ATHLETE PROFILE</div><h2>המאמן צריך להכיר אותך</h2></div><button class="close" onclick="profileDialog.close()">×</button></div><p class="help">הפרופיל הזה נשלח לסוכן בכל שיחה ומשמש לבניית אימון, תזונה והמלצות התאוששות.</p><div class="section-head" style="margin-top:14px"><div><h2>המטרה</h2></div></div><div class="seg3">${[['lean_gain','BUILD','מסת שריר'],['fat_loss','CUT','ירידה בשומן'],['recomp','RECOMP','שריר + חיטוב']].map(([v,a,b])=>`<button data-profile-goal="${v}" class="${p.goal===v?'active':''}">${a}<br><span style="font-size:7px">${b}</span></button>`).join('')}</div><div class="form-grid"><div class="field"><label>שם</label><input id="pName" value="${esc(p.name)}"></div><div class="field"><label>גיל</label><input id="pAge" inputmode="numeric" value="${p.age}"></div><div class="field"><label>גובה (ס״מ)</label><input id="pHeight" inputmode="numeric" value="${p.height}"></div><div class="field"><label>משקל (ק״ג)</label><input id="pWeight" inputmode="decimal" value="${p.weight}"></div><div class="field"><label>משקל יעד</label><input id="pTarget" inputmode="decimal" value="${p.targetWeight}"></div><div class="field"><label>אימוני כוח בשבוע</label><input id="pDays" inputmode="numeric" value="${p.days}"></div></div><div class="field"><label>רמת ניסיון</label><select id="pExperience"><option value="beginner" ${p.experience==='beginner'?'selected':''}>מתחיל</option><option value="intermediate" ${p.experience==='intermediate'?'selected':''}>ביניים</option><option value="advanced" ${p.experience==='advanced'?'selected':''}>מתקדם</option></select></div><div class="field"><label>מטרות שריר בעדיפות</label><input id="pPriority" value="${esc((p.priority||[]).map(x=>MUSCLE_NAMES[x]||x).join(', '))}" placeholder="חזה, גב, כתפיים, ידיים"></div><div class="field"><label>פציעות / מגבלות / משהו שהמאמן חייב לדעת</label><textarea id="pInjuries">${esc(p.injuries||'')}</textarea></div><div class="section-head"><div><h2>שגרה ותזונה</h2></div></div><div class="form-grid"><div class="field"><label>רמת פעילות יומית</label><select id="pActivity"><option value="low" ${p.activity==='low'?'selected':''}>נמוכה</option><option value="medium" ${p.activity==='medium'?'selected':''}>בינונית</option><option value="high" ${p.activity==='high'?'selected':''}>גבוהה</option></select></div><div class="field"><label>סגנון תזונה</label><input id="pDiet" value="${esc(p.dietStyle||'')}"></div><div class="field"><label>שעת קימה</label><input id="pWake" type="time" value="${p.wake}"></div><div class="field"><label>שעת שינה</label><input id="pSleep" type="time" value="${p.sleep}"></div></div><div class="field"><label>אוכל שאני אוהב</label><textarea id="pLikes">${esc(p.likes||'')}</textarea></div><div class="field"><label>אוכל שאני לא אוהב</label><textarea id="pDislikes">${esc(p.dislikes||'')}</textarea></div><div class="field"><label>אלרגיות / רגישויות / הגבלות</label><textarea id="pAllergies">${esc(p.allergies||'')}</textarea></div><div class="field"><label>ציוד בבית</label><textarea id="pEquipment">${esc(p.equipment||'')}</textarea></div><label style="display:flex;gap:8px;align-items:center;font-size:10px;margin:12px 0"><input id="pCreatine" type="checkbox" ${p.creatine?'checked':''}> אני משתמש / רוצה לעקוב אחרי קריאטין מונוהידראט</label><div class="section-head"><div><h2>יעדים מחושבים</h2><small>ניתנים לשינוי ידני</small></div></div><div class="big-stats"><div class="big-stat"><b>${t.calories}</b><small>kcal</small></div><div class="big-stat"><b>${t.protein}g</b><small>protein</small></div><div class="big-stat"><b>${t.carbs}g</b><small>carbs</small></div><div class="big-stat"><b>${t.fat}g</b><small>fat</small></div></div><div class="form-grid"><div class="field"><label>קלוריות ידניות (אופציונלי)</label><input id="pManualCal" inputmode="numeric" value="${p.manualCalories||''}"></div><div class="field"><label>חלבון ידני (אופציונלי)</label><input id="pManualPro" inputmode="numeric" value="${p.manualProtein||''}"></div></div><button class="primary" id="saveProfile">שמור Athlete Profile</button></div>`;$('#profileDialog').showModal();$$('[data-profile-goal]').forEach(b=>b.onclick=()=>{$$('[data-profile-goal]').forEach(x=>x.classList.remove('active'));b.classList.add('active');p.goal=b.dataset.profileGoal});$('#saveProfile').onclick=()=>{p.name=$('#pName').value.trim()||'דביר';p.age=+$('#pAge').value||28;p.height=+$('#pHeight').value||165;p.weight=+$('#pWeight').value||65;p.targetWeight=+$('#pTarget').value||p.weight;p.days=clamp(+$('#pDays').value||4,2,6);p.experience=$('#pExperience').value;p.priority=parsePriority($('#pPriority').value);p.injuries=$('#pInjuries').value.trim();p.activity=$('#pActivity').value;p.dietStyle=$('#pDiet').value.trim();p.wake=$('#pWake').value;p.sleep=$('#pSleep').value;p.likes=$('#pLikes').value.trim();p.dislikes=$('#pDislikes').value.trim();p.allergies=$('#pAllergies').value.trim();p.equipment=$('#pEquipment').value.trim();p.creatine=$('#pCreatine').checked;p.manualCalories=$('#pManualCal').value;p.manualProtein=$('#pManualPro').value;p.complete=true;save();$('#profileDialog').close();$('#avatarInitial').textContent=(p.name||'ד').slice(0,1);renderCurrent();toast('Athlete Profile נשמר')}}
+function parsePriority(s){const map={חזה:'chest',גב:'back',כתפיים:'shoulders',כתף:'shoulders',בייספס:'biceps',ידיים:'biceps',טרייספס:'triceps',רגליים:'quads',בטן:'abs'};const arr=[];for(const token of String(s||'').split(/[,،]/).map(x=>x.trim())){if(map[token]&&!arr.includes(map[token]))arr.push(map[token])}return arr.length?arr:['chest','back','shoulders','biceps','triceps']}
+let onboardingStep=0,onboardingDraft=null;
+function startOnboarding(){onboardingDraft=JSON.parse(JSON.stringify(S.profile));onboardingStep=0;$('#onboardDialog').showModal();renderOnboarding()}
+function renderOnboarding(){const d=onboardingDraft,p=$('#onboardContent'),dots=`<div class="stepdots">${[0,1,2,3].map(i=>`<i class="${i===onboardingStep?'active':''}"></i>`).join('')}</div>`;let body='';if(onboardingStep===0)body=`<div class="eyebrow" style="text-align:center">STEP 1 · GOAL</div><h1>מה הגוף שאתה רוצה לבנות?</h1><p>המטרה תשנה קלוריות, קצב התקדמות וסדרי עדיפויות.</p>${dots}<div class="card onboard-card"><div class="preset-grid">${[['lean_gain','BUILD','להגדיל מסת שריר בלי לעלות מהר בשומן'],['fat_loss','CUT','לרדת בשומן תוך שמירה על כוח ושריר'],['recomp','RECOMP','להתקדם לאט בשני הכיוונים'],['lean_gain','SIZE + SHAPE','חזה, כתפיים, גב וידיים בעדיפות']].map(([v,a,b],i)=>`<button class="preset ${d.goal===v&&(i<3||d.priority?.includes('chest'))?'active':''}" data-ob-goal="${v}" data-ob-index="${i}"><b>${a}</b><small>${b}</small></button>`).join('')}</div></div>`;if(onboardingStep===1)body=`<div class="eyebrow" style="text-align:center">STEP 2 · BODY</div><h1>נקודת הפתיחה.</h1><p>מספיק נתונים בסיסיים. אפשר לשנות הכול אחר כך.</p>${dots}<div class="card onboard-card"><div class="form-grid"><div class="field"><label>גיל</label><input id="obAge" inputmode="numeric" value="${d.age}"></div><div class="field"><label>גובה ס״מ</label><input id="obHeight" inputmode="numeric" value="${d.height}"></div><div class="field"><label>משקל ק״ג</label><input id="obWeight" inputmode="decimal" value="${d.weight}"></div><div class="field"><label>משקל יעד</label><input id="obTarget" inputmode="decimal" value="${d.targetWeight}"></div></div><div class="field"><label>כמה אימוני כוח בשבוע?</label><select id="obDays"><option ${d.days===3?'selected':''}>3</option><option ${d.days===4?'selected':''}>4</option><option ${d.days===5?'selected':''}>5</option></select></div></div>`;if(onboardingStep===2)body=`<div class="eyebrow" style="text-align:center">STEP 3 · TRAINING</div><h1>איפה ומה חשוב לך?</h1><p>האפליקציה יודעת לעבוד גם במכון וגם בבית.</p>${dots}<div class="card onboard-card"><div class="mode-toggle"><button data-ob-loc="gym" class="${S.location==='gym'?'active':''}">🏋️ בעיקר מכון</button><button data-ob-loc="home" class="${S.location==='home'?'active':''}">🏠 בעיקר בית</button></div><div class="field"><label>שרירים בעדיפות</label><input id="obPriority" value="חזה, גב, כתפיים, ידיים"></div><div class="field"><label>ציוד בבית</label><textarea id="obEquipment">${esc(d.equipment)}</textarea></div><div class="field"><label>פציעות / מגבלות</label><textarea id="obInjuries">${esc(d.injuries)}</textarea></div></div>`;if(onboardingStep===3)body=`<div class="eyebrow" style="text-align:center">STEP 4 · FUEL</div><h1>כדי שה־AI לא ינחש.</h1><p>תגיד לו מה מתאים לך לאכול ואיך נראית השגרה.</p>${dots}<div class="card onboard-card"><div class="field"><label>אוכל שאני אוהב</label><textarea id="obLikes">${esc(d.likes)}</textarea></div><div class="field"><label>אוכל שאני לא אוהב</label><textarea id="obDislikes">${esc(d.dislikes)}</textarea></div><div class="field"><label>רגישויות / הגבלות</label><textarea id="obAllergies">${esc(d.allergies)}</textarea></div><label style="display:flex;gap:8px;align-items:center;font-size:10px"><input id="obCreatine" type="checkbox" ${d.creatine?'checked':''}> מעקב קריאטין יומי</label></div>`;p.innerHTML=`<div class="onboard"><div class="onboard-logo"></div>${body}<div class="onboard-nav"><button class="secondary" id="obBack">${onboardingStep?'חזרה':'אחר כך'}</button><button class="primary" id="obNext">${onboardingStep===3?'סיים והפעל':'המשך'}</button></div></div>`;$$('[data-ob-goal]').forEach(b=>b.onclick=()=>{d.goal=b.dataset.obGoal;if(+b.dataset.obIndex===3)d.priority=['chest','back','shoulders','biceps','triceps'];renderOnboarding()});$$('[data-ob-loc]').forEach(b=>b.onclick=()=>{S.location=b.dataset.obLoc;renderOnboarding()});$('#obBack').onclick=()=>{if(!onboardingStep){$('#onboardDialog').close();return}saveObStep();onboardingStep--;renderOnboarding()};$('#obNext').onclick=()=>{saveObStep();if(onboardingStep<3){onboardingStep++;renderOnboarding()}else{d.complete=true;S.profile=d;save();$('#onboardDialog').close();renderCurrent();toast('Athlete OS הופעל')}}}
+function saveObStep(){const d=onboardingDraft;if(onboardingStep===1){d.age=+$('#obAge')?.value||d.age;d.height=+$('#obHeight')?.value||d.height;d.weight=+$('#obWeight')?.value||d.weight;d.targetWeight=+$('#obTarget')?.value||d.targetWeight;d.days=+$('#obDays')?.value||d.days}if(onboardingStep===2){d.priority=parsePriority($('#obPriority')?.value||'');d.equipment=$('#obEquipment')?.value||d.equipment;d.injuries=$('#obInjuries')?.value||d.injuries}if(onboardingStep===3){d.likes=$('#obLikes')?.value||'';d.dislikes=$('#obDislikes')?.value||'';d.allergies=$('#obAllergies')?.value||'';d.creatine=$('#obCreatine')?.checked}}
+const DB_NAME='dvirGymPhotos',DB_VER=1;
+function openDB(){return new Promise((resolve,reject)=>{const r=indexedDB.open(DB_NAME,DB_VER);r.onupgradeneeded=()=>{const db=r.result;if(!db.objectStoreNames.contains('photos'))db.createObjectStore('photos',{keyPath:'id'})};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}
+async function saveProgressPhoto(file){try{const data=await compressImage(file,900,.76),db=await openDB(),tx=db.transaction('photos','readwrite');tx.objectStore('photos').put({id:'p_'+Date.now(),ts:Date.now(),data});await new Promise((res,rej)=>{tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});toast('תמונת ההתקדמות נשמרה מקומית');renderProgress()}catch{toast('לא הצלחתי לשמור את התמונה')}}
+async function loadProgressPhotos(){const g=$('#progressPhotoGrid');if(!g)return;try{const db=await openDB(),tx=db.transaction('photos','readonly'),r=tx.objectStore('photos').getAll(),arr=await new Promise((res,rej)=>{r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error)});arr.sort((a,b)=>b.ts-a.ts);g.innerHTML=arr.length?arr.slice(0,12).map(x=>`<div class="progress-photo"><img src="${x.data}" alt="תמונת התקדמות"><small>${fmtDate(x.ts,{day:'2-digit',month:'2-digit'})}</small></div>`).join(''):'<div class="empty" style="grid-column:1/-1">עוד אין תמונות התקדמות</div>'}catch{g.innerHTML='<div class="empty" style="grid-column:1/-1">אחסון התמונות אינו זמין</div>'}}
+function compressImage(file,max=1000,quality=.72){return new Promise((resolve,reject)=>{const img=new Image(),url=URL.createObjectURL(file);img.onload=()=>{let w=img.width,h=img.height;if(Math.max(w,h)>max){const s=max/Math.max(w,h);w=Math.round(w*s);h=Math.round(h*s)}const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);const data=c.toDataURL('image/jpeg',quality);URL.revokeObjectURL(url);resolve(data)};img.onerror=reject;img.src=url})}
+async function imageForAI(file){return compressImage(file,900,.68)}
+
+async function generateDailyBrief(){const k=nowDay();if(S.dailyBrief.date===k)return;const top=nudges()[0];S.dailyBrief={date:k,text:top?top.title:'הנתונים שלך נראים מאוזנים. המשך לתעד כדי לשמור על דיוק.'};save();renderHome();try{const out=await callAI('תן לי Daily Brief יזום של שני משפטים בלבד: מה הדבר הכי חשוב שאני צריך לעשות היום כדי להתקדם במטרה שלי, לפי אימונים, אוכל, התאוששות ומשקל.');if(out?.reply){S.dailyBrief={date:k,text:out.reply};applyAI(out);save();renderHome()}}catch{}}
+function renderCurrent(){const active=$('.dock-item.active')?.dataset.screen||'home';switchScreen(active);$('#avatarInitial').textContent=(S.profile.name||'ד').slice(0,1);updateBell()}
+function checkForegroundReminders(){if(!('Notification' in window)||Notification.permission!=='granted')return;const n=new Date(),tm=n.toTimeString().slice(0,5),d=n.getDay(),base=`${nowDay()}-${tm}`;for(const r of S.reminders)if(r.on&&r.time===tm&&r.days.includes(d)&&sessionStorage.getItem(base+r.id)!=='1'){navigator.serviceWorker?.ready.then(reg=>reg.showNotification('Dvir Gym AI',{body:r.name,icon:'assets/icon-192.png',badge:'assets/icon-192.png',tag:'dvir-'+r.id})).catch(()=>new Notification('Dvir Gym AI',{body:r.name}));sessionStorage.setItem(base+r.id,'1')}}
+async function persistStorage(){try{if(navigator.storage?.persist)await navigator.storage.persist()}catch{}}
+async function boot(){dailyReset();persistStorage();await loadMachineSprite();$('#avatarInitial').textContent=(S.profile.name||'ד').slice(0,1);$$('.dock-item').forEach(b=>b.onclick=()=>{haptic();switchScreen(b.dataset.screen)});$('#profileBtn').onclick=openProfile;$('#bellBtn').onclick=openReminders;$('#mealPhotoInput').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{const data=await imageForAI(f);switchScreen('coach');sendCoach('זו ארוחה שאכלתי. זהה את המרכיבים, תן הערכה זהירה של המאקרו אם אפשר ושמור אותה בזיכרון. ציין במפורש שהערכה מתמונה אינה מדויקת.',data)}catch{toast('לא הצלחתי לקרוא את התמונה')}e.target.value=''};$('#coachPhotoInput').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{const data=await imageForAI(f);sendCoach('זהה את המכשיר או התרגיל בתמונה, קשר אותו לתוכנית שלי והסבר איך להשתמש בו.',data)}catch{toast('לא הצלחתי לקרוא את התמונה')}e.target.value=''};$('#progressPhotoInput').onchange=e=>{const f=e.target.files?.[0];if(f)saveProgressPhoto(f);e.target.value=''};$('#importInput').onchange=e=>{const f=e.target.files?.[0];if(f)importDataFile(f);e.target.value=''};
+ if('serviceWorker'in navigator){try{await navigator.serviceWorker.register('sw.js');await syncRemindersToSW()}catch{}}
+ const action=new URLSearchParams(location.search).get('action');
+ if(action==='coach')switchScreen('coach');else if(action==='fuel')switchScreen('fuel');else if(action==='workout')setTimeout(buildToday,120);else renderHome();
+ if(!S.profile.complete)setTimeout(startOnboarding,550);setInterval(checkForegroundReminders,60000);checkForegroundReminders();setTimeout(generateDailyBrief,900);setTimeout(checkAIHealth,500)}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){dailyReset();checkForegroundReminders();renderCurrent()}});
+window.addEventListener('online',()=>{toast('חזרת לאונליין');checkAIHealth()});window.addEventListener('offline',()=>toast('אין אינטרנט — Memory Engine נשאר פעיל'));
+boot();/* Dvir Gym AI 6.1 — production hardening layer */
+var DG_AI_ENDPOINTS=[
+ 'https://dvir-gym-athlete-ai-dvirs-projects-b157a454.vercel.app',
+ 'https://dvir-gym-ai-dvirs-projects-b157a454.vercel.app'
+];
+var dgActiveAI='';
+var dgWakeLock=null;
+var dgBackupAt=0;
+var dgRestEnd=0;
+
+function dgDataIntegrity(){
+ try{
+  S.logs=Array.isArray(S.logs)?S.logs.slice(0,300):[];
+  S.meals=Array.isArray(S.meals)?S.meals.slice(0,600):[];
+  S.weights=Array.isArray(S.weights)?S.weights.slice(0,180):[];
+  S.measures=Array.isArray(S.measures)?S.measures.slice(0,120):[];
+  S.chat=Array.isArray(S.chat)?S.chat.slice(-80):[];
+  S.reminders=Array.isArray(S.reminders)?S.reminders:defaults().reminders;
+  if(!S.ai)S.ai={lastOk:0,lastModel:'',lastError:''};
+ }catch(e){console.warn('integrity',e)}
+}
+
+function save(){
+ try{
+  dgDataIntegrity();S.version=VERSION;const raw=JSON.stringify(S);localStorage.setItem(STORE,raw);
+  const n=Date.now();if(n-dgBackupAt>5*60e3){localStorage.setItem(STORE+'_safe_backup',raw);dgBackupAt=n}
+ }catch(e){console.error('save failed',e);try{localStorage.setItem(STORE+'_emergency',JSON.stringify(S))}catch{}}
+ try{syncRemindersToSW()}catch{}try{updateBell()}catch{}
+}
+
+async function dgFetchJSON(url,options={},timeout=18000){
+ const c=new AbortController(),t=setTimeout(()=>c.abort(),timeout);
+ try{const r=await fetch(url,{...options,signal:c.signal,cache:options.cache||'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}
+ finally{clearTimeout(t)}
+}
+
+async function callAI(message,imageData=null){
+ const payload={message,imageData,history:S.chat.slice(-18),memory:coachMemory(),client:{version:'6.1.0',online:navigator.onLine,locale:navigator.language||'he-IL'}};
+ const ordered=dgActiveAI?[dgActiveAI,...DG_AI_ENDPOINTS.filter(x=>x!==dgActiveAI)]:DG_AI_ENDPOINTS;
+ let lastErr=null;
+ for(const base of ordered){
+  try{
+   const out=await dgFetchJSON(base+'/api/coach',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)},22000);
+   if(!out||typeof out!=='object'||!out.reply)throw new Error('invalid AI response');
+   dgActiveAI=base;S.ai.lastOk=Date.now();S.ai.lastError='';S.ai.lastModel=out.servedBy||out.model||S.ai.lastModel||'cloud';save();return out;
+  }catch(e){lastErr=e;S.ai.lastError=String(e?.message||e)}
+ }
+ throw lastErr||new Error('AI unavailable');
+}
+
+async function checkAIHealth(){
+ const els=[$('#homeAiStatus'),$('#coachStatus')].filter(Boolean);if(!els.length)return;
+ let live=false,label='Memory Engine · offline-safe';
+ for(const base of DG_AI_ENDPOINTS){
+  try{const j=await dgFetchJSON(base+'/api/health',{},4500);if(j?.ok&&(j.aiAuth||j.configured)){live=true;dgActiveAI=base;label=`AI LIVE · ${j.model||S.ai.lastModel||'cloud'}`;S.ai.lastOk=Date.now();S.ai.lastError='';save();break}}
+  catch(e){S.ai.lastError=String(e?.message||e)}
+ }
+ els.forEach(e=>{e.classList.toggle('off',!live);const s=e.querySelector('span');if(s)s.textContent=label});
+}
+
+async function dgRequestWakeLock(){
+ try{if('wakeLock'in navigator&&document.visibilityState==='visible'){dgWakeLock=await navigator.wakeLock.request('screen');dgWakeLock.addEventListener?.('release',()=>{dgWakeLock=null})}}catch{}
+}
+async function dgReleaseWakeLock(){try{await dgWakeLock?.release()}catch{}dgWakeLock=null}
+
+function openWorkout(){
+ if(!S.activeWorkout)S.activeWorkout=localWorkout();save();dgRequestWakeLock();$('#workoutDialog').showModal();renderWorkout();
+}
+
+function startRest(sec){
+ clearInterval(restTimer);dgRestEnd=Date.now()+Math.max(0,+sec||0)*1000;const b=$('#restBubble');b.classList.remove('hidden');
+ const tick=()=>{const x=Math.max(0,Math.ceil((dgRestEnd-Date.now())/1000));$('#restClock').textContent=x;if(x<=0){clearInterval(restTimer);b.classList.add('hidden');haptic([120,80,120]);toast('המנוחה הסתיימה')}};
+ tick();restTimer=setInterval(tick,250);
+}
+
+function dgPRsForWorkout(w){
+ const prs=[];
+ for(const e of w.exercises||[]){
+  const cur=(e.results||[]).filter(x=>x.done),old=findLastExercise(e);if(!cur.length||!old)continue;
+  const prev=(old.results||[]).filter(x=>x.done);if(!prev.length)continue;
+  const curW=Math.max(...cur.map(x=>+x.weight||0)),oldW=Math.max(...prev.map(x=>+x.weight||0));
+  const curR=Math.max(...cur.map(x=>+x.reps||0)),oldR=Math.max(...prev.map(x=>+x.reps||0));
+  if(curW>oldW&&curR>=repMin(e.reps)||curW===oldW&&curR>oldR)prs.push(e.name);
+ }
+ return prs;
+}
+
+function finishWorkout(){
+ const w=S.activeWorkout;if(!w)return;const prs=dgPRsForWorkout(w);w.end=Date.now();w.finishedAt=w.end;
+ const done=(w.exercises||[]).reduce((a,e)=>a+(e.results||[]).filter(r=>r.done).length,0),planned=(w.exercises||[]).reduce((a,e)=>a+(+e.sets||0),0);
+ w.quality={doneSets:done,plannedSets:planned,completion:planned?Math.round(done/planned*100):0,prs};
+ S.logs.unshift(w);S.logs=S.logs.slice(0,300);S.activeWorkout=null;save();dgReleaseWakeLock();haptic(prs.length?[80,50,140,50,180]:[70,50,120]);$('#workoutDialog').close();
+ toast(prs.length?`🏆 ${prs.length} שיאים חדשים נשמרו`:'🏆 האימון נשמר בזיכרון');switchScreen('fuel');
+ setTimeout(()=>{if(Notification.permission==='granted')navigator.serviceWorker?.ready.then(reg=>reg.showNotification('Dvir Gym AI',{body:prs.length?`אימון הושלם עם ${prs.length} PR. עכשיו סוגרים התאוששות.`:'סיימת אימון. תעד מה אכלת כדי שהמאמן יסגור התאוששות.',icon:'assets/icon-192.png',tag:'post-workout'})).catch(()=>{})},900);
+}
+
+function dgNetworkBadge(){
+ let e=document.getElementById('dgNet');if(!e){e=document.createElement('div');e.id='dgNet';e.className='dg-net';document.querySelector('.topbar')?.appendChild(e)}
+ if(e){const on=navigator.onLine;e.classList.toggle('offline',!on);e.textContent=on?(dgActiveAI?'AI CLOUD':'ONLINE'):'OFFLINE'}
+}
+
+function dgSystemAudit(){
+ dgDataIntegrity();dgNetworkBadge();
+ const backup=localStorage.getItem(STORE+'_safe_backup');if(!localStorage.getItem(STORE)&&backup){try{S=JSON.parse(backup);localStorage.setItem(STORE,backup);toast('הזיכרון שוחזר מגיבוי בטוח')}catch{}}
+}
+
+function dgEnhanceProduction(){
+ dgSystemAudit();
+ $('#workoutDialog')?.addEventListener('close',dgReleaseWakeLock);
+ document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S.activeWorkout)dgRequestWakeLock()});
+ window.addEventListener('online',()=>{dgNetworkBadge();checkAIHealth()});window.addEventListener('offline',dgNetworkBadge);
+ window.addEventListener('error',e=>{try{S.ai.lastError='runtime: '+String(e.message||'error');save()}catch{}});
+ window.addEventListener('unhandledrejection',e=>{try{S.ai.lastError='promise: '+String(e.reason?.message||e.reason||'error');save()}catch{}});
+ if(navigator.connection){navigator.connection.addEventListener?.('change',dgNetworkBadge)}
+ setInterval(()=>{try{save()}catch{}},5*60e3);
+}
+setTimeout(dgEnhanceProduction,250);
+/* Dvir Gym AI 6.1 — decision science layer */
+function readinessScore(){
+ const r=S.readiness||{},sleep=clamp(+r.sleep||3,1,5),energy=clamp(+r.energy||3,1,5),sore=clamp(+r.soreness||3,1,5),stress=clamp(+r.stress||3,1,5);
+ const weighted=(sleep*.30+energy*.30+(6-sore)*.22+(6-stress)*.18)/5*100;
+ return clamp(Math.round(weighted),20,100);
+}
+
+function inferMuscles(e){
+ const id=e.exerciseId||e.mi||'',n=String(e.name||'').toLowerCase(),out={};const add=(k,v=1)=>out[k]=(out[k]||0)+v;
+ if(id==='chest-press'||id==='home-pushup'||id==='home-floor-press'){add('chest',1);add('triceps',.5);add('shoulders',.2)}
+ else if(id==='shoulder-press'||id==='home-shoulder'){add('shoulders',1);add('triceps',.5)}
+ else if(id==='lat-pulldown'||id==='seated-row'||id==='lat-row-combo'||id==='home-pullup'||id==='home-db-row'){add('back',1);add('biceps',.5)}
+ else if(id==='preacher'||id==='home-curl'){add('biceps',1)}
+ else if(id==='leg-extension'){add('quads',1)}
+ else if(id==='leg-curl'){add('hamstrings',1)}
+ else if(id==='ab-crunch'||id==='home-legraise'){add('abs',1)}
+ else if(id==='home-goblet'||id==='home-lunge'){add('quads',1);add('glutes',.6)}
+ else if(id==='home-rdl'){add('hamstrings',1);add('glutes',.7)}
+ else if(id==='pec-rear'){if(/rear|delt/.test(n)){add('shoulders',1);add('back',.35)}else{add('chest',1);add('shoulders',.1)}}
+ else if(id==='assisted'){if(/dip/.test(n)){add('chest',1);add('triceps',.7)}else{add('back',1);add('biceps',.5)}}
+ else if(id==='hip'){if(/adduction|מקרב/.test(n))add('adductors',1);else add('glutes',1)}
+ else if(id==='smith'){if(/rdl|romanian/.test(n)){add('hamstrings',1);add('glutes',.7)}else if(/press/.test(n)){add('chest',1);add('triceps',.5);add('shoulders',.2)}else{add('quads',1);add('glutes',.6);add('adductors',.2)}}
+ else if(id==='cable'){if(/lateral/.test(n))add('shoulders',1);else if(/triceps|pushdown|extension/.test(n))add('triceps',1);else if(/curl/.test(n))add('biceps',1);else if(/row|pull/.test(n)){add('back',1);add('biceps',.4)}}
+ else{const info=exInfo(id);for(const m of info?.muscles||[])if(m!=='cardio')add(m,1)}
+ return out;
+}
+
+function nutritionTargets(){
+ const p=S.profile,w=Math.max(40,+p.weight||65),h=+p.height||165,a=+p.age||28;
+ const bmr=10*w+6.25*h-5*a+(p.sex==='female'?-161:5),fac={low:1.35,medium:1.5,high:1.65}[p.activity]||1.5,tdee=bmr*fac,tr=bodyTrend();
+ let delta=p.goal==='lean_gain'?Math.max(150,Math.min(260,w*3.2)):p.goal==='fat_loss'?-Math.max(250,Math.min(450,w*5.2)):0,adapt=0;
+ if(tr){const rate=tr.weekly/w;if(p.goal==='lean_gain'){if(rate<.0005)adapt=100;else if(rate>.003)adapt=-100}if(p.goal==='fat_loss'){if(rate>-.0025)adapt=-100;else if(rate<-.01)adapt=100}}
+ let calories=Math.round((tdee+delta+adapt)/10)*10;if(+p.manualCalories>0)calories=+p.manualCalories;
+ let protein=Math.round(w*(p.goal==='fat_loss'?2.0:1.8));if(+p.manualProtein>0)protein=+p.manualProtein;
+ const fat=Math.max(Math.round(w*.7),45),carbs=Math.max(80,Math.round((calories-protein*4-fat*9)/4));
+ return{bmr:Math.round(bmr),tdee:Math.round(tdee),calories,protein,fat,carbs,adapt,trend:tr?.weekly??null};
+}
+
+function localCoach(message){
+ const q=String(message||'').toLowerCase();
+ if(/כאב חד|סחרחורת|עילפון|קוצר נשימה חריג|כאב בחזה/.test(q))return{reply:'אל תמשיך אימון כבד עם הסימפטום הזה. עצור את האימון והערך את המצב; אם מדובר בכאב בחזה, עילפון, קוצר נשימה חריג או תסמין משמעותי — פנה להערכה רפואית מתאימה.'};
+ if(q.includes('קריאטין'))return{reply:`אם אתה בריא ואין לך הנחיה רפואית אחרת, ברירת המחדל הפרקטית היא קריאטין מונוהידראט 3–5 גרם ביום, כל יום. התזמון פחות חשוב מהעקביות. ${S.daily.creatine?'כבר סימנת שלקחת היום.':'עדיין לא סימנת שלקחת היום.'}`};
+ if(q.includes('לאכול')||q.includes('אוכל')||q.includes('אחרי אימון'))return{reply:lastWorkoutHours()<3?postWorkoutAdvice():dailyFuelAdvice()};
+ if(q.includes('פספס')||q.includes('audit')||q.includes('שבוע')){const c=weeklyCoverage(),d=deficits().slice(0,4).map(x=>`${MUSCLE_NAMES[x.k]} ${Math.round(c.sets[x.k])}/${TARGET_SETS[x.k]}`);return{reply:`ב־7 הימים האחרונים ביצעת ${workoutCountThisWeek()} אימוני כוח. לפי סטים אפקטיביים, הפערים הגדולים כרגע: ${d.join(', ')}. שרירים מסייעים מקבלים עכשיו קרדיט חלקי, כדי שלא נחשוב בטעות שהנפח שלהם מלא.`}}
+ if(q.includes('משקל')||q.includes('היקף')){const tr=bodyTrend(),m=S.measures[0];return{reply:`המשקל האחרון: ${S.weights[0]?.weight??S.profile.weight} ק״ג. ${tr?`המגמה היא בערך ${tr.weekly>0?'+':''}${tr.weekly.toFixed(2)} ק״ג לשבוע.`:'עדיין אין מספיק שקילות לכיול אמין.'} ${m?`היקף מותן ${m.waist||'—'} ס״מ וחזה ${m.chest||'—'} ס״מ.`:''}`}}
+ if(q.includes('אימון')||q.includes('היום')||q.includes('לעשות')){const w=localWorkout();return{reply:`בניתי ${w.title}. ${w.reason}`,workout:w}}
+ return{reply:'Cloud AI לא זמין כרגע, אבל Decision Engine המקומי עדיין משתמש ב־Readiness, באימונים, באוכל, במשקל ובהיקפים שלך. שאל אותי על האימון היום, תזונה, קריאטין, מה חסר השבוע או מגמת ההתקדמות.'};
+}
+
+function nudges(){
+ const a=[],t=nutritionTargets(),x=mealTotals(),h=new Date().getHours(),score=readinessScore();
+ if(!S.profile.complete)a.push({tone:'hot',title:'המאמן צריך להכיר אותך טוב יותר',text:'השלם Athlete Profile כדי שהחלטות האימון והתזונה יהיו אישיות.',action:'profile'});
+ if(score<50)a.push({tone:'hot',title:'Readiness נמוך היום',text:'המערכת תעדיף התאוששות או נפח מופחת במקום לדחוף אימון כבד בכוח.',action:'audit'});
+ if(h>=12&&!S.meals.some(m=>dayKey(m.ts)===dayKey()))a.push({tone:'warn',title:'אין עדיין תיעוד אוכל מהיום',text:'בלי נתוני אוכל ההמלצה התזונתית פחות מדויקת.',action:'meal'});
+ if(h>=19&&x.protein<t.protein*.7)a.push({tone:'hot',title:'פער חלבון לקראת סוף היום',text:`לפי התיעוד חסרים בערך ${Math.max(0,Math.round(t.protein-x.protein))} גרם חלבון.`,action:'fuel'});
+ if(S.profile.creatine&&!S.daily.creatine&&h>=18)a.push({tone:'warn',title:'קריאטין עדיין לא סומן היום',text:'העקביות היומית חשובה יותר מהשעה שבה לוקחים אותו.',action:'fuel'});
+ if(new Date().getDay()>=3&&workoutCountThisWeek()<S.profile.days)a.push({tone:'warn',title:'השבוע עדיין לא סגור',text:`בוצעו ${workoutCountThisWeek()}/${S.profile.days} אימוני כוח. האימון הבא יסגור פערים בלי נפח מיותר.`,action:'audit'});
+ const last=lastWorkout();if(last&&Date.now()-(last.end||last.ts||last.createdAt)<3*36e5&&(!recentMeals(1)[0]||recentMeals(1)[0].ts<(last.end||last.ts||last.createdAt)))a.push({tone:'good',title:'סיימת אימון — עכשיו התאוששות',text:postWorkoutAdvice(),action:'fuel'});
+ const w=S.weights[0];if(!w||Date.now()-w.ts>8*864e5)a.push({tone:'warn',title:'עבר זמן מאז השקילה',text:'שקילה שבועית עקבית עוזרת לכייל את התזונה לפי מגמה.',action:'weigh'});
+ return a.slice(0,4);
+}
+/* Dvir Gym AI 6.1 — resilient offline agent */
+function dgDateOffset(offset=0){const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()+offset);return dayKey(d)}
+function dgMealsOn(offset=0){const k=dgDateOffset(offset);return S.meals.filter(m=>dayKey(m.ts)===k).sort((a,b)=>a.ts-b.ts)}
+function dgWorkoutsOn(offset=0){const k=dgDateOffset(offset);return S.logs.filter(w=>dayKey(w.end||w.finishedAt||w.ts||w.createdAt)===k)}
+function dgMealSummary(arr){if(!arr.length)return'אין ארוחות מתועדות.';const p=Math.round(arr.reduce((a,m)=>a+(+m.protein||+m.pro||0),0)),c=Math.round(arr.reduce((a,m)=>a+(+m.calories||+m.cal||0),0));return `${arr.map(m=>m.description).join(' · ')}. סה״כ מתועד: בערך ${p} גרם חלבון ו־${c||'—'} קק״ל.`}
+function dgWorkoutSummary(arr){if(!arr.length)return'אין אימון מתועד.';return arr.map(w=>`${w.title||w.type||'אימון'} (${w.location==='home'?'בית':'מכון'}, ${(w.exercises||[]).reduce((a,e)=>a+(e.results||[]).filter(r=>r.done).length,0)} סטים)`).join(' · ')}
+function dgUpdateReadinessFromText(q){let changed=false;if(/עייף מאוד|מותש|אין לי כוח/.test(q)){S.readiness.energy=2;changed=true}else if(/עייף/.test(q)){S.readiness.energy=Math.min(S.readiness.energy,3);changed=true}if(/ישנתי גרוע|לא ישנתי|שינה גרועה/.test(q)){S.readiness.sleep=2;changed=true}if(/תפוס מאוד|כאבים בשרירים/.test(q)){S.readiness.soreness=4;changed=true}if(/לחוץ מאוד|סטרס גבוה/.test(q)){S.readiness.stress=4;changed=true}if(changed)save();return changed}
+function dgWeeklyPlanText(){const names=['היום','מחר','יום 3','יום 4','יום 5','יום 6','יום 7'],seq=[['Upper A','כוח'],['Lower A','כוח'],['Recovery','מנוחה'],['Upper B','כוח'],['Lower B','כוח'],['Recovery','מנוחה'],['Recovery','מנוחה']];if(S.profile.days>=5&&readinessScore()>=75)seq[5]=['Weak Point','אופציונלי קצר'];return seq.map((x,i)=>`${names[i]}: ${x[0]} · ${x[1]}`).join('\n')}
+function dgRemainingNutrition(){const t=nutritionTargets(),x=mealTotals();return{protein:Math.max(0,Math.round(t.protein-x.protein)),calories:Math.max(0,Math.round(t.calories-x.calories)),targets:t,done:x}}
+
+function localCoach(message){
+ const raw=String(message||'').trim(),q=raw.toLowerCase();dgUpdateReadinessFromText(q);
+ const mins=q.match(/(\d{2,3})\s*(?:דקות|דק|minutes?)/);if(mins){S.duration=clamp(+mins[1],20,120);save()}
+ if(/כאב חד|סחרחורת|עילפון|קוצר נשימה חריג|כאב בחזה/.test(q))return{reply:'אל תמשיך אימון כבד עם הסימפטום הזה. עצור והערך את המצב. כאב בחזה, עילפון, קוצר נשימה חריג או החמרה משמעותית מצריכים הערכה רפואית מתאימה.'};
+ if(q.includes('מה אכלתי אתמול'))return{reply:'אתמול: '+dgMealSummary(dgMealsOn(-1))};
+ if(q.includes('מה אכלתי היום'))return{reply:'היום: '+dgMealSummary(dgMealsOn(0))};
+ if((q.includes('מה עשיתי')||q.includes('איזה אימון'))&&q.includes('אתמול'))return{reply:'אתמול: '+dgWorkoutSummary(dgWorkoutsOn(-1))};
+ if((q.includes('מה עשיתי')||q.includes('איזה אימון'))&&q.includes('היום')&&dgWorkoutsOn(0).length)return{reply:'היום: '+dgWorkoutSummary(dgWorkoutsOn(0))};
+ if(q.includes('כמה חלבון')){const r=dgRemainingNutrition();return{reply:`היעד היומי שלך כרגע הוא ${r.targets.protein} גרם. לפי מה שתיעדת אכלת בערך ${Math.round(r.done.protein)} גרם, ולכן נשארו בערך ${r.protein} גרם.`}}
+ if(q.includes('כמה קלוריות')||q.includes('קלוריות נשאר')){const r=dgRemainingNutrition();return{reply:`היעד המשוער שלך כרגע הוא ${r.targets.calories} קק״ל. תיעדת בערך ${Math.round(r.done.calories)} קק״ל, ולכן נשארו בערך ${r.calories} קק״ל. זו הערכה, לא מדידה מעבדתית.`}}
+ if(q.includes('תבנה לי שבוע')||q.includes('בנה לי שבוע')||q.includes('תוכנית שבוע'))return{reply:`זו ברירת המחדל שאני ממליץ עליה לפי המטרה וההתאוששות שלך:\n${dgWeeklyPlanText()}\nאני לא ממליץ על כוח כבד כל יום; ההתאוששות היא חלק מהתוכנית.`};
+ if(q.includes('קריאטין'))return{reply:`קריאטין מונוהידראט: 3–5 גרם ביום, כל יום, אם אין לך מגבלה רפואית רלוונטית. התזמון פחות חשוב מהעקביות. ${S.daily.creatine?'סומן שכבר לקחת היום.':'עדיין לא סימנת שלקחת היום.'}`};
+ if(q.includes('אכלתי')||q.includes('שתיתי'))return{reply:'שמרתי את הדיווח בזיכרון התזונתי. אם לא כתבת כמויות או מאקרו, אני לא ממציא מספרים; אפשר להשלים אותם אחר כך.'};
+ if(q.includes('לאכול')||q.includes('אוכל')||q.includes('אחרי אימון'))return{reply:lastWorkoutHours()<3?postWorkoutAdvice():dailyFuelAdvice()};
+ if(q.includes('פספס')||q.includes('audit')||q.includes('מה חסר')||q.includes('לא עשיתי')){const c=weeklyCoverage(),d=deficits().slice(0,5).map(x=>`${MUSCLE_NAMES[x.k]} ${Math.round(c.sets[x.k])}/${TARGET_SETS[x.k]}`);return{reply:`ב־7 הימים האחרונים ביצעת ${workoutCountThisWeek()} אימוני כוח. כיסוי השרירים כרגע: ${d.join(', ')}. האימון הבא ייתן עדיפות לפערים הגדולים בלי להעמיס על שרירים שכבר קיבלו מספיק.`}}
+ if(q.includes('משקל')||q.includes('היקף')){const tr=bodyTrend(),m=S.measures[0];return{reply:`המשקל האחרון: ${S.weights[0]?.weight??S.profile.weight} ק״ג. ${tr?`המגמה המשוערת היא ${tr.weekly>0?'+':''}${tr.weekly.toFixed(2)} ק״ג לשבוע.`:'צריך עוד שקילות עקביות כדי לחשב מגמה.'} ${m?`מדידה אחרונה: מותן ${m.waist||'—'} ס״מ, חזה ${m.chest||'—'} ס״מ, זרוע ${m.arm||'—'} ס״מ.`:''}`}}
+ if(q.includes('אני עייף')||q.includes('ישנתי גרוע')||q.includes('תפוס')){const score=readinessScore(),w=localWorkout();return{reply:`עדכנתי את ה־Readiness מתוך מה שסיפרת. הציון כרגע ${score}/100. ${w.type==='recovery'?'אני מעדיף היום התאוששות ולא כוח כבד.':'אפשר להתאמן, אבל האימון המקומי יוריד נפח/יעלה RIR בהתאם.'}`,workout:q.includes('מה לעשות')?w:null}}
+ if(q.includes('אימון')||q.includes('היום')||q.includes('לעשות')){const w=localWorkout();return{reply:`בניתי ${w.title}. ${w.reason} יש לך ${S.duration} דקות ומיקום האימון הוא ${S.location==='home'?'בית':'מכון'}.`,workout:w}}
+ const r=dgRemainingNutrition(),w=localWorkout();return{reply:`אני עובד כרגע ב־Memory Engine המקומי. אני זוכר ${S.logs.length} אימונים ו־${S.meals.length} דיווחי אוכל. Readiness ${readinessScore()}/100; נשארו היום בערך ${r.protein} גרם חלבון. האימון הבא לפי המערכת: ${w.title}.`};
+}
+
+(function(){S.profile.days=clamp(+S.profile.days||4,2,5);save()})();
+/* Dvir Gym AI 6.4.1 — Cloud Memory transport */
+const DG_CLOUD_URL='https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/cloud-memory';
+const DG_CLOUD_TOKEN_KEY='dvirGymCloudRecoveryV1';
+const DG_CLOUD_META_KEY='dvirGymCloudMetaV1';
+let dgCloudTimer=null,dgCloudBusy=false,dgCloudStatus='connecting';
+
+function dgMakeRecoveryKey(){
+ const a=new Uint8Array(32);crypto.getRandomValues(a);
+ return btoa(String.fromCharCode(...a)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function dgCloudToken(){let t=localStorage.getItem(DG_CLOUD_TOKEN_KEY);if(!t){t=dgMakeRecoveryKey();localStorage.setItem(DG_CLOUD_TOKEN_KEY,t)}return t}
+function dgCloudMeta(){try{return JSON.parse(localStorage.getItem(DG_CLOUD_META_KEY))||{}}catch{return{}}}
+function dgSetCloudMeta(p){const m={...dgCloudMeta(),...p};localStorage.setItem(DG_CLOUD_META_KEY,JSON.stringify(m));return m}
+function dgCloudSnapshot(){
+ const x=JSON.parse(JSON.stringify(S));
+ x.cloud={provider:'supabase',version:'6.4.1',syncedAt:Date.now()};
+ return x;
+}
+async function dgCloudRequest(action,state=null){
+ const r=await fetch(DG_CLOUD_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,token:dgCloudToken(),state})});
+ if(!r.ok)throw new Error('cloud '+r.status);const j=await r.json();if(!j.ok)throw new Error(j.error||'cloud error');return j;
+}
+async function dgCloudPush(){
+ if(dgCloudBusy||!navigator.onLine)return false;dgCloudBusy=true;
+ try{const j=await dgCloudRequest('push',dgCloudSnapshot());const now=Date.now();dgSetCloudMeta({lastPushAt:now,lastCloudAt:j.updatedAt||now,lastError:''});dgCloudStatus='live';return true}
+ catch(e){dgSetCloudMeta({lastError:String(e),lastErrorAt:Date.now()});dgCloudStatus='offline';return false}
+ finally{dgCloudBusy=false;dgRefreshCloudBadges()}
+}
+function dgScheduleCloudPush(){clearTimeout(dgCloudTimer);dgCloudTimer=setTimeout(()=>dgCloudPush(),1300)}
+async function dgCloudBoot(){
+ dgCloudToken();if(!navigator.onLine){dgCloudStatus='offline';return}
+ dgCloudBusy=true;
+ try{
+  const j=await dgCloudRequest('pull'),m=dgCloudMeta(),cloudTs=j.updatedAt?new Date(j.updatedAt).getTime():0,localTs=+m.localModifiedAt||0,lastPush=+m.lastPushAt||0;
+  if(j.state&&cloudTs>0){
+   if(localTs>lastPush&&localTs>cloudTs){dgCloudBusy=false;await dgCloudPush();return}
+   const d=defaults();S={...d,...j.state,profile:{...d.profile,...(j.state.profile||{})},readiness:{...d.readiness,...(j.state.readiness||{})},prefs:{...d.prefs,...(j.state.prefs||{})},ai:{...d.ai,...(j.state.ai||{})},daily:{...d.daily,...(j.state.daily||{})},hydration:{...d.hydration,...(j.state.hydration||{})}};
+   localStorage.setItem(STORE,JSON.stringify(S));dgSetCloudMeta({lastPushAt:cloudTs,lastCloudAt:cloudTs,lastError:''});dgCloudStatus='live';renderCurrent();toast('☁ הזיכרון סונכרן מהענן');
+  }else{dgCloudBusy=false;await dgCloudPush();return}
+ }catch(e){dgCloudStatus='offline';dgSetCloudMeta({lastError:String(e),lastErrorAt:Date.now()})}
+ finally{dgCloudBusy=false;dgRefreshCloudBadges()}
+}
+
+const dgSaveLocal=save;
+save=function(){dgSaveLocal();dgSetCloudMeta({localModifiedAt:Date.now()});dgScheduleCloudPush()};
+
+function dgCloudStatusText(){const m=dgCloudMeta();if(dgCloudStatus==='live')return `Cloud Memory פעיל${m.lastPushAt?' · '+new Date(m.lastPushAt).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'}):''}`;if(!navigator.onLine)return'Offline · יסתנכרן כשתחזור לרשת';return'Cloud Memory מתחבר…'}
+function dgRefreshCloudBadges(){document.querySelectorAll('[data-cloud-status]').forEach(x=>{x.textContent=dgCloudStatusText();x.dataset.state=dgCloudStatus})}
+function dgMaskKey(k){return k?`${k.slice(0,7)}••••••••${k.slice(-6)}`:'—'}
+async function dgCopyRecovery(){try{await navigator.clipboard.writeText(dgCloudToken());toast('מפתח השחזור הועתק · שמור אותו במקום פרטי')}catch{toast('לא הצלחתי להעתיק') }}
+function dgImportRecovery(){const k=prompt('הדבק את מפתח השחזור הפרטי שלך');if(!k)return;const clean=k.trim();if(clean.length<32){toast('המפתח קצר מדי');return}localStorage.setItem(DG_CLOUD_TOKEN_KEY,clean);localStorage.removeItem(DG_CLOUD_META_KEY);toast('המפתח נשמר · מושך זיכרון מהענן');dgCloudBoot()}
+
+const dgRenderMoreBase=renderMore;
+renderMore=function(){dgRenderMoreBase();setTimeout(()=>{const s=$('#screen-more');if(!s||s.querySelector('#dgCloudCard'))return;const card=document.createElement('div');card.id='dgCloudCard';card.className='card system-card';card.style.marginTop='14px';card.innerHTML=`<div class="section-head" style="margin-top:0"><div><h2>☁ Cloud Memory</h2><small data-cloud-status>${dgCloudStatusText()}</small></div><span class="badge">SUPABASE</span></div><div class="system-row"><div><b>Recovery Key</b><small>${dgMaskKey(dgCloudToken())}</small></div><button class="secondary" id="dgCopyCloud" style="width:auto;padding:8px 11px">העתק</button></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px"><button class="secondary" id="dgSyncNow">סנכרן עכשיו</button><button class="secondary" id="dgRestoreCloud">שחזר בטלפון אחר</button></div><p class="help" style="margin:10px 0 0">המפתח הוא פרטי. מי שמחזיק בו יכול לשחזר את זיכרון האפליקציה. אל תפרסם אותו.</p>`;s.appendChild(card);$('#dgCopyCloud').onclick=dgCopyRecovery;$('#dgSyncNow').onclick=async()=>{toast('מסנכרן…');const ok=await dgCloudPush();toast(ok?'☁ הזיכרון בענן מעודכן':'הסנכרון ינסה שוב כשהחיבור יחזור')};$('#dgRestoreCloud').onclick=dgImportRecovery;},0)};
+
+window.addEventListener('online',()=>setTimeout(()=>dgCloudBoot(),300));
+setTimeout(()=>dgCloudBoot(),1500);
+setInterval(()=>{if(navigator.onLine)dgCloudPush()},5*60*1000);
+/* Dvir Gym AI 7.1 — Zero-Cost Cloud AI + OpenRouter PKCE */
+const DG_AI_SETUP_URL='https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/ai-key-setup';
+const DG_CLOUD_COACH_URL='https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/coach';
+const DG_OR_PKCE='dvirGymOpenRouterPkceV1';
+let dgAiConfigured=false,dgAiStatusCheckedAt=0,dgAiProvider='openrouter';
+
+async function dgKeyVault(action='status',apiKey='',extra={}){
+ const c=new AbortController(),t=setTimeout(()=>c.abort(),25000);
+ try{
+  const r=await fetch(DG_AI_SETUP_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,token:dgCloudToken(),apiKey,...extra}),signal:c.signal});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok||!j.ok){const e=new Error(j.error||('HTTP '+r.status));e.data=j;throw e}
+  dgAiProvider=j.provider||dgAiProvider;return j;
+ }finally{clearTimeout(t)}
+}
+async function dgCheckAIConfigured(force=false){
+ if(!force&&Date.now()-dgAiStatusCheckedAt<30000)return dgAiConfigured;
+ dgAiStatusCheckedAt=Date.now();
+ try{
+  const j=await dgKeyVault('status');dgAiConfigured=!!j.configured;
+  localStorage.setItem('dvirGymAiConfigured',dgAiConfigured?'1':'0');
+  localStorage.setItem('dvirGymAiProvider',j.provider||'openrouter');
+  if(j.legacyPaid)localStorage.setItem('dvirGymLegacyPaidIgnored','1');else localStorage.removeItem('dvirGymLegacyPaidIgnored');
+  return dgAiConfigured;
+ }catch{dgAiConfigured=localStorage.getItem('dvirGymAiConfigured')==='1';return dgAiConfigured}
+}
+
+callAI=async function(message,imageData=null){
+ const configured=await dgCheckAIConfigured();if(!configured)throw new Error('free_ai_not_configured');
+ const c=new AbortController(),timer=setTimeout(()=>c.abort(),50000);
+ try{
+  const r=await fetch(DG_CLOUD_COACH_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:dgCloudToken(),message,imageData,history:S.chat.slice(-14),memory:coachMemory()}),signal:c.signal});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok){const e=new Error(j.error||('Zero-Cost AI '+r.status));e.data=j;e.status=r.status;throw e}
+  return j;
+ }finally{clearTimeout(timer)}
+};
+
+checkAIHealth=async function(){
+ const els=[$('#homeAiStatus'),$('#coachStatus')].filter(Boolean);if(!els.length)return;
+ const configured=await dgCheckAIConfigured(true),recent=S.ai?.lastOk&&Date.now()-S.ai.lastOk<30*60e3,q=S.ai?.quota||{};
+ els.forEach(e=>{e.classList.toggle('off',!configured);const sp=e.querySelector('span');if(!sp)return;if(configured)sp.textContent=recent?`AI LIVE · FREE · ${S.ai.lastModel||localStorage.getItem('dvirGymAiTestModel')||'OpenRouter'}`:`Zero-Cost AI ready · ${q.dayCount||0}/45 היום`;else sp.textContent='Memory Engine · אפשר להפעיל AI בענן ב־0$'});
+};
+
+function dgB64url(bytes){return btoa(String.fromCharCode(...bytes)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+async function dgStartFreeOAuth(){
+ try{
+  const a=new Uint8Array(48);crypto.getRandomValues(a);const verifier=dgB64url(a),hash=new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(verifier))),challenge=dgB64url(hash),callback=location.origin+location.pathname;
+  const pack=JSON.stringify({verifier,at:Date.now(),callback});sessionStorage.setItem(DG_OR_PKCE,pack);localStorage.setItem(DG_OR_PKCE,pack);
+  const url=`https://openrouter.ai/auth?callback_url=${encodeURIComponent(callback)}&code_challenge=${encodeURIComponent(challenge)}&code_challenge_method=S256`;
+  location.assign(url);
+ }catch{toast('לא הצלחתי להתחיל חיבור מאובטח. אפשר להשתמש במפתח הידני.')}
+}
+async function dgFinishFreeOAuth(){
+ const p=new URLSearchParams(location.search),code=p.get('code');if(!code)return false;
+ let data=null;try{data=JSON.parse(sessionStorage.getItem(DG_OR_PKCE)||localStorage.getItem(DG_OR_PKCE)||'null')}catch{}
+ history.replaceState({},'',location.pathname+(location.hash||''));
+ if(!data?.verifier||Date.now()-(+data.at||0)>15*60e3){toast('חיבור OpenRouter פג תוקף. נסה שוב.');return false}
+ try{
+  toast('מחבר Zero‑Cost AI…');const j=await dgKeyVault('oauth-exchange','',{code,codeVerifier:data.verifier});
+  sessionStorage.removeItem(DG_OR_PKCE);localStorage.removeItem(DG_OR_PKCE);dgAiConfigured=true;localStorage.setItem('dvirGymAiConfigured','1');localStorage.setItem('dvirGymAiProvider','openrouter');if(j.testedModel)localStorage.setItem('dvirGymAiTestModel',j.testedModel);toast('✦ Zero‑Cost AI מחובר ומאומת');setTimeout(()=>{try{renderMore();checkAIHealth();switchScreen('coach')}catch{}},160);return true;
+ }catch(e){sessionStorage.removeItem(DG_OR_PKCE);localStorage.removeItem(DG_OR_PKCE);toast(typeof dgAIErrorMessage==='function'?dgAIErrorMessage(e):'החיבור החינמי נכשל. Memory Engine ממשיך לעבוד.');return false}
+}
+
+async function dgActivateAI(){
+ const input=$('#dgFreeAiKey'),btn=$('#dgActivateAI');if(!input||!btn)return;const key=input.value.trim();if(key.length<30){toast('הדבק OpenRouter API key תקין');return}
+ btn.disabled=true;btn.textContent='בודק מודל חינמי ומצפין…';
+ try{const j=await dgKeyVault('set',key);input.value='';dgAiConfigured=true;localStorage.setItem('dvirGymAiConfigured','1');localStorage.setItem('dvirGymAiProvider','openrouter');if(j.testedModel)localStorage.setItem('dvirGymAiTestModel',j.testedModel);localStorage.removeItem('dvirGymLegacyPaidIgnored');toast(`✦ Zero-Cost AI הופעל${j.testedModel?' · '+j.testedModel:''}`);renderMore();setTimeout(()=>{checkAIHealth();switchScreen('coach')},200)}catch(e){toast(typeof dgAIErrorMessage==='function'?dgAIErrorMessage(e):'המפתח החינמי לא הופעל. Memory Engine ממשיך לעבוד ב־0$.');btn.disabled=false;btn.textContent='הפעל AI ב־0$'}
+}
+async function dgDeleteAI(){if(!confirm('להסיר את מפתח ה־OpenRouter החינמי מהכספת? Memory Engine ימשיך לעבוד.'))return;try{await dgKeyVault('delete');dgAiConfigured=false;localStorage.setItem('dvirGymAiConfigured','0');toast('מפתח ה־AI החינמי נמחק מהכספת');renderMore();setTimeout(checkAIHealth,100)}catch{toast('לא הצלחתי למחוק כרגע')}}
+
+function dgInjectAISetupCard(){
+ const s=$('#screen-more');if(!s||s.querySelector('#dgAiCloudCard'))return;
+ const card=document.createElement('div');card.id='dgAiCloudCard';card.className='card system-card dg-zero-cost-card';card.style.marginTop='14px';const q=S.ai?.quota||{},used=q.dayCount||0,left=Math.max(0,45-used);
+ card.innerHTML=dgAiConfigured?`<div class="section-head" style="margin-top:0"><div><h2>✦ Zero‑Cost Cloud AI</h2><small>OpenRouter Free Router · Supabase Vault</small></div><span class="badge dg-free-badge">0$ ACTIVE</span></div><div class="system-row"><div><b>Coach Intelligence</b><small>רק <code>openrouter/free</code>. אין fallback בתשלום. אם המכסה החינמית נגמרת — Memory Engine מקומי נכנס לפעולה.</small></div><span style="color:var(--lime);font-weight:900">FREE</span></div><div class="dg-quota"><div><small>מכסת ענן יומית</small><b>${used}/45</b></div><i><span style="width:${Math.min(100,used/45*100)}%"></span></i><small>נותרו עד ${left} קריאות ענן באפליקציה היום. אין חיוב אוטומטי.</small></div><button class="secondary" id="dgTestAI" style="margin-top:9px">בדוק שיחת AI חינמית</button><button class="ghost" id="dgDeleteAI" style="margin-top:8px">נתק OpenRouter</button><p class="help">ה־API key נשמר ב־Supabase Vault בצד השרת ואינו חוזר לדפדפן. הזיכרון שלך נשמר בענן מוצפן AES‑GCM.</p>`:`<div class="section-head" style="margin-top:0"><div><h2>✦ AI בענן ב־0$</h2><small>One‑tap OpenRouter · Free models only</small></div><span class="badge dg-free-badge">ZERO COST</span></div><p class="help">הדרך המומלצת: התחברות מאובטחת ב־OpenRouter. אחרי האישור תחזור לכאן אוטומטית; המפתח ייווצר ויישמר ישירות ב־Vault בלי העתקה ובלי מסלול תשלום אוטומטי.</p><button class="primary" id="dgOAuthAI">חבר Zero‑Cost AI בלחיצה אחת</button><div class="dg-zero-divider"><span>או</span></div><details class="dg-manual-key"><summary>יש לי כבר OpenRouter API key</summary><div class="field" style="margin-top:10px"><label>OpenRouter API Key</label><input id="dgFreeAiKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-or-v1-…"></div><button class="secondary" id="dgActivateAI">שמור מפתח קיים</button></details><p class="help" style="margin-top:10px">בכל בקשה השרת משתמש רק ב־<code>openrouter/free</code>. אם המודלים החינמיים עמוסים או שהמכסה נגמרה, עוברים ל־Memory Engine המקומי ולא למודל בתשלום.</p>`;
+ s.appendChild(card);
+ if(dgAiConfigured){$('#dgTestAI').onclick=()=>{switchScreen('coach');setTimeout(()=>sendCoach('בדיקת Zero-Cost Cloud AI: תן לי במשפט אחד את ה־Readiness שלי ואת הפעולה הכי חשובה להיום.'),80)};$('#dgDeleteAI').onclick=dgDeleteAI}else{$('#dgOAuthAI').onclick=dgStartFreeOAuth;const m=$('#dgActivateAI');if(m)m.onclick=dgActivateAI}
+}
+
+const dgRenderMoreCloud=renderMore;renderMore=function(){dgRenderMoreCloud();setTimeout(async()=>{await dgCheckAIConfigured();dgInjectAISetupCard()},15)};
+setTimeout(async()=>{await dgFinishFreeOAuth();await dgCheckAIConfigured(true);checkAIHealth()},900);
+/* Dvir Gym AI 6.4 — encrypted Cloud Memory */
+S.appVersion='6.4.0';
+function dgBytesToB64(bytes){let s='';for(let i=0;i<bytes.length;i+=0x8000)s+=String.fromCharCode(...bytes.subarray(i,i+0x8000));return btoa(s)}
+function dgB64ToBytes(s){const bin=atob(s),out=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i);return out}
+async function dgEncryptionKey(){const raw=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(dgCloudToken()));return crypto.subtle.importKey('raw',raw,{name:'AES-GCM'},false,['encrypt','decrypt'])}
+async function dgEncryptCloudState(state){const key=await dgEncryptionKey(),iv=crypto.getRandomValues(new Uint8Array(12)),plain=new TextEncoder().encode(JSON.stringify(state)),buf=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,plain);return{format:'dvir-aes-gcm-v1',iv:dgBytesToB64(iv),cipher:dgBytesToB64(new Uint8Array(buf)),encryptedAt:Date.now()}}
+async function dgDecryptCloudState(payload){if(!payload)return null;if(payload.format!=='dvir-aes-gcm-v1')return payload;const key=await dgEncryptionKey(),iv=dgB64ToBytes(payload.iv),cipher=dgB64ToBytes(payload.cipher),plain=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,cipher);return JSON.parse(new TextDecoder().decode(plain))}
+
+dgCloudPush=async function(){
+ if(dgCloudBusy||!navigator.onLine)return false;dgCloudBusy=true;
+ try{const encrypted=await dgEncryptCloudState(dgCloudSnapshot()),j=await dgCloudRequest('push',encrypted),now=Date.now();dgSetCloudMeta({lastPushAt:now,lastCloudAt:j.updatedAt||now,lastError:'',encrypted:true});dgCloudStatus='live';return true}
+ catch(e){dgSetCloudMeta({lastError:String(e),lastErrorAt:Date.now()});dgCloudStatus='offline';return false}
+ finally{dgCloudBusy=false;dgRefreshCloudBadges()}
+};
+
+dgCloudBoot=async function(){
+ dgCloudToken();if(!navigator.onLine){dgCloudStatus='offline';dgRefreshCloudBadges();return}
+ dgCloudBusy=true;
+ try{
+  const j=await dgCloudRequest('pull'),m=dgCloudMeta(),cloudTs=j.updatedAt?new Date(j.updatedAt).getTime():0,localTs=+m.localModifiedAt||0,lastPush=+m.lastPushAt||0;
+  if(j.state&&cloudTs>0){
+   const wasEncrypted=j.state?.format==='dvir-aes-gcm-v1';let cloudState;
+   try{cloudState=await dgDecryptCloudState(j.state)}catch{throw new Error('recovery_key_mismatch')}
+   if(localTs>lastPush&&localTs>cloudTs){dgCloudBusy=false;await dgCloudPush();return}
+   const d=defaults();S={...d,...cloudState,profile:{...d.profile,...(cloudState.profile||{})},readiness:{...d.readiness,...(cloudState.readiness||{})},prefs:{...d.prefs,...(cloudState.prefs||{})},ai:{...d.ai,...(cloudState.ai||{})},daily:{...d.daily,...(cloudState.daily||{})},hydration:{...d.hydration,...(cloudState.hydration||{})}};S.appVersion='6.4.0';
+   dgSaveLocal();dgSetCloudMeta({lastPushAt:cloudTs,lastCloudAt:cloudTs,lastError:'',encrypted:wasEncrypted});dgCloudStatus='live';renderCurrent();toast('☁ הזיכרון המוצפן סונכרן');if(!wasEncrypted){dgCloudBusy=false;await dgCloudPush();return}
+  }else{dgCloudBusy=false;await dgCloudPush();return}
+ }catch(e){dgCloudStatus='offline';dgSetCloudMeta({lastError:String(e),lastErrorAt:Date.now()});if(String(e).includes('recovery_key_mismatch'))toast('מפתח השחזור לא מתאים לזיכרון הענן')}
+ finally{dgCloudBusy=false;dgRefreshCloudBadges()}
+};
+
+const dgRenderMoreEncrypted=renderMore;
+renderMore=function(){dgRenderMoreEncrypted();setTimeout(()=>{const card=$('#dgCloudCard');if(card&&!card.querySelector('[data-encrypted-badge]')){const p=document.createElement('div');p.setAttribute('data-encrypted-badge','1');p.className='system-row';p.style.marginTop='9px';p.innerHTML='<div><b>הצפנה מקצה האפליקציה</b><small>AES‑GCM · המידע מוצפן לפני העלאה לענן</small></div><span class="badge">ENCRYPTED</span>';card.appendChild(p)}},30)};
+setTimeout(()=>{dgCloudBoot()},2600);
+/* Dvir Gym AI 7.0 — Zero-Cost AI UX */
+S.ai=S.ai||{};
+const dgApplyAIBase=applyAI;
+applyAI=function(out){
+ dgApplyAIBase(out);
+ if(out?.quota){S.ai.quota=out.quota;try{save()}catch{}}
+ if(out?.servedBy){localStorage.setItem('dvirGymAiTestModel',String(out.servedBy));S.ai.lastModel=String(out.servedBy)}
+ if(out?.provider)S.ai.provider=out.provider;
+ if(out?.freeOnly)S.ai.freeOnly=true;
+};
+
+function dgAIErrorMessage(e){
+ const s=String(e?.message||e||'');
+ if(s.includes('free_daily_limit_reached'))return 'מכסת ה־AI החינמית להיום הסתיימה. אין חיוב: Memory Engine המקומי ממשיך לעבוד אוטומטית.';
+ if(s.includes('free_provider_rate_limited'))return 'המודלים החינמיים עמוסים כרגע. אין חיוב: המאמן המקומי ממשיך לעבוד ואפשר לנסות ענן שוב מאוחר יותר.';
+ if(s.includes('free_provider_failed'))return 'ה־Free Router לא מצא כרגע מודל חינמי מתאים. Memory Engine ממשיך ב־0$.';
+ if(s.includes('openrouter_key_rejected'))return 'OpenRouter דחה את המפתח או את בקשת הבדיקה החינמית. ודא שהמפתח פעיל ונסה שוב.';
+ if(s.includes('invalid_key_format'))return 'פורמט מפתח OpenRouter לא נראה תקין.';
+ if(s.includes('free_ai_not_configured'))return 'Zero‑Cost Cloud AI עדיין לא הופעל. Memory Engine ממשיך לעבוד.';
+ if(s.includes('AbortError'))return 'הענן התעכב יותר מדי. עברתי למאמן המקומי בלי עלות.';
+ return 'ה־AI החינמי לא זמין כרגע. אין חיוב — Memory Engine ממשיך לעבוד.';
+}
+
+const dgRenderCoachCloudUX=renderCoach;
+renderCoach=function(thinking=false){
+ dgRenderCoachCloudUX(thinking);
+ setTimeout(async()=>{
+  const s=$('#screen-coach');if(!s)return;
+  const configured=await dgCheckAIConfigured();
+  if(!configured&&!s.querySelector('#dgCoachActivate')){
+   const hero=s.querySelector('.coach-hero');if(hero){const box=document.createElement('div');box.id='dgCoachActivate';box.className='card system-card dg-ai-inline';box.style.margin='12px 0';box.innerHTML=`<div class="system-row"><div><b>✦ Zero‑Cost AI זמין</b><small>Memory Engine כבר עובד. אפשר להוסיף מודל שפה בענן דרך OpenRouter Free בלבד — בלי מסלול תשלום אוטומטי.</small></div><span class="badge dg-free-badge">0$</span></div><button class="primary" id="dgCoachActivateBtn" style="margin-top:9px">הפעל AI חינמי</button>`;hero.appendChild(box);$('#dgCoachActivateBtn').onclick=()=>{switchScreen('more');setTimeout(()=>$('#dgAiCloudCard')?.scrollIntoView({behavior:'smooth',block:'center'}),140)}}
+  }
+  if(configured&&!s.querySelector('#dgCoachCloudMeta')){
+   const hero=s.querySelector('.coach-hero');if(hero){const q=S.ai?.quota||{},model=S.ai?.lastModel||localStorage.getItem('dvirGymAiTestModel')||'OpenRouter Free';const meta=document.createElement('div');meta.id='dgCoachCloudMeta';meta.className='status-line dg-cloud-meta';meta.style.justifyContent='center';meta.style.marginTop='8px';meta.innerHTML=`<i></i><span>FREE CLOUD · ${esc(model)}${q.dayCount!=null?' · '+q.dayCount+'/45 היום':''} · 0$</span>`;hero.appendChild(meta)}
+  }
+ },40)
+};
+
+const dgRenderHomeCloudUX=renderHome;
+renderHome=function(){
+ dgRenderHomeCloudUX();
+ setTimeout(async()=>{const configured=await dgCheckAIConfigured();const st=$('#homeAiStatus');if(!st)return;const sp=st.querySelector('span');if(!configured){st.classList.add('off');if(sp)sp.textContent='Memory Engine · Zero‑Cost Cloud זמין'}else{st.classList.remove('off');const q=S.ai?.quota||{};if(sp)sp.textContent=`Zero‑Cost AI · ${q.dayCount||0}/45 · 0$`}},70)
+};
+
+window.addEventListener('unhandledrejection',e=>{const m=String(e.reason?.message||'');if(m.includes('free_daily_limit_reached')||m.includes('free_provider_rate_limited')||m.includes('free_provider_failed')){try{toast(dgAIErrorMessage(e.reason))}catch{}}});
+/* Dvir Gym AI 7.1 — Command Center UX */
+S.appVersion='7.1.0';
+try{save()}catch{}
+document.documentElement.dataset.athleteOs='7.1.0';
+function dgCostModeText(){return dgAiConfigured?'FREE CLOUD + LOCAL':'LOCAL + FREE CLOUD READY'}
+function dgCloudModeText(){const m=typeof dgCloudMeta==='function'?dgCloudMeta():{};return m.encrypted?'AES‑GCM LIVE':(typeof dgCloudStatus!=='undefined'&&dgCloudStatus==='live'?'CLOUD LIVE':'SYNC READY')}
+function dgNextMove(){try{const score=readinessScore(),t=nutritionTargets(),x=mealTotals(),hour=new Date().getHours();if(score<52)return{icon:'◌',title:'התאוששות קודם',text:`Readiness ${score}/100 · הורד עומס או בחר Recovery`};const remain=Math.max(0,Math.round(t.protein-x.protein));if(hour>=18&&remain>=35)return{icon:'◒',title:'סגור חלבון',text:`נשארו בערך ${remain}g חלבון לפי התיעוד`};const d=deficits?.()[0];if(d&&d.pct<.55)return{icon:'↗',title:`תעדף ${MUSCLE_NAMES[d.k]}`,text:'זה הפער הגדול ביותר ב־Weekly Audit כרגע'};return{icon:'▶',title:splitName(nextSplit()),text:`${S.duration} דקות · ${S.location==='gym'?'מכון':'בית'} · מוכן לבנייה`}}catch{return{icon:'✦',title:'המשך לתעד',text:'האפליקציה תחדד את ההמלצה ככל שהזיכרון גדל'}}}
+function dgEnhanceHomeV7(){const s=$('#screen-home');if(!s||s.querySelector('#dgCommandV7'))return;const hero=s.querySelector('.hero'),next=dgNextMove();if(!hero)return;const box=document.createElement('div');box.id='dgCommandV7';box.innerHTML=`<div class="dg-command-strip"><div class="dg-command-pill live"><small>SPEND GUARD</small><b>0$ · LOCKED</b></div><div class="dg-command-pill"><small>CLOUD MEMORY</small><b>${esc(dgCloudModeText())}</b></div><div class="dg-command-pill"><small>COACH MODE</small><b>${esc(dgCostModeText())}</b></div></div><button class="dg-cost-guardian" id="dgNextMoveBtn" style="width:100%;text-align:right;color:inherit"><span class="orb">${next.icon}</span><span><b>NEXT BEST ACTION · ${esc(next.title)}</b><small>${esc(next.text)}</small></span></button>`;hero.insertAdjacentElement('afterend',box);$('#dgNextMoveBtn').onclick=()=>{if(readinessScore()<52)openCoachWith('ה־Readiness שלי נמוך. תחליט אם נכון לי Recovery, מנוחה או אימון מקוצר היום.');else buildToday()}}
+function dgNetworkBanner(){let el=$('#dgNetworkState');if(!el){el=document.createElement('div');el.id='dgNetworkState';el.className='dg-network';document.body.appendChild(el)}return el}
+let dgNetworkTimer;function dgShowNetwork(online){const el=dgNetworkBanner();el.className=`dg-network show ${online?'online':'offline'}`;el.textContent=online?'● חזרת לרשת · מסנכרן זיכרון':'● Offline · הזיכרון המקומי ממשיך לעבוד';clearTimeout(dgNetworkTimer);dgNetworkTimer=setTimeout(()=>el.classList.remove('show'),online?2600:4200)}
+window.addEventListener('online',()=>{dgShowNetwork(true);try{dgCloudBoot()}catch{}});window.addEventListener('offline',()=>dgShowNetwork(false));
+async function dgLiveHealth(){const out={network:navigator.onLine,pwa:!!navigator.serviceWorker?.controller,cloud:false,cloudEncrypted:false,ai:false,aiFreeOnly:false};try{const c=await fetch(DG_CLOUD_URL,{cache:'no-store'}),j=await c.json();out.cloud=!!j.ok}catch{}try{const a=await fetch(DG_CLOUD_COACH_URL,{cache:'no-store'}),j=await a.json();out.ai=!!j.ok;out.aiFreeOnly=!!j.freeOnly}catch{}try{out.cloudEncrypted=!!dgCloudMeta()?.encrypted}catch{}return out}
+function dgHealthRow(label,value,tone=''){return`<div class="system-row"><div><b>${label}</b><small>${value.detail||''}</small></div><span class="badge ${tone}">${value.label}</span></div>`}
+async function dgRenderHealthCard(){const s=$('#screen-more');if(!s||s.querySelector('#dgHealthV7'))return;const card=document.createElement('div');card.id='dgHealthV7';card.className='card system-card';card.style.marginTop='14px';card.innerHTML=`<div class="section-head" style="margin-top:0"><div><h2>System Health</h2><small>בדיקה אמיתית של שכבות המוצר</small></div><span class="badge">7.1</span></div><div id="dgHealthRows"><div class="system-row"><div><b>בודק מערכת…</b><small>Cloud · AI · PWA · Encryption</small></div><span class="badge">…</span></div></div><button class="secondary" id="dgHealthAgain" style="margin-top:9px">בדוק עכשיו</button>`;s.appendChild(card);async function run(){const rows=$('#dgHealthRows');if(!rows)return;rows.innerHTML='<div class="system-row"><div><b>מריץ בדיקות…</b><small>לא מסתמך רק על סטטוס שמור</small></div><span class="badge">LIVE</span></div>';const h=await dgLiveHealth(),configured=await dgCheckAIConfigured(true);rows.innerHTML=dgHealthRow('מצב עלויות',{label:'0$ LOCK',detail:'Free Router בלבד · אין fallback בתשלום'})+dgHealthRow('Cloud Memory',{label:h.cloud?'ONLINE':'LOCAL',detail:h.cloudEncrypted?'AES‑GCM מוצפן לפני העלאה':'ממתין לסנכרון מוצפן'})+dgHealthRow('AI בענן',{label:configured&&h.ai&&h.aiFreeOnly?'FREE LIVE':'LOCAL READY',detail:configured?'OpenRouter Free Router + Memory fallback':'Memory Engine פעיל; חיבור OpenRouter Free בלחיצה אחת'})+dgHealthRow('PWA',{label:h.pwa?'INSTALLED/RUNNING':'WEB READY',detail:h.pwa?'Service Worker שולט באפליקציה':'אפשר להתקין למסך הבית'})+dgHealthRow('רשת',{label:h.network?'ONLINE':'OFFLINE',detail:h.network?'סנכרון ענן זמין':'העבודה המקומית נשמרת ותסתנכרן בהמשך'});}$('#dgHealthAgain').onclick=run;run()}
+const dgRenderHomeV7=renderHome;renderHome=function(){dgRenderHomeV7();setTimeout(dgEnhanceHomeV7,80)};const dgRenderMoreV7=renderMore;renderMore=function(){dgRenderMoreV7();setTimeout(dgRenderHealthCard,90)};
+document.addEventListener('click',e=>{const b=e.target.closest('button,.action,.dock-item');if(!b)return;try{if(navigator.vibrate&&!matchMedia('(prefers-reduced-motion: reduce)').matches)navigator.vibrate(7)}catch{}},{capture:true});
+try{$('#toast')?.setAttribute('aria-live','polite');document.querySelector('main')?.setAttribute('aria-live','off')}catch{}
+if('serviceWorker'in navigator){navigator.serviceWorker.addEventListener('controllerchange',()=>{try{toast('Athlete OS עודכן לגרסה החדשה')}catch{}})}
+setTimeout(()=>{try{renderCurrent();dgEnhanceHomeV7()}catch{}},3200);
+/* Dvir Gym AI 7.2 — Real Web Push Reminders */
+S.appVersion='7.2.0';try{save()}catch{}document.documentElement.dataset.athleteOs='7.2.0';
+const DG_PUSH_URL='https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/push-subscribe';
+const DG_VAPID_PUBLIC='BPjojkiU72P9_vN8JEl0HXdmg643LvU1gEF6-H-0p5F8K34tovgUHmx7Di7cQ1JxnTuYkcMPvO5Nrs3ecE_VwsU';
+let dgPushTimer=null;
+function dgVapidBytes(s){const pad='='.repeat((4-s.length%4)%4),b=(s+pad).replace(/-/g,'+').replace(/_/g,'/'),raw=atob(b),a=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)a[i]=raw.charCodeAt(i);return a}
+function dgReminderPayload(){return S.reminders.map(r=>({id:r.id,name:r.name,time:r.time,days:r.days,on:!!r.on}))}
+async function dgPushRequest(payload){const c=new AbortController(),t=setTimeout(()=>c.abort(),20000);try{const r=await fetch(DG_PUSH_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:dgCloudToken(),...payload}),signal:c.signal});const j=await r.json().catch(()=>({}));if(!r.ok||!j.ok)throw new Error(j.error||('push '+r.status));return j}finally{clearTimeout(t)}}
+async function dgPushStatus(){if(!('serviceWorker'in navigator)||!('PushManager'in window)||!('Notification'in window))return{supported:false,subscribed:false};try{const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();return{supported:true,subscribed:!!sub,permission:Notification.permission}}catch{return{supported:true,subscribed:false,permission:Notification.permission}}}
+async function dgSyncPushSubscription(createIfMissing=false){if(!('serviceWorker'in navigator)||!('PushManager'in window)||!('Notification'in window))return false;if(Notification.permission!=='granted')return false;try{const reg=await navigator.serviceWorker.ready;let sub=await reg.pushManager.getSubscription();if(!sub&&createIfMissing)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:dgVapidBytes(DG_VAPID_PUBLIC)});if(!sub)return false;const json=sub.toJSON();await dgPushRequest({action:'sync',subscription:{endpoint:json.endpoint,keys:json.keys},timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||'Asia/Jerusalem',reminders:dgReminderPayload()});localStorage.setItem('dvirGymPushLive','1');return true}catch{localStorage.setItem('dvirGymPushLive','0');return false}}
+function dgSchedulePushSync(){clearTimeout(dgPushTimer);dgPushTimer=setTimeout(()=>dgSyncPushSubscription(false),900)}
+async function dgDisablePush(){try{const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();if(sub)await sub.unsubscribe();await dgPushRequest({action:'remove'});localStorage.setItem('dvirGymPushLive','0');toast('התראות Push כובו. תזכורות היומן נשארות לפי מה שייבאת.');openReminders()}catch{toast('לא הצלחתי לכבות Push כרגע')}}
+requestNotifications=async function(){if(!('Notification'in window)){toast('הדפדפן הזה לא תומך בהתראות Web. השתמש בכפתור הוספה ליומן.');return}const p=Notification.permission==='granted'?'granted':await Notification.requestPermission();if(p!=='granted'){toast('ההרשאה לא אושרה. אפשר עדיין להוסיף את התזכורות ליומן.');return}await syncRemindersToSW(true);const ok=await dgSyncPushSubscription(true);toast(ok?'◉ התראות Push אמיתיות הופעלו גם כשהאפליקציה סגורה':'הרשאת ההתראות פעילה, אבל Push לא נתמך כאן. יומן המכשיר הוא הגיבוי האמין.');try{openReminders()}catch{}};
+document.addEventListener('change',e=>{if(e.target?.matches?.('[data-rem-on],[data-rem-time]'))dgSchedulePushSync()},true);
+const dgOpenRemindersPush=openReminders;openReminders=function(){dgOpenRemindersPush();setTimeout(async()=>{const root=$('#reminderContent');if(!root||root.querySelector('#dgPushPanel'))return;const st=await dgPushStatus(),box=document.createElement('div');box.id='dgPushPanel';box.className='card system-card';box.style.margin='10px 0';box.innerHTML=`<div class="system-row"><div><b>Push לענן</b><small>${!st.supported?'לא נתמך בדפדפן הזה':st.subscribed?'פעיל · Supabase cron כל 5 דקות':'מוכן להפעלה · עובד גם כשה־PWA סגורה'}</small></div><span class="badge ${st.subscribed?'dg-free-badge':''}">${st.subscribed?'LIVE':'READY'}</span></div>${st.subscribed?'<button class="ghost" id="dgPushOff" style="margin-top:6px">כבה Push</button>':''}<p class="help">לשרת נשמר רק לוח התזכורות המינימלי הדרוש לשליחה. שאר זיכרון האימונים והתזונה נשאר מוצפן.</p>`;const sheet=root.querySelector('.sheet');if(sheet)sheet.insertBefore(box,sheet.children[2]||null);if(st.subscribed)$('#dgPushOff').onclick=dgDisablePush},40)};
+const dgHealthPushBase=dgRenderHealthCard;dgRenderHealthCard=async function(){await dgHealthPushBase();setTimeout(async()=>{const rows=$('#dgHealthRows');if(!rows||rows.querySelector('[data-push-health]'))return;const st=await dgPushStatus(),row=document.createElement('div');row.className='system-row';row.dataset.pushHealth='1';row.innerHTML=`<div><b>התראות Push</b><small>${st.subscribed?'Web Push ענני פעיל':'Calendar fallback + הפעלה אופציונלית'}</small></div><span class="badge ${st.subscribed?'dg-free-badge':''}">${st.subscribed?'LIVE':'READY'}</span>`;rows.appendChild(row)},80)};
+setTimeout(()=>{if('Notification'in window&&Notification.permission==='granted')dgSyncPushSubscription(false)},4200);
+/* Dvir Gym AI 7.2 — Gym Music 2.0 + final polish */
+const DG_SPOTIFY_HE='https://open.spotify.com/playlist/6Id3CRHj2wIyumi1MIJTN6?utm_source=openai&utm_medium=chatgpt&go=1&nap_web=1&request_id=5f9b5ed2-f5b6-4464-88a4-9ab8413f0e55&nl=spotify%3Anl%3ACAASEF%2BbXtL1tkRkiKSauEE%2FDlUaGDk6NklkM0NSSGoyd0l5dW1pMU1JSlRONiADMAPgAzXoA6ioo4uANPADoAQ%3D';
+const DG_SPOTIFY_EN='https://open.spotify.com/playlist/78Nfm6RtM3tB7sPWjRIhkQ?utm_source=openai&utm_medium=chatgpt&go=1&nap_web=1&request_id=dc9118ed-cfc0-4d43-8f2d-64cac8556884&nl=spotify%3Anl%3ACAASENyRGO3PwE1Djy1kyshVaIQaGDk6NzhOZm02UnRNM3RCN3NQV2pSSWhrUSADMAPgAzXoA%2Fz5oouANPADoAQ%3D';
+function dgWorkoutMusicHint(){try{const n=String(splitName(nextSplit())||'').toLowerCase();if(n.includes('lower'))return'רגליים · אנרגיה גבוהה';if(n.includes('upper'))return'Upper · קצב יציב וחזק';if(n.includes('recovery'))return'Recovery · שמור קצב קל';return'Gym Mode · בחר את הווייב שלך'}catch{return'Gym Mode · בחר את הווייב שלך'}}
+function dgOpenSpotify(url){try{window.open(url,'_blank','noopener,noreferrer')}catch{location.href=url}}
+function dgInjectMusicV72(){const s=$('#screen-more');if(!s||s.querySelector('#dgMusicV72'))return;const card=document.createElement('div');card.id='dgMusicV72';card.className='card system-card dg-music-v72';card.style.marginTop='14px';card.innerHTML=`<div class="section-head" style="margin-top:0"><div><h2>♫ Gym Music 2.0</h2><small>${esc(dgWorkoutMusicHint())}</small></div><span class="badge">SPOTIFY</span></div><div class="dg-music-grid"><button class="dg-music-card israel" id="dgSpotifyHe"><span>🇮🇱</span><div><b>Israeli Workout Hits</b><small>עברית · אנרגיה למכון</small></div><em>▶</em></button><button class="dg-music-card world" id="dgSpotifyEn"><span>⚡</span><div><b>Workout Energy Mix</b><small>בינלאומי · High Energy</small></div><em>▶</em></button></div><p class="help">הפלייליסטים נפתחים ישירות ב־Spotify. אין עלות נוספת מצד Athlete OS ואין מוזיקה שמוזרמת דרך השרת שלנו.</p>`;s.appendChild(card);$('#dgSpotifyHe').onclick=()=>dgOpenSpotify(DG_SPOTIFY_HE);$('#dgSpotifyEn').onclick=()=>dgOpenSpotify(DG_SPOTIFY_EN)}
+const dgRenderMoreMusicV72=renderMore;renderMore=function(){dgRenderMoreMusicV72();setTimeout(()=>{dgInjectMusicV72();const badge=$('#dgHealthV7 .section-head .badge');if(badge)badge.textContent='7.2'},130)};
+setTimeout(()=>{const badge=$('#dgHealthV7 .section-head .badge');if(badge)badge.textContent='7.2'},3500);
+/* Dvir Gym AI 7.3 — Decision Engine + Privacy Control + Diagnostics */
+const DG_APP_VERSION='7.3.0';
+const DG_PRIVACY_URL='https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/privacy-control';
+const DG_DIAG_KEY='dvirGymDiagnosticsV1';
+const DG_CLOUD_DISABLED='dvirGymCloudDisabledV1';
+S.appVersion=DG_APP_VERSION;S.version=DG_APP_VERSION;
+
+// Keep persisted state version aligned with the actual production build.
+const dgSaveV73=save;
+save=function(){dgSaveV73();S.appVersion=DG_APP_VERSION;S.version=DG_APP_VERSION;try{localStorage.setItem(STORE,JSON.stringify(S))}catch{}};
+try{localStorage.setItem(STORE,JSON.stringify(S))}catch{}
+
+function dgDiagRead(){try{return JSON.parse(localStorage.getItem(DG_DIAG_KEY))||{errors:[]}}catch{return{errors:[]}}}
+function dgDiagWrite(p){const d={...dgDiagRead(),...p};try{localStorage.setItem(DG_DIAG_KEY,JSON.stringify(d))}catch{}return d}
+function dgRecordError(type,error){const d=dgDiagRead(),arr=Array.isArray(d.errors)?d.errors:[];arr.unshift({ts:Date.now(),type,message:String(error?.message||error||'unknown').slice(0,500)});dgDiagWrite({errors:arr.slice(0,20),lastErrorAt:Date.now()})}
+window.addEventListener('error',e=>dgRecordError('window',e.error||e.message));
+window.addEventListener('unhandledrejection',e=>dgRecordError('promise',e.reason));
+
+async function dgPrivacy(action='status'){
+ const c=new AbortController(),t=setTimeout(()=>c.abort(),20000);
+ try{const r=await fetch(DG_PRIVACY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:dgCloudToken(),action}),signal:c.signal});const j=await r.json().catch(()=>({}));if(!r.ok||!j.ok){const e=new Error(j.error||('privacy '+r.status));e.data=j;throw e}return j}finally{clearTimeout(t)}
+}
+function dgCloudPaused(){return localStorage.getItem(DG_CLOUD_DISABLED)==='1'}
+function dgSetCloudPaused(v){localStorage.setItem(DG_CLOUD_DISABLED,v?'1':'0');dgCloudStatus=v?'paused':'connecting';dgRefreshCloudBadges?.()}
+
+// Cloud transport with optimistic conflict detection. Memory remains encrypted end-to-end.
+dgCloudRequest=async function(action,state=null,baseUpdatedAt=null){
+ const body={action,token:dgCloudToken(),state};if(baseUpdatedAt!=null)body.baseUpdatedAt=baseUpdatedAt;
+ const r=await fetch(DG_CLOUD_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),j=await r.json().catch(()=>({}));
+ if(!r.ok||!j.ok){const e=new Error(j.error||('cloud '+r.status));e.status=r.status;e.data=j;throw e}return j;
+};
+function dgMergeById(cloud=[],local=[],limit=300){const map=new Map();for(const x of cloud||[]){const k=x?.id||`${x?.ts||''}:${x?.description||x?.title||JSON.stringify(x).slice(0,80)}`;map.set(k,x)}for(const x of local||[]){const k=x?.id||`${x?.ts||''}:${x?.description||x?.title||JSON.stringify(x).slice(0,80)}`;map.set(k,x)}return[...map.values()].sort((a,b)=>(b.ts||b.end||b.createdAt||0)-(a.ts||a.end||a.createdAt||0)).slice(0,limit)}
+function dgMergeStates(local,cloud){const d=defaults(),m={...d,...cloud,...local,profile:{...d.profile,...(cloud?.profile||{}),...(local?.profile||{})},readiness:{...d.readiness,...(cloud?.readiness||{}),...(local?.readiness||{})},prefs:{...d.prefs,...(cloud?.prefs||{}),...(local?.prefs||{})},ai:{...d.ai,...(cloud?.ai||{}),...(local?.ai||{})},daily:{...d.daily,...(cloud?.daily||{}),...(local?.daily||{})},hydration:{...d.hydration,...(cloud?.hydration||{}),...(local?.hydration||{})}};m.logs=dgMergeById(cloud?.logs,local?.logs,260);m.meals=dgMergeById(cloud?.meals,local?.meals,500);m.weights=dgMergeById(cloud?.weights,local?.weights,160);m.measures=dgMergeById(cloud?.measures,local?.measures,120);m.chat=dgMergeById(cloud?.chat,local?.chat,120);const rem=new Map();for(const r of cloud?.reminders||[])rem.set(r.id,r);for(const r of local?.reminders||[])rem.set(r.id,r);m.reminders=[...rem.values()];m.version=DG_APP_VERSION;m.appVersion=DG_APP_VERSION;return m}
+
+dgCloudPush=async function(){
+ if(dgCloudPaused()||dgCloudBusy||!navigator.onLine)return false;dgCloudBusy=true;
+ try{const meta=dgCloudMeta(),encrypted=await dgEncryptCloudState(dgCloudSnapshot());let j;
+  try{j=await dgCloudRequest('push',encrypted,+meta.lastCloudAt||0)}catch(e){
+   if(e.status===409&&e.data?.state){const cloud=await dgDecryptCloudState(e.data.state),merged=dgMergeStates(S,cloud);S=merged;localStorage.setItem(STORE,JSON.stringify(S));const serverTs=e.data.updatedAt?new Date(e.data.updatedAt).getTime():Date.now();dgSetCloudMeta({lastCloudAt:serverTs,lastPushAt:serverTs,lastConflictAt:Date.now(),lastError:'',encrypted:true});dgCloudBusy=false;renderCurrent();toast('☁ זוהה עדכון ממכשיר אחר · הזיכרונות מוזגו');return dgCloudPush()}throw e}
+  const now=Date.now(),cloudTs=j.updatedAt?new Date(j.updatedAt).getTime():now;dgSetCloudMeta({lastPushAt:cloudTs,lastCloudAt:cloudTs,lastError:'',encrypted:true});dgCloudStatus='live';return true
+ }catch(e){dgRecordError('cloud-push',e);dgSetCloudMeta({lastError:String(e),lastErrorAt:Date.now()});dgCloudStatus='offline';return false}
+ finally{dgCloudBusy=false;dgRefreshCloudBadges?.()}
+};
+const dgCloudBootV73=dgCloudBoot;dgCloudBoot=async function(){if(dgCloudPaused()){dgCloudStatus='paused';dgRefreshCloudBadges?.();return}return dgCloudBootV73()};
+
+// Adaptive nutrition: calibrate with percentage of body weight, not a fixed kg threshold.
+const dgNutritionTargetsV72=nutritionTargets;
+nutritionTargets=function(){
+ const p=S.profile,w=+p.weight||65,h=+p.height||165,a=+p.age||28,bmr=10*w+6.25*h-5*a+(p.sex==='female'?-161:5),fac={low:1.35,medium:1.5,high:1.65}[p.activity]||1.5,tdee=bmr*fac,tr=bodyTrend();
+ let delta=p.goal==='lean_gain'?180:p.goal==='fat_loss'?-300:0,adapt=0,trendPct=null,adaptReason='ממתין למספיק שקילות';
+ if(tr&&S.weights.filter(x=>+x.weight).length>=6){trendPct=tr.weekly/w*100;
+  if(p.goal==='lean_gain'){if(trendPct<.08){adapt=100;adaptReason='קצב העלייה נמוך מהיעד'}else if(trendPct>.30){adapt=-100;adaptReason='קצב העלייה מהיר מדי ל־Clean Bulk'}else adaptReason='קצב העלייה בטווח המתוכנן'}
+  if(p.goal==='fat_loss'){if(trendPct>-.35){adapt=-100;adaptReason='קצב הירידה נמוך'}else if(trendPct<-.85){adapt=100;adaptReason='קצב הירידה מהיר מדי'}else adaptReason='קצב הירידה בטווח המתוכנן'}
+  if(p.goal==='recomp'){if(trendPct>.30){adapt=-100;adaptReason='המשקל עולה מהר ל־Recomp'}else if(trendPct<-.40){adapt=100;adaptReason='המשקל יורד מהר ל־Recomp'}else adaptReason='המשקל יציב יחסית — מתאים ל־Recomp'}
+ }
+ let calories=Math.round((tdee+delta+adapt)/10)*10;if(+p.manualCalories>0)calories=+p.manualCalories;let protein=Math.round(w*(p.goal==='fat_loss'?2:1.8));if(+p.manualProtein>0)protein=+p.manualProtein;const fat=Math.round(w*.8),carbs=Math.max(80,Math.round((calories-protein*4-fat*9)/4));return{bmr:Math.round(bmr),tdee:Math.round(tdee),calories,protein,fat,carbs,adapt,trendPct,adaptReason}
+};
+
+function dgExerciseSessions(e,max=4){const out=[];for(const w of S.logs){for(const x of w.exercises||[]){if((x.exerciseId||x.mi)===e.exerciseId&&String(x.name||'').toLowerCase()===String(e.name||'').toLowerCase()){const done=(x.results||[]).filter(r=>r.done);if(done.length)out.push({ts:w.end||w.ts||w.createdAt||0,done});if(out.length>=max)return out}}}return out}
+function dgSessionScore(s){if(!s?.done?.length)return 0;const reps=sum(s.done.map(r=>+r.reps||0)),loads=s.done.map(r=>+r.weight||0).filter(Boolean),load=loads.length?avg(loads):0;return load>0?load*reps:reps}
+const dgProgressionV72=progressionAdvice;
+progressionAdvice=function(e){const base=dgProgressionV72(e),hist=dgExerciseSessions(e,4);if(readinessScore()<55)return{title:'Auto‑Regulation',text:'ה־Readiness נמוך היום. שמור 3 RIR לפחות, אל תרדוף אחרי PR, ואם הטכניקה יורדת עצור סט מוקדם.'};if(hist.length>=3){const s=hist.slice(0,3).map(dgSessionScore),eff=hist.slice(0,3).flatMap(x=>x.done.map(r=>Number.isFinite(+r.rir)?+r.rir:2)),hard=avg(eff)<=2.2;if(hard&&s[0]<=s[1]*1.01&&s[1]<=s[2]*1.01)return{title:'Plateau detected',text:'שלושה חשיפות בלי התקדמות ברורה למרות מאמץ גבוה. היום שמור טכניקה, אל תוסיף עומס בכוח; אם זה חוזר שוב, נוריד מעט עומס/נפח ונבנה מחדש.'};if(s[0]>s[1]*1.03&&s[1]>=s[2]*.98)return{title:'Progression confirmed',text:'ה־logbook מראה מגמת שיפור. המשך Double Progression: קודם מלא את טווח החזרות, ואז העלה עומס קטן.'}}return base};
+
+function dgFatigueFlag(){return readinessScore()<60&&weekLogs(6).length>=3}
+const dgLocalWorkoutV72=localWorkout;
+localWorkout=function(){const w=dgLocalWorkoutV72();if(w.type==='recovery')return w;const fatigue=dgFatigueFlag();w.autoRegulated=true;w.exercises=w.exercises.map((e,i)=>{const x={...e};if(fatigue&&x.sets>=3)x.sets=Math.max(2,x.sets-1);if(readinessScore()<65)x.targetRIR=Math.max(3,x.targetRIR||2);if(i<2&&x.sets>1)x.warmup='חימום: 1–2 סטים מדורגים, קלים מהעומס העובד; הם לא נספרים כסטי עבודה.';return x});if(fatigue){w.title+=' · Auto‑Regulated';w.reason+=` זוהתה עייפות מצטברת: נפח העבודה הופחת היום בלי לבטל את האימון.`}return w};
+
+// Ranked exercise substitutions instead of choosing the first match.
+swapExercise=function(e){const target=Object.keys(inferMuscles(e)),used=new Set((S.activeWorkout?.exercises||[]).map(x=>x.exerciseId)),src=S.location==='home'?HOME_EX:MACHINES,cands=src.filter(x=>x.id!==e.exerciseId&&!x.muscles?.includes('cardio')).map(x=>({x,score:(x.muscles||[]).filter(m=>target.includes(m)).length*10-(used.has(x.id)?4:0)})).filter(z=>z.score>0).sort((a,b)=>b.score-a.score).slice(0,4);if(!cands.length){toast('לא מצאתי תחליף איכותי לאותה מטרה');return}const root=$('#machineContent');root.innerHTML=`<div class="sheet"><div class="sheet-head"><div><div class="eyebrow">SMART SWAP</div><h2>המכשיר תפוס?</h2></div><button class="close" id="dgSwapClose">×</button></div><p class="help">החלופות מדורגות לפי השרירים של ${esc(e.name)} והתרגילים שכבר נמצאים באימון.</p><div class="dg-swap-list">${cands.map(z=>`<button class="dg-swap-option" data-dg-swap="${esc(z.x.id)}"><div><b>${esc(z.x.simple||z.x.pro)}</b><small>${esc(z.x.pro||'')} · ${(z.x.muscles||[]).map(m=>MUSCLE_NAMES[m]||m).join(' · ')}</small></div><span>החלף</span></button>`).join('')}</div></div>`;$('#machineDialog').showModal();$('#dgSwapClose').onclick=()=>$('#machineDialog').close();$$('[data-dg-swap]').forEach(b=>b.onclick=()=>{const x=src.find(y=>y.id===b.dataset.dgSwap);if(!x)return;e.exerciseId=x.id;e.name=x.pro||x.simple;e.results=[];save();$('#machineDialog').close();toast(`הוחלף ל־${x.simple||x.pro}`);renderWorkout()})};
+
+const dgRenderWorkoutV73=renderWorkout;renderWorkout=function(){dgRenderWorkoutV73();setTimeout(()=>{const w=S.activeWorkout,e=w?.exercises?.[w.currentIndex||0],panel=$('#workoutContent .exercise-panel');if(!e||!panel||panel.querySelector('#dgSmartSetBrief'))return;const d=document.createElement('div');d.id='dgSmartSetBrief';d.className='dg-smart-brief';const hist=dgExerciseSessions(e,3);d.innerHTML=`<div><small>SMART SESSION</small><b>${e.warmup?'חימום מדורג לפני סטי העבודה':'עבוד לפי ה־RIR וה־logbook'}</b></div><p>${esc(e.warmup||`יש ${hist.length} אימונים קודמים זמינים להשוואה. המטרה היא לנצח את ה־logbook בלי לפגוע בטכניקה.`)}</p>`;const rx=panel.querySelector('.rx');(rx||panel.firstChild).insertAdjacentElement('afterend',d)},10)};
+
+async function dgPhotoCount(){try{const db=await openDB(),tx=db.transaction('photos','readonly'),r=tx.objectStore('photos').count();return await new Promise((res,rej)=>{r.onsuccess=()=>res(r.result||0);r.onerror=()=>rej(r.error)})}catch{return 0}}
+async function dgStorageEstimate(){try{const e=await navigator.storage?.estimate?.();return{used:+e?.usage||0,quota:+e?.quota||0,persisted:await navigator.storage?.persisted?.()}}catch{return{used:0,quota:0,persisted:false}}}
+function dgMb(n){return n?`${(n/1048576).toFixed(1)} MB`:'—'}
+async function dgWipeMemoryOnly(){if(!confirm('למחוק את עותק הזיכרון המוצפן מהענן? הנתונים המקומיים בטלפון יישארו.'))return;try{await dgPrivacy('wipe-memory');dgSetCloudPaused(true);dgSetCloudMeta({lastCloudAt:0,lastPushAt:0,lastError:'cloud memory deleted'});toast('Cloud Memory נמחק והסנכרון הושהה כדי שלא יעלה שוב אוטומטית');renderMore()}catch(e){toast('לא הצלחתי למחוק את הזיכרון בענן');dgRecordError('privacy-wipe-memory',e)}}
+async function dgWipeAllCloud(){const x=prompt('מחיקה מלאה מהענן תסיר זיכרון, AI ו־Push. כדי לאשר הקלד: מחק ענן');if(x!=='מחק ענן')return;try{await dgPrivacy('wipe-all');dgSetCloudPaused(true);dgAiConfigured=false;localStorage.setItem('dvirGymAiConfigured','0');try{const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager?.getSubscription();await sub?.unsubscribe()}catch{}localStorage.setItem('dvirGymPushLive','0');toast('כל נתוני הענן נמחקו. הנתונים המקומיים נשארו אצלך.');renderMore()}catch(e){toast('המחיקה המלאה לא הושלמה');dgRecordError('privacy-wipe-all',e)}}
+async function dgResumeCloud(){dgSetCloudPaused(false);toast('Cloud Memory הופעל מחדש · מסנכרן');await dgCloudPush();renderMore()}
+async function dgClearLocal(){const x=prompt('פעולה זו מוחקת את הנתונים מהמכשיר הזה בלבד. הקלד: מחק מהמכשיר');if(x!=='מחק מהמכשיר')return;try{localStorage.removeItem(STORE);localStorage.removeItem(DG_CLOUD_META_KEY);localStorage.removeItem(DG_DIAG_KEY);indexedDB.deleteDatabase(DB_NAME);toast('הנתונים המקומיים נמחקו');setTimeout(()=>location.reload(),800)}catch{toast('לא הצלחתי להשלים מחיקה מקומית')}}
+
+function dgDiagLine(label,val,tone=''){return`<div class="system-row"><div><b>${esc(label)}</b><small>${esc(val)}</small></div><span class="badge ${tone}">${tone==='good'?'OK':'INFO'}</span></div>`}
+async function dgInjectPrivacyV73(){const s=$('#screen-more');if(!s||s.querySelector('#dgPrivacyV73'))return;const [storage,photos,privacy,push]=await Promise.all([dgStorageEstimate(),dgPhotoCount(),dgPrivacy('status').catch(()=>null),typeof dgPushStatus==='function'?dgPushStatus().catch(()=>null):null]),m=dgCloudMeta(),err=dgDiagRead().errors?.[0];const card=document.createElement('div');card.id='dgPrivacyV73';card.className='card system-card dg-privacy-card';card.style.marginTop='14px';card.innerHTML=`<div class="section-head" style="margin-top:0"><div><h2>Privacy & Diagnostics</h2><small>שליטה מלאה בנתונים + מצב המערכת</small></div><span class="badge dg-free-badge">7.3</span></div><div class="dg-diag-grid">${dgDiagLine('זיכרון מקומי',`${S.logs.length} אימונים · ${S.meals.length} ארוחות · ${S.weights.length} שקילות · ${photos} תמונות`,'good')}${dgDiagLine('אחסון',`${dgMb(storage.used)} בשימוש · ${storage.persisted?'Persistent':'Best effort'}`,storage.persisted?'good':'')}${dgDiagLine('Cloud Memory',dgCloudPaused()?'מושהה על ידך':privacy?.memory?'קיים ומוצפן בענן':'אין כרגע snapshot בענן',privacy?.memory&&!dgCloudPaused()?'good':'')}${dgDiagLine('AI Vault',privacy?.ai?'OpenRouter Free key קיים':'אין מפתח AI בענן',privacy?.ai?'good':'')}${dgDiagLine('Push',push?.subscribed?'Subscription פעיל':'לא רשום כרגע',push?.subscribed?'good':'')}${dgDiagLine('Sync אחרון',m.lastPushAt?new Date(m.lastPushAt).toLocaleString('he-IL'):'טרם סונכרן',m.lastPushAt?'good':'')}${dgDiagLine('שגיאה אחרונה',err?`${new Date(err.ts).toLocaleString('he-IL')} · ${err.message}`:'לא נרשמה שגיאת runtime','good')}</div><div class="dg-data-actions"><button class="secondary" id="dgExportV73">הורד גיבוי JSON</button><button class="secondary" id="dgCopyRecoveryV73">העתק Recovery Key</button>${dgCloudPaused()?'<button class="primary" id="dgResumeCloudV73">הפעל Cloud Memory מחדש</button>':'<button class="ghost danger" id="dgWipeMemoryV73">מחק רק Cloud Memory</button>'}<button class="ghost danger" id="dgWipeAllV73">מחק את כל נתוני הענן</button><button class="ghost danger" id="dgClearLocalV73">מחק נתונים מהמכשיר</button></div><p class="help">Cloud Memory מוצפן לפני העלאה. תמונות התקדמות נשמרות מקומית בלבד. מחיקה מהענן משהה סנכרון כדי למנוע העלאה מחדש אוטומטית.</p>`;s.appendChild(card);$('#dgExportV73').onclick=exportData;$('#dgCopyRecoveryV73').onclick=dgCopyRecovery;$('#dgResumeCloudV73')?.addEventListener('click',dgResumeCloud);$('#dgWipeMemoryV73')?.addEventListener('click',dgWipeMemoryOnly);$('#dgWipeAllV73').onclick=dgWipeAllCloud;$('#dgClearLocalV73').onclick=dgClearLocal}
+const dgRenderMoreV73=renderMore;renderMore=function(){dgRenderMoreV73();setTimeout(dgInjectPrivacyV73,160)};
+
+// Surface adaptive nutrition calibration in Fuel screen.
+const dgRenderFuelV73=renderFuel;renderFuel=function(){dgRenderFuelV73();setTimeout(()=>{const s=$('#screen-fuel');if(!s||s.querySelector('#dgAdaptiveFuel'))return;const t=nutritionTargets(),hero=s.querySelector('.fuel-hero,.card');if(!hero)return;const d=document.createElement('div');d.id='dgAdaptiveFuel';d.className='dg-adaptive-fuel';d.innerHTML=`<small>ADAPTIVE CALORIES</small><b>${t.adapt>0?'+':''}${t.adapt} kcal calibration</b><span>${esc(t.adaptReason||'')}</span>${t.trendPct!=null?`<em>${t.trendPct>0?'+':''}${t.trendPct.toFixed(2)}% משקל/שבוע</em>`:''}`;hero.appendChild(d)},40)};
+
+setTimeout(()=>{try{renderCurrent()}catch{}},1800);
+/* Dvir Gym AI 7.4 — Zero-Cost Food Scanner */
+S.appVersion='7.4.0';S.version='7.4.0';try{save()}catch{}
+const DG_FOOD_URL='https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/food-lookup';
+let dgScanStream=null,dgScanRAF=0,dgScanBusy=false;
+function dgStopScanner(){cancelAnimationFrame(dgScanRAF);dgScanRAF=0;dgScanBusy=false;try{dgScanStream?.getTracks()?.forEach(t=>t.stop())}catch{}dgScanStream=null}
+async function dgFoodLookup(code){code=String(code||'').replace(/\D/g,'');if(code.length<8)return toast('ברקוד קצר מדי');const c=new AbortController(),t=setTimeout(()=>c.abort(),18000);try{const r=await fetch(DG_FOOD_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code}),signal:c.signal}),j=await r.json().catch(()=>({}));if(!r.ok||!j.ok){if(j.error==='product_not_found')throw new Error('המוצר לא נמצא ב־Open Food Facts');throw new Error(j.error||'לא הצלחתי לקרוא את המוצר')}return j}finally{clearTimeout(t)}}
+function dgMacroForAmount(p,amount){const f=Math.max(0,+amount||0)/100,x=p.per100||{};return{calories:(+x.calories||0)*f,protein:(+x.protein||0)*f,carbs:(+x.carbs||0)*f,fat:(+x.fat||0)*f}}
+function dgRenderFoodProduct(p){const root=$('#dgFoodResult');if(!root)return;const defaultAmount=+p.servingQuantity||100;root.innerHTML=`<div class="dg-product-card">${p.image?`<img src="${esc(p.image)}" alt="${esc(p.name)}">`:'<div class="dg-product-placeholder">▦</div>'}<div class="dg-product-copy"><small>${esc(p.brands||'OPEN FOOD FACTS')}</small><h3>${esc(p.name)}</h3><p>${esc(p.quantity||p.servingSize||'')}</p></div></div><div class="field"><label>כמה אכלת? גרם / מ״ל</label><input id="dgFoodAmount" inputmode="decimal" value="${defaultAmount}" min="1" max="3000"></div><div class="dg-food-macros" id="dgFoodMacros"></div><button class="primary" id="dgAddScannedFood">שמור את הכמות הזו בארוחה</button><p class="help">הערכים מבוססים על מאגר Open Food Facts והכמות שאתה מזין. בדוק מול התווית אם משהו נראה חריג.</p>`;
+ const render=()=>{const a=+$('#dgFoodAmount').value||0,z=dgMacroForAmount(p,a);$('#dgFoodMacros').innerHTML=`<div><b>${Math.round(z.calories)}</b><small>kcal</small></div><div><b>${z.protein.toFixed(1)}g</b><small>חלבון</small></div><div><b>${z.carbs.toFixed(1)}g</b><small>פחמימה</small></div><div><b>${z.fat.toFixed(1)}g</b><small>שומן</small></div>`};render();$('#dgFoodAmount').oninput=render;$('#dgAddScannedFood').onclick=()=>{const amount=+$('#dgFoodAmount').value||0;if(!(amount>0&&amount<=3000))return toast('הכמות לא נראית תקינה');const z=dgMacroForAmount(p,amount);S.meals.unshift({id:'meal_'+Date.now(),ts:Date.now(),description:`${p.name}${p.brands?' · '+p.brands:''} · ${amount} גרם/מ״ל`,protein:+z.protein.toFixed(1),calories:Math.round(z.calories),carbs:+z.carbs.toFixed(1),fat:+z.fat.toFixed(1),confidence:'database',source:'Open Food Facts',barcode:p.code});S.meals=S.meals.slice(0,500);save();dgStopScanner();$('#mealDialog').close();renderFuel();toast('✓ המוצר נשמר לפי הכמות שאכלת')}}
+async function dgLookupAndShow(code){const btn=$('#dgFoodLookupBtn');if(btn){btn.disabled=true;btn.textContent='מחפש…'}try{const p=await dgFoodLookup(code);dgStopScanner();dgRenderFoodProduct(p);haptic([25,35,25])}catch(e){toast(e.message||'לא מצאתי את המוצר');dgRecordError?.('food-lookup',e)}finally{if(btn){btn.disabled=false;btn.textContent='חפש ברקוד'}}}
+async function dgStartBarcodeCamera(){const video=$('#dgBarcodeVideo'),hint=$('#dgScanHint');if(!video)return;if(!('mediaDevices'in navigator)||!navigator.mediaDevices.getUserMedia){hint.textContent='מצלמה לא זמינה כאן · אפשר להקליד ברקוד';return}if(!('BarcodeDetector'in window)){hint.textContent='סריקה אוטומטית לא נתמכת בדפדפן הזה · אפשר להקליד ברקוד';return}try{const formats=(await BarcodeDetector.getSupportedFormats?.().catch(()=>[]))||[],wanted=['ean_13','ean_8','upc_a','upc_e','code_128'].filter(x=>!formats.length||formats.includes(x)),detector=new BarcodeDetector(wanted.length?{formats:wanted}:undefined);dgScanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false});video.srcObject=dgScanStream;await video.play();hint.textContent='כוון את הברקוד למרכז · הזיהוי אוטומטי';const loop=async()=>{if(!dgScanStream||dgScanBusy)return;try{const found=await detector.detect(video);if(found?.[0]?.rawValue){dgScanBusy=true;const code=found[0].rawValue;$('#dgBarcodeManual').value=code;hint.textContent='זוהה · מחפש מוצר…';await dgLookupAndShow(code);return}}catch{}dgScanRAF=requestAnimationFrame(loop)};loop()}catch(e){hint.textContent='לא ניתנה גישה למצלמה · אפשר להקליד ברקוד';dgStopScanner()}}
+function dgOpenBarcodeScanner(){dgStopScanner();$('#mealContent').innerHTML=`<div class="sheet dg-food-sheet"><div class="sheet-head"><div><div class="eyebrow">FOOD SCANNER · 0$</div><h2>סרוק מוצר ארוז</h2></div><button class="close" id="dgFoodClose">×</button></div><div class="dg-scanner"><video id="dgBarcodeVideo" autoplay muted playsinline></video><div class="dg-scan-frame"></div><small id="dgScanHint">פותח מצלמה…</small></div><div class="dg-manual-barcode"><input id="dgBarcodeManual" inputmode="numeric" placeholder="או הקלד את המספר מתחת לברקוד"><button class="secondary" id="dgFoodLookupBtn">חפש ברקוד</button></div><div id="dgFoodResult"></div><p class="help">Open Food Facts הוא מאגר פתוח. אם מוצר לא קיים או הערכים לא תואמים לתווית, השתמש בתיעוד ידני.</p></div>`;$('#mealDialog').showModal();$('#dgFoodClose').onclick=()=>{$('#mealDialog').close();dgStopScanner()};$('#mealDialog').addEventListener('close',dgStopScanner,{once:true});$('#dgFoodLookupBtn').onclick=()=>dgLookupAndShow($('#dgBarcodeManual').value);$('#dgBarcodeManual').onkeydown=e=>{if(e.key==='Enter')dgLookupAndShow(e.target.value)};setTimeout(dgStartBarcodeCamera,80)}
+
+const dgRenderFuelV74=renderFuel;renderFuel=function(){dgRenderFuelV74();setTimeout(()=>{const s=$('#screen-fuel');if(!s||s.querySelector('#dgBarcodeFood'))return;const grid=s.querySelector('.action-grid');if(!grid)return;const b=document.createElement('button');b.className='action dg-barcode-action';b.id='dgBarcodeFood';b.innerHTML='<em>▦</em><b>סרוק ברקוד</b><small>מוצר ארוז · מאקרו לפי הכמות</small>';b.onclick=dgOpenBarcodeScanner;grid.insertBefore(b,grid.children[2]||null)},20)};
+setTimeout(()=>{try{if($('#screen-fuel')?.classList.contains('active'))renderFuel()}catch{}},1200);
