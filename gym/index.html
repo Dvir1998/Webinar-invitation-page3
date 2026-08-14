@@ -52,9 +52,9 @@
 <div id="restBubble" class="rest-bubble hidden"><div><small>REST</small><b id="restClock">90</b></div><button id="skipRest">דלג</button></div>
 <script>
 (async()=>{try{
- const css=(await Promise.all([1,2,3].map(i=>fetch(`code/css${i}.txt?v=6.0.0`).then(r=>{if(!r.ok)throw Error('CSS '+r.status);return r.text()})))).join('');
+ const css=(await Promise.all(Array.from({length:4},(_,k)=>k+1).map(i=>fetch(`code/css${i}.txt?v=6.1.0`).then(r=>{if(!r.ok)throw Error('CSS '+r.status);return r.text()})))).join('');
  const st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
- const js=(await Promise.all(Array.from({length:15},(_,k)=>k+1).map(i=>fetch(`code/js${i}.txt?v=6.0.0`).then(r=>{if(!r.ok)throw Error('JS '+r.status);return r.text()})))).join('');
+ const js=(await Promise.all(Array.from({length:16},(_,k)=>k+1).map(i=>fetch(`code/js${i}.txt?v=6.1.0`).then(r=>{if(!r.ok)throw Error('JS '+r.status);return r.text()})))).join('');
  const sc=document.createElement('script');sc.textContent=js;document.body.appendChild(sc);document.body.classList.add('ready');
 }catch(e){document.body.innerHTML=`<div style="min-height:100vh;display:grid;place-items:center;background:#06080d;color:white;font-family:system-ui;text-align:center;padding:24px"><div><h2>לא הצלחתי לטעון את Athlete OS</h2><p style="color:#94a0b0">רענן את הדף · ${String(e.message||e)}</p></div></div>`}})();
 </script>
