@@ -14,7 +14,7 @@ permissions:
 jobs:
   verify-athlete-os:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 6
     steps:
       - uses: actions/checkout@v4
       - name: Verify required production files
@@ -26,21 +26,21 @@ jobs:
           test -f gym/manifest.json
           test -f gym/sw.js
           for i in $(seq 1 5); do test -f "gym/code/css${i}.txt"; done
-          for i in $(seq 1 23); do test -f "gym/code/js${i}.txt"; done
+          for i in $(seq 1 24); do test -f "gym/code/js${i}.txt"; done
           for i in $(seq 1 7); do test -f "gym/assets/sprite${i}.txt"; done
           grep -q 'length:5' gym/index.html
-          grep -q 'length:23' gym/index.html
-          grep -q 'v=7.1.0' gym/index.html
-          grep -q 'v7-1-0' gym/sw.js
+          grep -q 'length:24' gym/index.html
+          grep -q 'v=7.2.0' gym/index.html
+          grep -q 'v7-2-0' gym/sw.js
       - name: JavaScript syntax check
         shell: bash
         run: |
           set -euo pipefail
-          cat $(for i in $(seq 1 23); do printf 'gym/code/js%s.txt ' "$i"; done) > /tmp/athlete-os.js
+          cat $(for i in $(seq 1 24); do printf 'gym/code/js%s.txt ' "$i"; done) > /tmp/athlete-os.js
           node --check /tmp/athlete-os.js
           node --check gym/sw.js
           node -e "JSON.parse(require('fs').readFileSync('gym/manifest.json','utf8')); console.log('manifest ok')"
-      - name: Enforce zero-cost source policy
+      - name: Enforce zero-cost and privacy source policy
         shell: bash
         run: |
           set -euo pipefail
@@ -53,6 +53,8 @@ jobs:
           grep -q '0\$' gym/code/js20.txt
           grep -q 'code_challenge_method=S256' gym/code/js20.txt
           grep -q 'oauth-exchange' gym/code/js20.txt
+          grep -q "addEventListener('push'" gym/sw.js
+          grep -q 'DG_VAPID_PUBLIC' gym/code/js24.txt
       - name: Verify cloud services are alive and free-only
         shell: bash
         run: |
@@ -60,11 +62,17 @@ jobs:
           COACH=$(curl --fail --silent --show-error --max-time 25 'https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/coach')
           MEMORY=$(curl --fail --silent --show-error --max-time 25 'https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/cloud-memory')
           SETUP=$(curl --fail --silent --show-error --max-time 25 'https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/ai-key-setup')
+          PUSH_SUB=$(curl --fail --silent --show-error --max-time 25 'https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/push-subscribe')
+          PUSH_DISP=$(curl --fail --silent --show-error --max-time 25 'https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/push-dispatch')
           echo "$COACH"
           echo "$MEMORY"
           echo "$SETUP"
+          echo "$PUSH_SUB"
+          echo "$PUSH_DISP"
           echo "$COACH" | grep -q '"freeOnly":true'
           echo "$COACH" | grep -q '"model":"openrouter/free"'
           echo "$MEMORY" | grep -q '"ok":true'
           echo "$SETUP" | grep -q '"mode":"free-only"'
           echo "$SETUP" | grep -q '"oauth":"pkce"'
+          echo "$PUSH_SUB" | grep -q '"ok":true'
+          echo "$PUSH_DISP" | grep -q '"ok":true'
