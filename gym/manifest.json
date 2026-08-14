@@ -1,8 +1,8 @@
 {
   "id":"./",
-  "name":"Dvir Gym AI — Athlete OS 7.2",
+  "name":"Dvir Gym AI — Athlete OS 7.3",
   "short_name":"Dvir Gym AI",
-  "description":"מאמן כושר ותזונה אישי עם זיכרון מוצפן, AI חינמי בלבד, תזכורות Push, אימונים, תזונה והתקדמות",
+  "description":"מאמן כושר ותזונה אישי עם זיכרון מוצפן, AI חינמי בלבד, תזכורות Push, Decision Engine, אימונים, תזונה והתקדמות",
   "lang":"he",
   "dir":"rtl",
   "start_url":"./",
