@@ -1,0 +1,36 @@
+/* Dvir Gym AI 7.2 — Real Web Push Reminders */
+const DG_PUSH_URL='https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/push-subscribe';
+const DG_VAPID_PUBLIC='BPjojkiU72P9_vN8JEl0HXdmg643LvU1gEF6-H-0p5F8K34tovgUHmx7Di7cQ1JxnTuYkcMPvO5Nrs3ecE_VwsU';
+let dgPushTimer=null;
+function dgVapidBytes(s){const pad='='.repeat((4-s.length%4)%4),b=(s+pad).replace(/-/g,'+').replace(/_/g,'/'),raw=atob(b),a=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)a[i]=raw.charCodeAt(i);return a}
+function dgReminderPayload(){return S.reminders.map(r=>({id:r.id,name:r.name,time:r.time,days:r.days,on:!!r.on}))}
+async function dgPushRequest(payload){const c=new AbortController(),t=setTimeout(()=>c.abort(),20000);try{const r=await fetch(DG_PUSH_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:dgCloudToken(),...payload}),signal:c.signal});const j=await r.json().catch(()=>({}));if(!r.ok||!j.ok)throw new Error(j.error||('push '+r.status));return j}finally{clearTimeout(t)}}
+async function dgPushStatus(){if(!('serviceWorker'in navigator)||!('PushManager'in window))return{supported:false,subscribed:false};try{const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();return{supported:true,subscribed:!!sub,permission:Notification.permission}}catch{return{supported:true,subscribed:false,permission:Notification.permission}}}
+async function dgSyncPushSubscription(createIfMissing=false){
+ if(!('serviceWorker'in navigator)||!('PushManager'in window)||!('Notification'in window))return false;
+ if(Notification.permission!=='granted')return false;
+ try{
+  const reg=await navigator.serviceWorker.ready;let sub=await reg.pushManager.getSubscription();
+  if(!sub&&createIfMissing)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:dgVapidBytes(DG_VAPID_PUBLIC)});
+  if(!sub)return false;
+  const json=sub.toJSON();await dgPushRequest({action:'sync',subscription:{endpoint:json.endpoint,keys:json.keys},timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||'Asia/Jerusalem',reminders:dgReminderPayload()});localStorage.setItem('dvirGymPushLive','1');return true
+ }catch(e){localStorage.setItem('dvirGymPushLive','0');return false}
+}
+function dgSchedulePushSync(){clearTimeout(dgPushTimer);dgPushTimer=setTimeout(()=>dgSyncPushSubscription(false),900)}
+async function dgDisablePush(){try{const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();if(sub)await sub.unsubscribe();await dgPushRequest({action:'remove'});localStorage.setItem('dvirGymPushLive','0');toast('התראות Push כובו. תזכורות היומן נשארות לפי מה שייבאת.');openReminders()}catch{toast('לא הצלחתי לכבות Push כרגע')}}
+
+requestNotifications=async function(){
+ if(!('Notification'in window)){toast('הדפדפן הזה לא תומך בהתראות Web. השתמש בכפתור הוספה ליומן.');return}
+ const p=Notification.permission==='granted'?'granted':await Notification.requestPermission();
+ if(p!=='granted'){toast('ההרשאה לא אושרה. אפשר עדיין להוסיף את התזכורות ליומן.');return}
+ await syncRemindersToSW(true);const ok=await dgSyncPushSubscription(true);
+ toast(ok?'◉ התראות Push אמיתיות הופעלו גם כשהאפליקציה סגורה':'הרשאת ההתראות פעילה, אבל Push לא נתמך כאן. יומן המכשיר הוא הגיבוי האמין.');
+ try{openReminders()}catch{}
+};
+
+document.addEventListener('change',e=>{if(e.target?.matches?.('[data-rem-on],[data-rem-time]'))dgSchedulePushSync()},true);
+const dgOpenRemindersPush=openReminders;openReminders=function(){dgOpenRemindersPush();setTimeout(async()=>{const root=$('#reminderContent');if(!root||root.querySelector('#dgPushPanel'))return;const st=await dgPushStatus(),box=document.createElement('div');box.id='dgPushPanel';box.className='card system-card';box.style.margin='10px 0';box.innerHTML=`<div class="system-row"><div><b>Push לענן</b><small>${!st.supported?'לא נתמך בדפדפן הזה':st.subscribed?'פעיל · Supabase cron כל 5 דקות':'מוכן להפעלה · עובד גם כשה־PWA סגורה'}</small></div><span class="badge ${st.subscribed?'dg-free-badge':''}">${st.subscribed?'LIVE':'READY'}</span></div>${st.subscribed?'<button class="ghost" id="dgPushOff" style="margin-top:6px">כבה Push</button>':''}<p class="help">לשרת נשמר רק לוח התזכורות המינימלי הדרוש לשליחה. שאר זיכרון האימונים והתזונה נשאר מוצפן.</p>`;const sheet=root.querySelector('.sheet');if(sheet)sheet.insertBefore(box,sheet.children[2]||null);if(st.subscribed)$('#dgPushOff').onclick=dgDisablePush},40)};
+
+const dgHealthPushBase=dgRenderHealthCard;dgRenderHealthCard=async function(){await dgHealthPushBase();setTimeout(async()=>{const rows=$('#dgHealthRows');if(!rows||rows.querySelector('[data-push-health]'))return;const st=await dgPushStatus(),row=document.createElement('div');row.className='system-row';row.dataset.pushHealth='1';row.innerHTML=`<div><b>התראות Push</b><small>${st.subscribed?'Web Push ענני פעיל':'Calendar fallback + הפעלה אופציונלית'}</small></div><span class="badge ${st.subscribed?'dg-free-badge':''}">${st.subscribed?'LIVE':'READY'}</span>`;rows.appendChild(row)},80)};
+
+setTimeout(()=>{if(Notification?.permission==='granted')dgSyncPushSubscription(false)},4200);
