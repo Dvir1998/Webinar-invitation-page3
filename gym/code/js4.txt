@@ -1,0 +1,32 @@
+er.map(x=>+x.weight)),now:avg(newer.map(x=>+x.weight)),weekly:(avg(newer.map(x=>+x.weight))-avg(older.map(x=>+x.weight)))*7/days}}
+function nutritionTargets(){
+ const p=S.profile,w=+p.weight||65,h=+p.height||165,a=+p.age||28,bmr=10*w+6.25*h-5*a+(p.sex==='female'?-161:5),fac={low:1.35,medium:1.5,high:1.65}[p.activity]||1.5,tdee=bmr*fac;
+ let delta=p.goal==='lean_gain'?220:p.goal==='fat_loss'?-320:0,adapt=0,tr=bodyTrend();if(tr){if(p.goal==='lean_gain'){if(tr.weekly<.05)adapt=100;if(tr.weekly>.3)adapt=-100}if(p.goal==='fat_loss'){if(tr.weekly>-.05)adapt=-100;if(tr.weekly<-.7)adapt=100}}
+ let calories=Math.round((tdee+delta+adapt)/10)*10;if(+p.manualCalories>0)calories=+p.manualCalories;let protein=Math.round(w*(p.goal==='fat_loss'?2:1.8));if(+p.manualProtein>0)protein=+p.manualProtein;const fat=Math.round(w*.8),carbs=Math.max(80,Math.round((calories-protein*4-fat*9)/4));return{bmr:Math.round(bmr),tdee:Math.round(tdee),calories,protein,fat,carbs,adapt}
+}
+function mealTotals(key=nowDay()){return S.meals.filter(m=>dayKey(m.ts)===key).reduce((a,m)=>({calories:a.calories+(+m.calories||+m.cal||0),protein:a.protein+(+m.protein||+m.pro||0),carbs:a.carbs+(+m.carbs||+m.carb||0),fat:a.fat+(+m.fat||0)}),{calories:0,protein:0,carbs:0,fat:0})}
+function recentMeals(days=7){const min=Date.now()-days*864e5;return S.meals.filter(m=>m.ts>=min).sort((a,b)=>b.ts-a.ts)}
+function inferMuscles(e){const id=e.exerciseId||e.mi||'',name=String(e.name||'').toLowerCase(),info=exInfo(id),out={};const add=(k,v=1)=>out[k]=(out[k]||0)+v;if(info){for(const m of info.muscles||[])if(m!=='cardio')add(m)}
+ if(id==='pec-rear'&&name.includes('rear')){delete out.chest;add('shoulders',1);add('back',.3)}
+ if(id==='pec-rear'&&name.includes('pec')){out.chest=1;out.shoulders=.15}
+ if(id==='smith'){if(/rdl|romanian/.test(name)){out.hamstrings=1;out.glutes=.7;delete out.quads;delete out.chest}else if(/squat/.test(name)){out.quads=1;out.glutes=.7;delete out.chest;delete out.hamstrings}else if(/press/.test(name)){out.chest=1;out.triceps=.5;delete out.quads;delete out.hamstrings;delete out.glutes}}
+ if(id==='cable'){if(/lateral/.test(name))out.shoulders=1;if(/triceps/.test(name))out.triceps=1;if(/curl/.test(name))out.biceps=1}
+ if(id==='assisted'){if(/dip/.test(name)){out.chest=1;out.triceps=.7;delete out.back;delete out.biceps}else{out.back=1;out.biceps=.5}}
+ return out}
+function weeklyCoverage(){const c=Object.fromEntries(Object.keys(TARGET_SETS).map(k=>[k,0])),locations={gym:0,home:0};for(const w of weekLogs(7)){locations[w.location||'gym']=(locations[w.location||'gym']||0)+1;for(const e of w.exercises||[]){const st=(e.results||[]).filter(x=>x.done).length,m=inferMuscles(e);for(const[k,v]of Object.entries(m))if(k in c)c[k]+=st*v}}return{sets:c,locations}}
+function deficits(){const c=weeklyCoverage().sets;return Object.keys(TARGET_SETS).map(k=>({k,score:Math.max(0,TARGET_SETS[k]-c[k]),pct:c[k]/TARGET_SETS[k]})).sort((a,b)=>b.score-a.score)}
+function nextSplit(){
+ const recent=lastWorkout(),lastType=recent?.type;const seq=['upperA','lowerA','upperB','lowerB'];let base=seq[(Math.max(-1,seq.indexOf(lastType))+1)%4]||'upperA';const c=weeklyCoverage().sets;
+ const upperDef=(TARGET_SETS.chest-c.chest)+(TARGET_SETS.back-c.back)+(TARGET_SETS.shoulders-c.shoulders);const lowerDef=(TARGET_SETS.quads-c.quads)+(TARGET_SETS.hamstrings-c.hamstrings)+(TARGET_SETS.glutes-c.glutes);
+ if(workoutCountThisWeek()>=S.profile.days)return'recovery';if(lastWorkoutHours()<18||readinessScore()<45)return'recovery';
+ if(upperDef>lowerDef*1.35&&lastType?.startsWith('lower'))base=c.chest<c.back?'upperA':'upperB';if(lowerDef>upperDef*1.35&&lastType?.startsWith('upper'))base=c.quads<c.hamstrings?'lowerA':'lowerB';return base
+}
+function splitName(t){return{upperA:'Upper A · חזה + גב',upperB:'Upper B · גב + כתפיים',lowerA:'Lower A · רגליים קדמי',lowerB:'Lower B · שרשרת אחורית',recovery:'Recovery · התאוששות'}[t]||t}
+function localWorkout(){
+ const type=nextSplit(),loc=S.location,score=readinessScore();if(type==='recovery')return{id:'w_'+Date.now(),title:'Recovery Session',reason:score<45?'ה־Readiness נמוך. היום שומרים על התאוששות.':'השבוע כבר קיבל מספיק אימוני כוח או האימון האחרון קרוב מדי.',estimatedMinutes:25,type:'recovery',location:loc,createdAt:Date.now(),currentIndex:0,exercises:loc==='gym'?[{exerciseId:'treadmill',name:'הליכה קלה / שיפוע קל',sets:1,reps:'15–25 דקות',restSec:0,targetRIR:5,note:'קצב שמאפשר לדבר',results:[]}]:[{exerciseId:'home-legraise',name:'הליכה קלה + מוביליטי',sets:1,reps:'20–30 דקות',restSec:0,targetRIR:5,note:'בלי מאמץ עצים',results:[]}]};
+ const src=TEMPLATES[loc][type]||TEMPLATES[loc].upperA,max=S.duration<=30?4:S.duration<=45?5:S.duration<=60?7:8,low=score<65;let rows=src.slice(0,max).map((x,i)=>({exerciseId:x[0],name:x[1],sets:Math.max(2,x[2]-(low?1:0)),reps:x[3],restSec:x[4],targetRIR:low?3:2,note:'',order:i,results:[]}));
+ return{id:'w_'+Date.now(),title:splitName(type)+(loc==='home'?' · בית':' · מכון'),reason:`נבחר לפי הרוטציה, כיסוי השרירים השבועי ו־Readiness ${score}/100.`,estimatedMinutes:S.duration,type,location:loc,createdAt:Date.now(),currentIndex:0,exercises:rows}
+}
+function findLastExercise(e){for(const w of S.logs)for(const x of w.exercises||[])if((x.exerciseId||x.mi)===e.exerciseId&&String(x.name).toLowerCase()===String(e.name).toLowerCase())return x;return null}
+function repMax(str){const a=String(str).match(/(\d+)\s*[–-]\s*(\d+)/);return a?+a[2]:null}function repMin(str){const a=String(str).match(/(\d+)\s*[–-]\s*(\d+)/);return a?+a[1]:null}
+function progressionAdvice(e){const last=findLastExercise(e);if(!last)return{title:'Baseline חכם',text:'בחר עומס שמאפשר לסיים את הטווח עם בערך 1–3 חזרות ברזרבה. אל תרדוף אחרי מספר ביום הראשון.'};const done=(last.results||[]).filter(x=>x.done);if(!done.length)return{title:'Baseline',text:'בפעם הקודמת לא נשמרו סטים מלאים. היום תעד את כל הסטים ונבנה נקודת פתיחה.'};const hi=repMax(e.reps),lo=repMin(e.reps),reps=done.map(x=>+x.reps||0),rir=done.map(x=>Number.isFinite(+x.rir)?+x.rir:2),wt=done[0]?

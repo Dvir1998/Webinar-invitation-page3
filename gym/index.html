@@ -1,1 +1,62 @@
-<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07090d"><title>Dvir Gym AI</title><style>body{margin:0;background:#07090d;color:#fff;font-family:system-ui;display:grid;place-items:center;min-height:100vh}.boot{text-align:center}.o{width:64px;height:64px;border:5px solid #ffffff16;border-top-color:#57e8ff;border-right-color:#a8ff67;border-radius:50%;margin:auto;animation:s .8s linear infinite}@keyframes s{to{transform:rotate(360deg)}}small{display:block;margin-top:14px;color:#8d9aac}</style></head><body><div class="boot"><div class="o"></div><small>DVIR GYM AI · ATHLETE OS</small></div><script>Promise.all(Array.from({length:8},(_,i)=>fetch('app'+(i+1)+'.txt?v=2').then(r=>{if(!r.ok)throw Error(r.status);return r.text()}))).then(p=>{document.open();document.write(p.join(''));document.close()}).catch(e=>document.body.innerHTML='<div class="boot"><h2>טעינה נכשלה</h2><small>רענן את הדף · '+e.message+'</small></div>')</script></body></html>
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#06080d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Dvir Gym AI — מאמן כושר ותזונה אישי עם זיכרון, AI, אימונים, תזונה והתקדמות">
+<title>Dvir Gym AI — Athlete OS</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="assets/icon-192.png">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+<style>html,body{background:#06080d;color:#fff;margin:0;min-height:100%}body::before{content:"DVIR GYM AI · LOADING";position:fixed;inset:0;display:grid;place-items:center;font:700 12px system-ui;letter-spacing:2px;color:#7f8b9b;background:#06080d;z-index:99999}body.ready::before{display:none}</style>
+</head>
+<body>
+<div class="ambient a1"></div><div class="ambient a2"></div><div class="noise"></div>
+<div id="app" class="app-shell">
+<header class="topbar glassline">
+  <button id="profileBtn" class="icon-btn avatar-btn" aria-label="פרופיל"><span id="avatarInitial">ד</span></button>
+  <div class="brand"><small>DVIR GYM AI</small><strong id="pageTitle">ATHLETE OS</strong></div>
+  <button id="bellBtn" class="icon-btn" aria-label="תזכורות">◉<i id="bellDot"></i></button>
+</header>
+<main>
+  <section id="screen-home" class="screen active"></section>
+  <section id="screen-coach" class="screen"></section>
+  <section id="screen-fuel" class="screen"></section>
+  <section id="screen-progress" class="screen"></section>
+  <section id="screen-more" class="screen"></section>
+</main>
+<nav class="dock glassline" aria-label="ניווט ראשי">
+  <button class="dock-item active" data-screen="home"><span>⌂</span><b>היום</b></button>
+  <button class="dock-item" data-screen="coach"><span>✦</span><b>AI</b></button>
+  <button class="dock-item" data-screen="fuel"><span>◒</span><b>תזונה</b></button>
+  <button class="dock-item" data-screen="progress"><span>↗</span><b>התקדמות</b></button>
+  <button class="dock-item" data-screen="more"><span>•••</span><b>עוד</b></button>
+</nav>
+</div>
+
+<dialog id="profileDialog" class="sheet-dialog"><div id="profileContent"></div></dialog>
+<dialog id="workoutDialog" class="full-dialog"><div id="workoutContent"></div></dialog>
+<dialog id="mealDialog" class="sheet-dialog"><div id="mealContent"></div></dialog>
+<dialog id="measureDialog" class="sheet-dialog"><div id="measureContent"></div></dialog>
+<dialog id="reminderDialog" class="sheet-dialog"><div id="reminderContent"></div></dialog>
+<dialog id="machineDialog" class="sheet-dialog"><div id="machineContent"></div></dialog>
+<dialog id="onboardDialog" class="full-dialog"><div id="onboardContent"></div></dialog>
+<input id="mealPhotoInput" type="file" accept="image/*" capture="environment" hidden>
+<input id="coachPhotoInput" type="file" accept="image/*" capture="environment" hidden>
+<input id="progressPhotoInput" type="file" accept="image/*" capture="environment" hidden>
+<input id="importInput" type="file" accept="application/json" hidden>
+<div id="toast" class="toast" role="status"></div>
+<div id="restBubble" class="rest-bubble hidden"><div><small>REST</small><b id="restClock">90</b></div><button id="skipRest">דלג</button></div>
+<script>
+(async()=>{try{
+ const css=(await Promise.all([1,2,3].map(i=>fetch(`code/css${i}.txt?v=6.0.0`).then(r=>{if(!r.ok)throw Error('CSS '+r.status);return r.text()})))).join('');
+ const st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
+ const js=(await Promise.all(Array.from({length:15},(_,k)=>k+1).map(i=>fetch(`code/js${i}.txt?v=6.0.0`).then(r=>{if(!r.ok)throw Error('JS '+r.status);return r.text()})))).join('');
+ const sc=document.createElement('script');sc.textContent=js;document.body.appendChild(sc);document.body.classList.add('ready');
+}catch(e){document.body.innerHTML=`<div style="min-height:100vh;display:grid;place-items:center;background:#06080d;color:white;font-family:system-ui;text-align:center;padding:24px"><div><h2>לא הצלחתי לטעון את Athlete OS</h2><p style="color:#94a0b0">רענן את הדף · ${String(e.message||e)}</p></div></div>`}})();
+</script>
+</body>
+</html>

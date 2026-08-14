@@ -1,0 +1,35 @@
+ילה ובמסלול.'},
+{id:'preacher',simple:'ספסל ליד קדמית עם המוט המעוקל',pro:'Preacher Curl',cat:'ידיים',muscles:['biceps'],img:'assets/machines/preacher.webp',setup:'בית שחי קרוב לחלק העליון של הכרית והזרועות נתמכות.',cue:'כופף מרפקים בלי להרים כתפיים. עצור לפני איבוד שליטה בתחתית.',mistake:'אל תנתק את הזרוע מהכרית כדי לזרוק את המשקל.'},
+{id:'cable',simple:'תחנת הכבלים הגדולה',pro:'Cable Station',cat:'רב־תכליתי',muscles:['back','shoulders','biceps','triceps','chest'],img:'assets/machines/cable.webp',setup:'בחר גובה כבל ואביזר לפי התרגיל. וודא שהפין יושב היטב.',cue:'שמור על מתח רציף ושליטה.',mistake:'אל תשתמש בתנופה רק כי הכבל מאפשר.'},
+{id:'assisted',simple:'המכונה למתח ודיפס עם עזרה',pro:'Assisted Pull-up / Dip',cat:'גב · חזה · ידיים',muscles:['back','biceps','chest','triceps'],img:'assets/machines/assisted.webp',setup:'בחר סיוע: יותר משקל במכונה = יותר עזרה. עלה בזהירות לפלטפורמה.',cue:'במתח משוך מרפקים למטה; בדיפס שמור כתפיים בשליטה.',mistake:'התקדמות כאן לרוב פירושה פחות סיוע לאורך זמן.'},
+{id:'treadmill',simple:'הליכון',pro:'Treadmill',cat:'אירובי',muscles:['cardio'],img:'assets/machines/treadmill.webp',setup:'התחל לאט ורק אז העלה מהירות/שיפוע.',cue:'לחימום לפני כוח מספיק קצב קל 5–8 דקות.',mistake:'אל תתיש רגליים לפני אימון כוח כבד.'},
+{id:'elliptical',simple:'אליפטיקל',pro:'Elliptical',cat:'אירובי',muscles:['cardio'],img:'assets/machines/elliptical.webp',setup:'עמוד זקוף והתחל בהתנגדות קלה.',cue:'מתאים לחימום או אירובי מתון.',mistake:'אירובי אינו תחליף לעומס מתקדם לבניית שריר.'},
+{id:'stair',simple:'מדרגות',pro:'Stair Climber',cat:'אירובי',muscles:['cardio','quads','glutes'],img:'assets/machines/stair.webp',setup:'התחל בקצב נמוך והחזק ידיות רק ליציבות.',cue:'צעדים יציבים, גוף גבוה.',mistake:'לא לבצע נפח עצים לפני אימון רגליים אם המטרה היא ביצועי כוח.'},
+{id:'recumbent',simple:'אופניים עם משענת',pro:'Recumbent Bike',cat:'אירובי',muscles:['cardio'],img:'assets/machines/recumbent.webp',setup:'כוון מרחק מושב כך שהברך נשארת מעט כפופה בסוף הדחיפה.',cue:'מעולה לחימום קל או התאוששות.',mistake:'אל תדחוף התנגדות גבוהה לפני אימון רגליים.'},
+{id:'rower',simple:'מכונת חתירה ארוכה',pro:'Rower',cat:'אירובי',muscles:['cardio','back','legs'],img:'assets/machines/rower.webp',setup:'חגור כפות רגליים והתחל התנגדות מתונה.',cue:'רגליים → גוף → ידיים; בחזרה ידיים → גוף → רגליים.',mistake:'אל תמשוך רק בידיים.'},
+{id:'bike',simple:'אופני כושר',pro:'Upright Bike',cat:'אירובי',muscles:['cardio'],img:'assets/machines/bike.webp',setup:'כוון מושב כך שהברך מעט כפופה בתחתית הסיבוב.',cue:'חימום קל 5–8 דקות מספיק לרוב אימוני הכוח.',mistake:'אל תשרוף את הרגליים לפני סטים כבדים.'}
+];
+MACHINES.forEach((m,i)=>m.photoIndex=i);
+const machineMap=Object.fromEntries(MACHINES.map(x=>[x.id,x]));
+const HOME_EX=[
+{id:'home-pushup',simple:'שכיבות סמיכה',pro:'Push-up',cat:'חזה',muscles:['chest','triceps'],emoji:'⬆',setup:'כפות ידיים מעט רחבות מהכתפיים, גוף בקו אחד.',cue:'חזה לכיוון הרצפה, גוף יחידה אחת.'},
+{id:'home-pullup',simple:'מתח',pro:'Pull-up',cat:'גב',muscles:['back','biceps'],emoji:'↥',setup:'אחיזה יציבה במוט והתחלה מזרועות ארוכות.',cue:'מרפקים לכיסים, בלי בעיטה.'},
+{id:'home-db-row',simple:'חתירה עם משקולת',pro:'Dumbbell Row',cat:'גב',muscles:['back','biceps'],emoji:'↤',setup:'תמוך ביד או ברך ושמור גב ניטרלי.',cue:'משוך מרפק לכיוון האגן.'},
+{id:'home-floor-press',simple:'לחיצת חזה על הרצפה',pro:'Dumbbell Floor Press',cat:'חזה',muscles:['chest','triceps'],emoji:'⇧',setup:'שכב על הגב, מרפקים בזווית נוחה.',cue:'דחוף למעלה בשליטה.'},
+{id:'home-shoulder',simple:'לחיצת כתפיים עם משקולות',pro:'Dumbbell Shoulder Press',cat:'כתפיים',muscles:['shoulders','triceps'],emoji:'↑',setup:'שב/עמוד זקוף, משקולות בגובה כתף.',cue:'דחוף בלי לקשת גב.'},
+{id:'home-lateral',simple:'הרחקת כתפיים',pro:'Dumbbell Lateral Raise',cat:'כתפיים',muscles:['shoulders'],emoji:'↔',setup:'משקולות קלות לצד הגוף, מרפק מעט כפוף.',cue:'הרם דרך המרפקים עד בערך גובה כתף.'},
+{id:'home-goblet',simple:'סקוואט עם משקולת',pro:'Goblet Squat',cat:'רגליים',muscles:['quads','glutes'],emoji:'▼',setup:'החזק משקולת מול החזה, כפות רגליים יציבות.',cue:'ברכיים בכיוון האצבעות וחזה גבוה.'},
+{id:'home-rdl',simple:'דדליפט רומני עם משקולות',pro:'Dumbbell RDL',cat:'רגליים',muscles:['hamstrings','glutes'],emoji:'⌁',setup:'משקולות קרובות לרגליים וברכיים מעט כפופות.',cue:'אגן לאחור וגב ניטרלי.'},
+{id:'home-lunge',simple:'מכרע לאחור',pro:'Reverse Lunge',cat:'רגליים',muscles:['quads','glutes'],emoji:'↙',setup:'צעד לאחור ארוך מספיק ליציבות.',cue:'דחוף דרך כל כף הרגל הקדמית.'},
+{id:'home-curl',simple:'כפיפת מרפקים',pro:'Dumbbell Curl',cat:'ידיים',muscles:['biceps'],emoji:'⌒',setup:'מרפקים לצד הגוף.',cue:'ללא תנופה.'},
+{id:'home-triceps',simple:'פשיטת מרפק מעל הראש',pro:'Overhead Triceps Extension',cat:'ידיים',muscles:['triceps'],emoji:'⇡',setup:'משקולת מעל הראש, מרפקים יחסית פנימה.',cue:'הזז בעיקר את האמה.'},
+{id:'home-legraise',simple:'הרמת רגליים בשכיבה',pro:'Lying Leg Raise',cat:'בטן',muscles:['abs'],emoji:'∠',setup:'שכב על הגב ושמור גב תחתון בשליטה.',cue:'בסוף גלגל מעט את האגן.'}
+];
+const homeMap=Object.fromEntries(HOME_EX.map(x=>[x.id,x]));
+const exInfo=id=>machineMap[id]||homeMap[id];
+const MUSCLE_NAMES={chest:'חזה',back:'גב',shoulders:'כתפיים',biceps:'בייספס',triceps:'טרייספס',quads:'ארבע־ראשי',hamstrings:'ירך אחורית',glutes:'גלוטס',adductors:'מקרבים',abs:'בטן',calves:'תאומים'};
+const TARGET_SETS={chest:10,back:12,shoulders:10,biceps:6,triceps:6,quads:8,hamstrings:8,glutes:6,abs:6};
+const TEMPLATES={
+ gym:{
+  upperA:[['chest-press','Chest Press',3,'6–10',120],['lat-pulldown','Lat Pulldown',3,'8–12',120],['seated-row','Seated Row',3,'8–12',100],['pec-rear','Pec Fly',2,'10–15',75],['shoulder-press','Shoulder Press',3,'8–12',100],['cable','Cable Lateral Raise',3,'12–20',60],['preacher','Preacher Curl',3,'8–12',75],['cable','Triceps Pushdown',3,'10–15',60]],
+  lowerA:[['smith','Smith Squat',3,'6–10',150],['leg-extension','Leg Extension',3,'10–15',90],['leg-curl','Seated Leg Curl',3,'8–12',100],['smith','Smith RDL',3,'8–12',120],['hip','Hip Adduction',2,'12–20',60],['ab-crunch','Ab Crunch',3

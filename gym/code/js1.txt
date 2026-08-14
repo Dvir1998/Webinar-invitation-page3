@@ -1,0 +1,35 @@
+'use strict';
+const VERSION='6.0.0';
+const STORE='dvirAthleteOS_v6';
+const LEGACY=['dvirAthleteLiveV1','dvirGymAthleteOSV4','dvirGym2027V3'];
+const AI_BASE='https://dvir-gym-athlete-ai-dvirs-projects-b157a454.vercel.app';
+const SPOTIFY_HE='https://open.spotify.com/playlist/0ykVDSWEiFkYm6BdIsE3j6?utm_source=openai&utm_medium=chatgpt&go=1&nap_web=1&request_id=ee50a7d6-9be3-4d6b-ad57-3eb33cda21a1&nl=spotify%3Anl%3ACAASEO5Qp9ab401rrVc%2BszzaIaEaGDk6MHlrVkRTV0VpRmtZbTZCZElzRTNqNiADMAPgAzXoA5np6v7%2FM%2FADoAQ%3D';
+const SPOTIFY_EN='https://open.spotify.com/playlist/0ttZE7epVt4aJByM9fEzez?utm_source=openai&utm_medium=chatgpt&go=1&nap_web=1&request_id=ddc11b8d-b34e-4d1e-9323-1c90a4454517&nl=spotify%3Anl%3ACAASEN3BG42zTk0ekyMckKRFRRcaGDk6MHR0WkU3ZXBWdDRhSkJ5TTlmRXpleiADMAPgAzXoA5aK6%2F7%2FM%2FADoAQ%3D';
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const nowDay=()=>new Date().toISOString().slice(0,10), fmtDate=(ts,opt={day:'2-digit',month:'2-digit',year:'numeric'})=>new Date(ts).toLocaleDateString('he-IL',opt), fmtTime=ts=>new Date(ts).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)), sum=a=>a.reduce((x,y)=>x+y,0), avg=a=>a.length?sum(a)/a.length:0;
+const haptic=(p=18)=>{try{navigator.vibrate?.(p)}catch{}};
+let toastTimer;function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.classList.remove('show'),2600)}
+function dayKey(ts=Date.now()){const d=new Date(ts),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),da=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${da}`}
+
+let machineSprite='';
+async function loadMachineSprite(){
+ try{machineSprite='data:image/webp;base64,'+(await Promise.all(Array.from({length:7},(_,i)=>fetch(`assets/sprite${i+1}.txt?v=6`).then(r=>{if(!r.ok)throw Error(r.status);return r.text()})))).join('')}
+ catch(e){console.warn('machine sprite unavailable',e);machineSprite=''}
+}
+function photoStyle(i){const c=i%4,r=Math.floor(i/4);return machineSprite?`background-image:url(${machineSprite});background-size:400% 500%;background-position:${c*33.333}% ${r*25}%;background-repeat:no-repeat`:''}
+function machineVisual(m,cls='machine-sprite'){return `<div class="${cls}" role="img" aria-label="${esc(m.simple)}" style="${photoStyle(m.photoIndex||0)}"></div>`}
+
+const MACHINES=[
+{id:'lat-pulldown',simple:'המכשיר שמושכים מלמעלה',pro:'Lat Pulldown',cat:'גב',muscles:['back','biceps'],img:'assets/machines/lat-pulldown.webp',setup:'כוון את כרית הירכיים כך שתייצב אותך. אחיזה מעט רחבה מהכתפיים.',cue:'משוך מרפקים לכיוון הכיסים והבא את הידית לחזה העליון. אל תמשוך מאחורי הראש.',mistake:'אל תהפוך את התנועה לנדנוד של כל הגוף.'},
+{id:'leg-extension',simple:'המכשיר שמיישרים בו ברכיים',pro:'Leg Extension',cat:'רגליים',muscles:['quads'],img:'assets/machines/leg-extension.webp',setup:'ציר המכונה בערך מול הברך והכרית מעל הקרסול.',cue:'יישר בשליטה, עצור קצר למעלה וחזור לאט.',mistake:'אל תבעט במהירות ואל תרים את האגן מהמושב.'},
+{id:'pec-rear',simple:'פרפר / כתף אחורית',pro:'Pec Fly / Rear Delt',cat:'חזה · כתפיים',muscles:['chest','shoulders'],img:'assets/machines/pec-rear.webp',setup:'בחר מצב Pec Fly לחזה או Rear Delt לכתף אחורית. כוון מושב כך שהידיות בגובה מתאים.',cue:'בחזה: סגור ידיים בקשת. בכתף אחורית: פתח מרפקים לצדדים תוך שמירת חזה יציב.',mistake:'אל תעמיס משקל שמקצר את הטווח.'},
+{id:'lat-row-combo',simple:'משיכה עליונה / חתירה משולבת',pro:'Lat Pulldown / Seated Row Combo',cat:'גב',muscles:['back','biceps'],img:'assets/machines/lat-row-combo.webp',setup:'בחר את התחנה לפי האיור: משיכה מלמעלה או חתירה אופקית.',cue:'שמור חזה יציב והניע דרך המרפקים.',mistake:'אל תמשוך רק עם כפות הידיים.'},
+{id:'hip',simple:'המכשיר שפותחים וסוגרים בו רגליים',pro:'Hip Abduction / Adduction',cat:'רגליים',muscles:['glutes','adductors'],img:'assets/machines/hip.webp',setup:'כוון את כריות הירך והטווח כך שהתחלה נוחה.',cue:'פתח או סגור בשליטה בלי תנופה.',mistake:'אל תקרוס קדימה כדי להשלים חזרות.'},
+{id:'seated-row',simple:'המכשיר שמושכים אל הבטן',pro:'Seated Row',cat:'גב',muscles:['back','biceps'],img:'assets/machines/seated-row.webp',setup:'התאם מושב/כרית חזה כך שתוכל להגיע לידיות בלי לעגל גב.',cue:'משוך מרפקים לאחור, השהה רגע וסיים בלי להרים כתפיים.',mistake:'אל תזרוק את הגב לאחור בכל חזרה.'},
+{id:'ab-crunch',simple:'מכונת כפיפות בטן',pro:'Abdominal Crunch',cat:'בטן',muscles:['abs'],img:'assets/machines/ab-crunch.webp',setup:'כוון מושב וטווח כך שהידיות נוחות ועמוד השדרה מתחיל ניטרלי.',cue:'קרב צלעות לאגן. חשוב על כיפוף גו, לא משיכה בידיים.',mistake:'אל תהפוך את התרגיל ללחיצה של הידיים.'},
+{id:'leg-curl',simple:'המכשיר שמכופפים בו ברכיים',pro:'Seated Leg Curl',cat:'רגליים',muscles:['hamstrings'],img:'assets/machines/leg-curl.webp',setup:'ציר המכונה מול הברך, כרית מעל הקרסול וירכיים מקובעות.',cue:'כופף עד לטווח נוח וחזור לאט.',mistake:'אל תנתק את הירכיים מהמושב.'},
+{id:'shoulder-press',simple:'המכשיר שדוחפים מעל הראש',pro:'Shoulder Press',cat:'כתפיים',muscles:['shoulders','triceps'],img:'assets/machines/shoulder-press.webp',setup:'כוון מושב כך שהידיות מתחילות בערך בגובה הכתפיים.',cue:'דחוף למעלה בשליטה ושמור צלעות ואגן יציבים.',mistake:'אל תקשת את הגב כדי לסיים חזרה.'},
+{id:'chest-press',simple:'המכשיר שדוחפים קדימה',pro:'Chest Press',cat:'חזה',muscles:['chest','triceps'],img:'assets/machines/chest-press.webp',setup:'כוון מושב כך שהידיות בערך בגובה אמצע החזה. שכמות מעט אחורה.',cue:'דחוף קדימה תוך שמירת החזה פתוח והמרפקים במסלול נוח.',mistake:'אל תרים כתפיים ואל תנתק שכמות בצורה אגרסיבית.'},
+{id:'smith',simple:'המוט שנע על מסילה',pro:'Smith Machine',cat:'רגליים · חזה',muscles:['quads','hamstrings','glutes','chest'],img:'assets/machines/smith.webp',setup:'למד קודם את מנגנון הנעילה ואת גובה הסטופרים. התאם מיקום רגליים לתרגיל.',cue:'מסילה קבועה דורשת למצוא עמידה שמתאימה לך; אל תכפה טווח לא נוח.',mistake:'אל תעמיס לפני שאתה בטוח בנע

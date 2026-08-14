@@ -1,0 +1,49 @@
+,'10–15',60]],
+  upperB:[['assisted','Assisted Pull-up',3,'6–10',120],['seated-row','Seated Row',3,'8–12',100],['chest-press','Chest Press',3,'8–12',100],['pec-rear','Rear Delt Fly',3,'12–20',60],['cable','Cable Lateral Raise',3,'12–20',60],['preacher','Preacher Curl',3,'10–15',60],['cable','Overhead Triceps Extension',3,'10–15',60]],
+  lowerB:[['smith','Smith RDL',3,'6–10',150],['smith','Smith Squat',3,'8–12',130],['leg-curl','Seated Leg Curl',3,'10–15',90],['leg-extension','Leg Extension',2,'12–15',75],['hip','Hip Abduction',3,'12–20',60],['ab-crunch','Ab Crunch',3,'10–15',60]]
+ },
+ home:{
+  upperA:[['home-pushup','Push-up',4,'8–20',90],['home-pullup','Pull-up',3,'5–10',120],['home-db-row','Dumbbell Row',3,'8–12',90],['home-shoulder','Dumbbell Shoulder Press',3,'8–12',90],['home-lateral','Lateral Raise',3,'12–20',60],['home-curl','Dumbbell Curl',3,'10–15',60],['home-triceps','Overhead Triceps Extension',3,'10–15',60]],
+  lowerA:[['home-goblet','Goblet Squat',4,'8–15',120],['home-rdl','Dumbbell RDL',4,'8–12',120],['home-lunge','Reverse Lunge',3,'8–12',90],['home-legraise','Lying Leg Raise',3,'10–20',60]],
+  upperB:[['home-pullup','Pull-up',4,'5–10',120],['home-floor-press','Dumbbell Floor Press',4,'8–15',90],['home-db-row','Dumbbell Row',3,'8–12',90],['home-lateral','Lateral Raise',4,'12–20',60],['home-curl','Dumbbell Curl',3,'10–15',60],['home-triceps','Triceps Extension',3,'10–15',60]],
+  lowerB:[['home-rdl','Dumbbell RDL',4,'8–12',120],['home-goblet','Goblet Squat',4,'8–15',120],['home-lunge','Reverse Lunge',3,'8–12',90],['home-legraise','Lying Leg Raise',3,'10–20',60]]
+ }
+};
+function defaults(){return{
+ version:VERSION,
+ profile:{name:'דביר',age:28,sex:'male',height:165,weight:65,targetWeight:68,goal:'lean_gain',days:4,activity:'medium',experience:'beginner',priority:['chest','back','shoulders','biceps','triceps'],likes:'',dislikes:'',allergies:'',dietStyle:'הכול',wake:'08:00',sleep:'00:00',equipment:'משקולות, מוט מתח, חבל קפיצה',injuries:'ללא פציעות ידועות',manualCalories:'',manualProtein:'',creatine:true,complete:false},
+ readiness:{sleep:4,energy:4,soreness:2,stress:2},location:'gym',duration:60,
+ logs:[],meals:[],weights:[],measures:[],photos:[],chat:[],activeWorkout:null,
+ hydration:{date:nowDay(),cups:0},daily:{date:nowDay(),creatine:false,proteinChecked:false},
+ reminders:[
+  {id:'workout',name:'אימון כוח',time:'18:00',days:[0,1,3,5],on:false},
+  {id:'creatine',name:'קריאטין',time:'12:00',days:[0,1,2,3,4,5,6],on:false},
+  {id:'protein',name:'בדיקת חלבון',time:'20:30',days:[0,1,2,3,4,5,6],on:false},
+  {id:'weigh',name:'שקילה שבועית',time:'08:00',days:[0],on:false},
+  {id:'review',name:'סיכום שבוע עם המאמן',time:'19:30',days:[6],on:false},
+  {id:'sleep',name:'הכנה לשינה',time:'23:15',days:[0,1,2,3,4,5,6],on:false}
+ ],
+ prefs:{spotifyCustom:'',theme:'titanium'},installDismissed:false,dailyBrief:{date:'',text:''},ai:{lastOk:0,lastModel:'',lastError:''}
+}}
+function migrateLegacy(){
+ let old=null;for(const k of LEGACY){try{const v=localStorage.getItem(k);if(v){old=JSON.parse(v);break}}catch{}}
+ const d=defaults();if(!old)return d;
+ if(old.profile){d.profile={...d.profile,...old.profile};if(typeof old.profile.priority==='string')d.profile.priority=['chest','back','shoulders','biceps','triceps'];}
+ d.readiness={...d.readiness,...(old.ready||old.readiness||{})};if('sore'in d.readiness&&!('soreness'in (old.ready||{})))d.readiness.soreness=+d.readiness.sore||2;
+ d.location=old.location||d.location;d.duration=old.duration||d.duration;d.logs=old.logs||old.workoutLogs||[];d.meals=old.meals||old.mealLogs||[];d.weights=old.weights||old.bodyLogs||[];d.measures=old.measures||old.measurementLogs||[];d.chat=old.chat||[];d.reminders=old.reminders?.length?old.reminders:d.reminders;d.activeWorkout=old.active||old.activeWorkout||null;
+ return d;
+}
+function loadState(){try{const raw=localStorage.getItem(STORE);if(raw){const x=JSON.parse(raw),d=defaults();return{...d,...x,profile:{...d.profile,...(x.profile||{})},readiness:{...d.readiness,...(x.readiness||{})},prefs:{...d.prefs,...(x.prefs||{})},ai:{...d.ai,...(x.ai||{})},daily:{...d.daily,...(x.daily||{})},hydration:{...d.hydration,...(x.hydration||{})}}}}catch{}return migrateLegacy()}
+let S=loadState();
+function save(){S.version=VERSION;localStorage.setItem(STORE,JSON.stringify(S));syncRemindersToSW();updateBell();}
+function dailyReset(){const k=nowDay();if(S.daily.date!==k)S.daily={date:k,creatine:false,proteinChecked:false};if(S.hydration.date!==k)S.hydration={date:k,cups:0};save()}
+function goalName(g=S.profile.goal){return{lean_gain:'עלייה נקייה במסת שריר',fat_loss:'ירידה בשומן ושמירת שריר',recomp:'Recomposition'}[g]||'מטרה אישית'}
+function greet(){const h=new Date().getHours();return h<12?'בוקר טוב':h<18?'צהריים טובים':'ערב טוב'}
+function readinessScore(){const r=S.readiness;return clamp(Math.round((r.sleep*9+r.energy*9+(6-r.soreness)*6+(6-r.stress)*5)),30,100)}
+function weekLogs(days=7){const min=Date.now()-days*864e5;return S.logs.filter(w=>(w.end||w.finishedAt||w.ts||w.createdAt||0)>=min)}
+function workoutCountThisWeek(){return weekLogs(7).length}
+function totalDoneSets(logs=S.logs){let n=0;for(const w of logs)for(const e of w.exercises||[])n+=(e.results||[]).filter(x=>x.done).length;return n}
+function streak(){const days=[...new Set(S.logs.map(w=>dayKey(w.end||w.ts||w.createdAt)))].sort().reverse();if(!days.length)return 0;let c=0,d=new Date();for(let i=0;i<14;i++){const k=dayKey(d);if(days.includes(k)){c++;d.setDate(d.getDate()-1);continue}if(i===0){d.setDate(d.getDate()-1);continue}break}return c}
+function lastWorkout(){return S.logs[0]||null}
+function lastWorkoutHours(){const w=lastWorkout();return w?(Date.now()-(w.end||w.finishedAt||w.ts||0))/36e5:999}
+function bodyTrend(){const a=S.weights.filter(x=>+x.weight).slice(0,30).sort((x,y)=>x.ts-y.ts);if(a.length<5)return null;const cut=Math.max(2,Math.floor(a.length/3)),older=a.slice(0,cut),newer=a.slice(-cut),days=(newer.at(-1).ts-older[0].ts)/864e5;if(days<10)return null;return{old:avg(old
