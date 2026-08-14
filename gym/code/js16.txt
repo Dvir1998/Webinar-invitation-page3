@@ -1,0 +1,117 @@
+/* Dvir Gym AI 6.1 — production hardening layer */
+var DG_AI_ENDPOINTS=[
+ 'https://dvir-gym-athlete-ai-dvirs-projects-b157a454.vercel.app',
+ 'https://dvir-gym-ai-dvirs-projects-b157a454.vercel.app'
+];
+var dgActiveAI='';
+var dgWakeLock=null;
+var dgBackupAt=0;
+var dgRestEnd=0;
+
+function dgDataIntegrity(){
+ try{
+  S.logs=Array.isArray(S.logs)?S.logs.slice(0,300):[];
+  S.meals=Array.isArray(S.meals)?S.meals.slice(0,600):[];
+  S.weights=Array.isArray(S.weights)?S.weights.slice(0,180):[];
+  S.measures=Array.isArray(S.measures)?S.measures.slice(0,120):[];
+  S.chat=Array.isArray(S.chat)?S.chat.slice(-80):[];
+  S.reminders=Array.isArray(S.reminders)?S.reminders:defaults().reminders;
+  if(!S.ai)S.ai={lastOk:0,lastModel:'',lastError:''};
+ }catch(e){console.warn('integrity',e)}
+}
+
+function save(){
+ try{
+  dgDataIntegrity();S.version=VERSION;const raw=JSON.stringify(S);localStorage.setItem(STORE,raw);
+  const n=Date.now();if(n-dgBackupAt>5*60e3){localStorage.setItem(STORE+'_safe_backup',raw);dgBackupAt=n}
+ }catch(e){console.error('save failed',e);try{localStorage.setItem(STORE+'_emergency',JSON.stringify(S))}catch{}}
+ try{syncRemindersToSW()}catch{}try{updateBell()}catch{}
+}
+
+async function dgFetchJSON(url,options={},timeout=18000){
+ const c=new AbortController(),t=setTimeout(()=>c.abort(),timeout);
+ try{const r=await fetch(url,{...options,signal:c.signal,cache:options.cache||'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}
+ finally{clearTimeout(t)}
+}
+
+async function callAI(message,imageData=null){
+ const payload={message,imageData,history:S.chat.slice(-18),memory:coachMemory(),client:{version:'6.1.0',online:navigator.onLine,locale:navigator.language||'he-IL'}};
+ const ordered=dgActiveAI?[dgActiveAI,...DG_AI_ENDPOINTS.filter(x=>x!==dgActiveAI)]:DG_AI_ENDPOINTS;
+ let lastErr=null;
+ for(const base of ordered){
+  try{
+   const out=await dgFetchJSON(base+'/api/coach',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)},22000);
+   if(!out||typeof out!=='object'||!out.reply)throw new Error('invalid AI response');
+   dgActiveAI=base;S.ai.lastOk=Date.now();S.ai.lastError='';S.ai.lastModel=out.servedBy||out.model||S.ai.lastModel||'cloud';save();return out;
+  }catch(e){lastErr=e;S.ai.lastError=String(e?.message||e)}
+ }
+ throw lastErr||new Error('AI unavailable');
+}
+
+async function checkAIHealth(){
+ const els=[$('#homeAiStatus'),$('#coachStatus')].filter(Boolean);if(!els.length)return;
+ let live=false,label='Memory Engine · offline-safe';
+ for(const base of DG_AI_ENDPOINTS){
+  try{const j=await dgFetchJSON(base+'/api/health',{},4500);if(j?.ok&&(j.aiAuth||j.configured)){live=true;dgActiveAI=base;label=`AI LIVE · ${j.model||S.ai.lastModel||'cloud'}`;S.ai.lastOk=Date.now();S.ai.lastError='';save();break}}
+  catch(e){S.ai.lastError=String(e?.message||e)}
+ }
+ els.forEach(e=>{e.classList.toggle('off',!live);const s=e.querySelector('span');if(s)s.textContent=label});
+}
+
+async function dgRequestWakeLock(){
+ try{if('wakeLock'in navigator&&document.visibilityState==='visible'){dgWakeLock=await navigator.wakeLock.request('screen');dgWakeLock.addEventListener?.('release',()=>{dgWakeLock=null})}}catch{}
+}
+async function dgReleaseWakeLock(){try{await dgWakeLock?.release()}catch{}dgWakeLock=null}
+
+function openWorkout(){
+ if(!S.activeWorkout)S.activeWorkout=localWorkout();save();dgRequestWakeLock();$('#workoutDialog').showModal();renderWorkout();
+}
+
+function startRest(sec){
+ clearInterval(restTimer);dgRestEnd=Date.now()+Math.max(0,+sec||0)*1000;const b=$('#restBubble');b.classList.remove('hidden');
+ const tick=()=>{const x=Math.max(0,Math.ceil((dgRestEnd-Date.now())/1000));$('#restClock').textContent=x;if(x<=0){clearInterval(restTimer);b.classList.add('hidden');haptic([120,80,120]);toast('המנוחה הסתיימה')}};
+ tick();restTimer=setInterval(tick,250);
+}
+
+function dgPRsForWorkout(w){
+ const prs=[];
+ for(const e of w.exercises||[]){
+  const cur=(e.results||[]).filter(x=>x.done),old=findLastExercise(e);if(!cur.length||!old)continue;
+  const prev=(old.results||[]).filter(x=>x.done);if(!prev.length)continue;
+  const curW=Math.max(...cur.map(x=>+x.weight||0)),oldW=Math.max(...prev.map(x=>+x.weight||0));
+  const curR=Math.max(...cur.map(x=>+x.reps||0)),oldR=Math.max(...prev.map(x=>+x.reps||0));
+  if(curW>oldW&&curR>=repMin(e.reps)||curW===oldW&&curR>oldR)prs.push(e.name);
+ }
+ return prs;
+}
+
+function finishWorkout(){
+ const w=S.activeWorkout;if(!w)return;const prs=dgPRsForWorkout(w);w.end=Date.now();w.finishedAt=w.end;
+ const done=(w.exercises||[]).reduce((a,e)=>a+(e.results||[]).filter(r=>r.done).length,0),planned=(w.exercises||[]).reduce((a,e)=>a+(+e.sets||0),0);
+ w.quality={doneSets:done,plannedSets:planned,completion:planned?Math.round(done/planned*100):0,prs};
+ S.logs.unshift(w);S.logs=S.logs.slice(0,300);S.activeWorkout=null;save();dgReleaseWakeLock();haptic(prs.length?[80,50,140,50,180]:[70,50,120]);$('#workoutDialog').close();
+ toast(prs.length?`🏆 ${prs.length} שיאים חדשים נשמרו`:'🏆 האימון נשמר בזיכרון');switchScreen('fuel');
+ setTimeout(()=>{if(Notification.permission==='granted')navigator.serviceWorker?.ready.then(reg=>reg.showNotification('Dvir Gym AI',{body:prs.length?`אימון הושלם עם ${prs.length} PR. עכשיו סוגרים התאוששות.`:'סיימת אימון. תעד מה אכלת כדי שהמאמן יסגור התאוששות.',icon:'assets/icon-192.png',tag:'post-workout'})).catch(()=>{})},900);
+}
+
+function dgNetworkBadge(){
+ let e=document.getElementById('dgNet');if(!e){e=document.createElement('div');e.id='dgNet';e.className='dg-net';document.querySelector('.topbar')?.appendChild(e)}
+ if(e){const on=navigator.onLine;e.classList.toggle('offline',!on);e.textContent=on?(dgActiveAI?'AI CLOUD':'ONLINE'):'OFFLINE'}
+}
+
+function dgSystemAudit(){
+ dgDataIntegrity();dgNetworkBadge();
+ const backup=localStorage.getItem(STORE+'_safe_backup');if(!localStorage.getItem(STORE)&&backup){try{S=JSON.parse(backup);localStorage.setItem(STORE,backup);toast('הזיכרון שוחזר מגיבוי בטוח')}catch{}}
+}
+
+function dgEnhanceProduction(){
+ dgSystemAudit();
+ $('#workoutDialog')?.addEventListener('close',dgReleaseWakeLock);
+ document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S.activeWorkout)dgRequestWakeLock()});
+ window.addEventListener('online',()=>{dgNetworkBadge();checkAIHealth()});window.addEventListener('offline',dgNetworkBadge);
+ window.addEventListener('error',e=>{try{S.ai.lastError='runtime: '+String(e.message||'error');save()}catch{}});
+ window.addEventListener('unhandledrejection',e=>{try{S.ai.lastError='promise: '+String(e.reason?.message||e.reason||'error');save()}catch{}});
+ if(navigator.connection){navigator.connection.addEventListener?.('change',dgNetworkBadge)}
+ setInterval(()=>{try{save()}catch{}},5*60e3);
+}
+setTimeout(dgEnhanceProduction,250);
