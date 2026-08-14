@@ -1,8 +1,8 @@
 {
   "id":"./",
-  "name":"Dvir Gym AI — Athlete OS 7",
+  "name":"Dvir Gym AI — Athlete OS 7.2",
   "short_name":"Dvir Gym AI",
-  "description":"מאמן כושר ותזונה אישי עם זיכרון מוצפן, AI חינמי, אימונים, תזונה והתקדמות",
+  "description":"מאמן כושר ותזונה אישי עם זיכרון מוצפן, AI חינמי בלבד, תזכורות Push, אימונים, תזונה והתקדמות",
   "lang":"he",
   "dir":"rtl",
   "start_url":"./",
@@ -20,7 +20,7 @@
   ],
   "shortcuts":[
     {"name":"התחל אימון","short_name":"אימון","description":"פתח את האימון המתאים להיום","url":"./?action=workout","icons":[{"src":"assets/icon-192.png","sizes":"192x192","type":"image/png"}]},
-    {"name":"שאל את המאמן","short_name":"AI","description":"פתח את Coach Intelligence","url":"./?action=coach","icons":[{"src":"assets/icon-192.png","sizes":"192x192","type":"image/png"}]},
+    {"name":"שאל את המאמן","short_name":"AI","description":"פתח את Coach Intelligence החינמי","url":"./?action=coach","icons":[{"src":"assets/icon-192.png","sizes":"192x192","type":"image/png"}]},
     {"name":"תעד אוכל","short_name":"אוכל","description":"תעד ארוחה בזיכרון התזונתי","url":"./?action=fuel","icons":[{"src":"assets/icon-192.png","sizes":"192x192","type":"image/png"}]}
   ]
 }
