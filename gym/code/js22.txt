@@ -1,34 +1,25 @@
-/* Dvir Gym AI 6.5 — Cloud AI activation UX */
+/* Dvir Gym AI 7.0 — Zero-Cost AI UX */
 S.ai=S.ai||{};
-
 const dgApplyAIBase=applyAI;
 applyAI=function(out){
  dgApplyAIBase(out);
  if(out?.quota){S.ai.quota=out.quota;try{save()}catch{}}
- if(out?.servedBy){localStorage.setItem('dvirGymAiTestModel',String(out.servedBy))}
+ if(out?.servedBy){localStorage.setItem('dvirGymAiTestModel',String(out.servedBy));S.ai.lastModel=String(out.servedBy)}
+ if(out?.provider)S.ai.provider=out.provider;
+ if(out?.freeOnly)S.ai.freeOnly=true;
 };
 
 function dgAIErrorMessage(e){
  const s=String(e?.message||e||'');
- if(s.includes('openai_billing_required'))return 'המפתח תקין, אבל ל־OpenAI API אין כרגע יתרה/חיוב פעיל. הפעל Billing בחשבון ה־API ואז נסה שוב.';
- if(s.includes('no_supported_model'))return 'המפתח תקין, אבל לא נמצא מודל נתמך בחשבון ה־API הזה.';
- if(s.includes('openai_rate_limited'))return 'OpenAI מגביל כרגע בקשות. המתן מעט ונסה שוב.';
- if(s.includes('openai_key_rejected'))return 'OpenAI דחה את המפתח. ודא שה־API key פעיל ולא בוטל.';
- if(s.includes('invalid_key_format'))return 'פורמט המפתח לא נראה תקין.';
- if(s.includes('rate_limited'))return 'הגעת זמנית למכסת הבטיחות של המאמן. נסה שוב מאוחר יותר.';
- return 'לא הצלחתי להפעיל Cloud AI כרגע. Memory Engine ממשיך לעבוד, ואפשר לנסות שוב.';
+ if(s.includes('free_daily_limit_reached'))return 'מכסת ה־AI החינמית להיום הסתיימה. אין חיוב: Memory Engine המקומי ממשיך לעבוד אוטומטית.';
+ if(s.includes('free_provider_rate_limited'))return 'המודלים החינמיים עמוסים כרגע. אין חיוב: המאמן המקומי ממשיך לעבוד ואפשר לנסות ענן שוב מאוחר יותר.';
+ if(s.includes('free_provider_failed'))return 'ה־Free Router לא מצא כרגע מודל חינמי מתאים. Memory Engine ממשיך ב־0$.';
+ if(s.includes('openrouter_key_rejected'))return 'OpenRouter דחה את המפתח או את בקשת הבדיקה החינמית. ודא שהמפתח פעיל ונסה שוב.';
+ if(s.includes('invalid_key_format'))return 'פורמט מפתח OpenRouter לא נראה תקין.';
+ if(s.includes('free_ai_not_configured'))return 'Zero‑Cost Cloud AI עדיין לא הופעל. Memory Engine ממשיך לעבוד.';
+ if(s.includes('AbortError'))return 'הענן התעכב יותר מדי. עברתי למאמן המקומי בלי עלות.';
+ return 'ה־AI החינמי לא זמין כרגע. אין חיוב — Memory Engine ממשיך לעבוד.';
 }
-
-dgActivateAI=async function(){
- const input=$('#dgOpenAIKey'),btn=$('#dgActivateAI');if(!input||!btn)return;
- const key=input.value.trim();if(key.length<30){toast('הדבק מפתח OpenAI API תקין');return}
- btn.disabled=true;btn.textContent='בודק מפתח + מודל + Billing…';
- try{
-  const j=await dgKeyVault('set',key);input.value='';dgAiConfigured=true;localStorage.setItem('dvirGymAiConfigured','1');
-  if(j.testedModel)localStorage.setItem('dvirGymAiTestModel',j.testedModel);
-  toast(`✦ Cloud AI הופעל${j.testedModel?' · '+j.testedModel:''}`);renderMore();setTimeout(()=>{checkAIHealth();switchScreen('coach')},250)
- }catch(e){toast(dgAIErrorMessage(e));btn.disabled=false;btn.textContent='הפעל Cloud AI'}
-};
 
 const dgRenderCoachCloudUX=renderCoach;
 renderCoach=function(thinking=false){
@@ -37,15 +28,18 @@ renderCoach=function(thinking=false){
   const s=$('#screen-coach');if(!s)return;
   const configured=await dgCheckAIConfigured();
   if(!configured&&!s.querySelector('#dgCoachActivate')){
-   const hero=s.querySelector('.coach-hero');if(hero){const box=document.createElement('div');box.id='dgCoachActivate';box.className='card system-card';box.style.margin='12px 0';box.innerHTML=`<div class="system-row"><div><b>✦ הפעל Cloud AI אמיתי</b><small>Memory Engine כבר עובד. חיבור OpenAI יוסיף מודל שפה מלא עם כל הזיכרון שלך.</small></div><span class="badge">1 MIN</span></div><button class="primary" id="dgCoachActivateBtn" style="margin-top:9px">הפעל בצורה מאובטחת</button>`;hero.appendChild(box);$('#dgCoachActivateBtn').onclick=()=>{switchScreen('more');setTimeout(()=>$('#dgAiCloudCard')?.scrollIntoView({behavior:'smooth',block:'center'}),120)}}
+   const hero=s.querySelector('.coach-hero');if(hero){const box=document.createElement('div');box.id='dgCoachActivate';box.className='card system-card dg-ai-inline';box.style.margin='12px 0';box.innerHTML=`<div class="system-row"><div><b>✦ Zero‑Cost AI זמין</b><small>Memory Engine כבר עובד. אפשר להוסיף מודל שפה בענן דרך OpenRouter Free בלבד — בלי מסלול תשלום אוטומטי.</small></div><span class="badge dg-free-badge">0$</span></div><button class="primary" id="dgCoachActivateBtn" style="margin-top:9px">הפעל AI חינמי</button>`;hero.appendChild(box);$('#dgCoachActivateBtn').onclick=()=>{switchScreen('more');setTimeout(()=>$('#dgAiCloudCard')?.scrollIntoView({behavior:'smooth',block:'center'}),140)}}
   }
   if(configured&&!s.querySelector('#dgCoachCloudMeta')){
-   const hero=s.querySelector('.coach-hero');if(hero){const q=S.ai?.quota||{},model=S.ai?.lastModel||localStorage.getItem('dvirGymAiTestModel')||'OpenAI';const meta=document.createElement('div');meta.id='dgCoachCloudMeta';meta.className='status-line';meta.style.justifyContent='center';meta.style.marginTop='8px';meta.innerHTML=`<i></i><span>Cloud AI · ${esc(model)}${q.dayCount!=null?' · '+q.dayCount+'/250 היום':''}</span>`;hero.appendChild(meta)}
+   const hero=s.querySelector('.coach-hero');if(hero){const q=S.ai?.quota||{},model=S.ai?.lastModel||localStorage.getItem('dvirGymAiTestModel')||'OpenRouter Free';const meta=document.createElement('div');meta.id='dgCoachCloudMeta';meta.className='status-line dg-cloud-meta';meta.style.justifyContent='center';meta.style.marginTop='8px';meta.innerHTML=`<i></i><span>FREE CLOUD · ${esc(model)}${q.dayCount!=null?' · '+q.dayCount+'/45 היום':''} · 0$</span>`;hero.appendChild(meta)}
   }
  },40)
 };
 
 const dgRenderHomeCloudUX=renderHome;
 renderHome=function(){
- dgRenderHomeCloudUX();setTimeout(async()=>{const configured=await dgCheckAIConfigured();if(configured)return;const st=$('#homeAiStatus');if(st){st.classList.add('off');st.querySelector('span').textContent='Memory Engine · אפשר להפעיל Cloud AI'}} ,70)
+ dgRenderHomeCloudUX();
+ setTimeout(async()=>{const configured=await dgCheckAIConfigured();const st=$('#homeAiStatus');if(!st)return;const sp=st.querySelector('span');if(!configured){st.classList.add('off');if(sp)sp.textContent='Memory Engine · Zero‑Cost Cloud זמין'}else{st.classList.remove('off');const q=S.ai?.quota||{};if(sp)sp.textContent=`Zero‑Cost AI · ${q.dayCount||0}/45 · 0$`}},70)
 };
+
+window.addEventListener('unhandledrejection',e=>{const m=String(e.reason?.message||'');if(m.includes('free_daily_limit_reached')||m.includes('free_provider_rate_limited')||m.includes('free_provider_failed')){try{toast(dgAIErrorMessage(e.reason))}catch{}}});
