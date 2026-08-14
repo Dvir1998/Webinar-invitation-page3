@@ -30,9 +30,9 @@ jobs:
           test -f gym/dist/SHA256SUMS
           test -f gym/tests/e2e.mjs
           for i in $(seq 1 7); do test -f "gym/assets/sprite${i}.txt"; done
-          grep -q 'dist/app.css?v=7.4.1' gym/index.html
-          grep -q 'dist/app.js?v=7.4.1' gym/index.html
-          grep -q 'v7-4-1' gym/sw.js
+          grep -q 'dist/app.css?v=7.5.0' gym/index.html
+          grep -q 'dist/app.js?v=7.5.0' gym/index.html
+          grep -q 'v7-5-0' gym/sw.js
           grep -q "'dist/app.css'" gym/sw.js
           grep -q "'dist/app.js'" gym/sw.js
           (cd gym/dist && sha256sum -c SHA256SUMS)
@@ -44,7 +44,7 @@ jobs:
           node --check gym/sw.js
           node --check gym/tests/e2e.mjs
           node -e "JSON.parse(require('fs').readFileSync('gym/manifest.json','utf8')); console.log('manifest ok')"
-      - name: Enforce zero-cost and privacy source policy
+      - name: Enforce zero-cost, privacy and coaching policy
         shell: bash
         run: |
           set -euo pipefail
@@ -61,6 +61,8 @@ jobs:
           grep -q 'Plateau detected' gym/dist/app.js
           grep -q 'DG_FOOD_URL' gym/dist/app.js
           grep -q 'Open Food Facts' gym/dist/app.js
+          grep -q 'TECHNIQUE SNAPSHOT' gym/dist/app.js
+          grep -q 'תמונה סטטית אחת בלבד' gym/dist/app.js
           grep -q "addEventListener('push'" gym/sw.js
       - name: Verify cloud services are alive and free-only
         shell: bash
