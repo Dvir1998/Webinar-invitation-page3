@@ -1,4 +1,4 @@
-const CACHE='dvir-athlete-os-v6-20260814-final';
+const CACHE='dvir-athlete-os-v6-20260814-601';
 const ASSETS=['./', 'index.html', 'manifest.json', 'assets/icon-192.png', 'assets/icon-512.png', 'code/css1.txt', 'code/css2.txt', 'code/css3.txt', 'code/js1.txt', 'code/js2.txt', 'code/js3.txt', 'code/js4.txt', 'code/js5.txt', 'code/js6.txt', 'code/js7.txt', 'code/js8.txt', 'code/js9.txt', 'code/js10.txt', 'code/js11.txt', 'code/js12.txt', 'code/js13.txt', 'code/js14.txt', 'code/js15.txt', 'assets/sprite1.txt', 'assets/sprite2.txt', 'assets/sprite3.txt', 'assets/sprite4.txt', 'assets/sprite5.txt', 'assets/sprite6.txt', 'assets/sprite7.txt'];
 self.addEventListener('install',e=>{e.waitUntil((async()=>{const c=await caches.open(CACHE);await Promise.allSettled(ASSETS.map(a=>c.add(a)));await self.skipWaiting()})())});
 self.addEventListener('activate',e=>{e.waitUntil((async()=>{for(const k of await caches.keys())if(k!==CACHE)await caches.delete(k);await self.clients.claim()})())});
