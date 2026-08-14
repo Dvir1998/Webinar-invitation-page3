@@ -1,0 +1,27 @@
+name: Dvir Gym Free Cloud Keepalive
+
+on:
+  schedule:
+    - cron: '17 */12 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Keep Supabase Free project active
+        shell: bash
+        run: |
+          set -euo pipefail
+          for URL in \
+            'https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/health' \
+            'https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/cloud-memory' \
+            'https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/coach' \
+            'https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/push-subscribe'; do
+            curl --fail --silent --show-error --max-time 25 "$URL" >/dev/null
+          done
+          echo 'Dvir Gym cloud health checks passed'
