@@ -1,0 +1,34 @@
+/* Dvir Gym AI 6.4 — encrypted Cloud Memory */
+S.appVersion='6.4.0';
+function dgBytesToB64(bytes){let s='';for(let i=0;i<bytes.length;i+=0x8000)s+=String.fromCharCode(...bytes.subarray(i,i+0x8000));return btoa(s)}
+function dgB64ToBytes(s){const bin=atob(s),out=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i);return out}
+async function dgEncryptionKey(){const raw=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(dgCloudToken()));return crypto.subtle.importKey('raw',raw,{name:'AES-GCM'},false,['encrypt','decrypt'])}
+async function dgEncryptCloudState(state){const key=await dgEncryptionKey(),iv=crypto.getRandomValues(new Uint8Array(12)),plain=new TextEncoder().encode(JSON.stringify(state)),buf=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,plain);return{format:'dvir-aes-gcm-v1',iv:dgBytesToB64(iv),cipher:dgBytesToB64(new Uint8Array(buf)),encryptedAt:Date.now()}}
+async function dgDecryptCloudState(payload){if(!payload)return null;if(payload.format!=='dvir-aes-gcm-v1')return payload;const key=await dgEncryptionKey(),iv=dgB64ToBytes(payload.iv),cipher=dgB64ToBytes(payload.cipher),plain=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,cipher);return JSON.parse(new TextDecoder().decode(plain))}
+
+dgCloudPush=async function(){
+ if(dgCloudBusy||!navigator.onLine)return false;dgCloudBusy=true;
+ try{const encrypted=await dgEncryptCloudState(dgCloudSnapshot()),j=await dgCloudRequest('push',encrypted),now=Date.now();dgSetCloudMeta({lastPushAt:now,lastCloudAt:j.updatedAt||now,lastError:'',encrypted:true});dgCloudStatus='live';return true}
+ catch(e){dgSetCloudMeta({lastError:String(e),lastErrorAt:Date.now()});dgCloudStatus='offline';return false}
+ finally{dgCloudBusy=false;dgRefreshCloudBadges()}
+};
+
+dgCloudBoot=async function(){
+ dgCloudToken();if(!navigator.onLine){dgCloudStatus='offline';dgRefreshCloudBadges();return}
+ dgCloudBusy=true;
+ try{
+  const j=await dgCloudRequest('pull'),m=dgCloudMeta(),cloudTs=j.updatedAt?new Date(j.updatedAt).getTime():0,localTs=+m.localModifiedAt||0,lastPush=+m.lastPushAt||0;
+  if(j.state&&cloudTs>0){
+   const wasEncrypted=j.state?.format==='dvir-aes-gcm-v1';let cloudState;
+   try{cloudState=await dgDecryptCloudState(j.state)}catch{throw new Error('recovery_key_mismatch')}
+   if(localTs>lastPush&&localTs>cloudTs){dgCloudBusy=false;await dgCloudPush();return}
+   const d=defaults();S={...d,...cloudState,profile:{...d.profile,...(cloudState.profile||{})},readiness:{...d.readiness,...(cloudState.readiness||{})},prefs:{...d.prefs,...(cloudState.prefs||{})},ai:{...d.ai,...(cloudState.ai||{})},daily:{...d.daily,...(cloudState.daily||{})},hydration:{...d.hydration,...(cloudState.hydration||{})}};S.appVersion='6.4.0';
+   dgSaveLocal();dgSetCloudMeta({lastPushAt:cloudTs,lastCloudAt:cloudTs,lastError:'',encrypted:wasEncrypted});dgCloudStatus='live';renderCurrent();toast('☁ הזיכרון המוצפן סונכרן');if(!wasEncrypted){dgCloudBusy=false;await dgCloudPush();return}
+  }else{dgCloudBusy=false;await dgCloudPush();return}
+ }catch(e){dgCloudStatus='offline';dgSetCloudMeta({lastError:String(e),lastErrorAt:Date.now()});if(String(e).includes('recovery_key_mismatch'))toast('מפתח השחזור לא מתאים לזיכרון הענן')}
+ finally{dgCloudBusy=false;dgRefreshCloudBadges()}
+};
+
+const dgRenderMoreEncrypted=renderMore;
+renderMore=function(){dgRenderMoreEncrypted();setTimeout(()=>{const card=$('#dgCloudCard');if(card&&!card.querySelector('[data-encrypted-badge]')){const p=document.createElement('div');p.setAttribute('data-encrypted-badge','1');p.className='system-row';p.style.marginTop='9px';p.innerHTML='<div><b>הצפנה מקצה האפליקציה</b><small>AES‑GCM · המידע מוצפן לפני העלאה לענן</small></div><span class="badge">ENCRYPTED</span>';card.appendChild(p)}},30)};
+setTimeout(()=>{dgCloudBoot()},2600);
