@@ -36,6 +36,9 @@ if(!scanned||scanned.calories!==150||scanned.protein!==15)throw new Error('Barco
 await domClick('[data-screen="more"]');
 await page.waitForSelector('#screen-more.active');
 await page.waitForSelector('#dgPrivacyV73',{timeout:10000});
+await page.waitForSelector('#dgLaunchChecklist',{timeout:10000});
+const checklistText=await page.locator('#dgLaunchChecklist').innerText();
+if(!checklistText.includes('Launch Checklist'))throw new Error('Launch Checklist missing from bundled app');
 await domClick('#profileBtn');
 await page.waitForSelector('#profileDialog[open]');
 await domClick('#profileDialog .close');
@@ -71,5 +74,5 @@ if(!logic.mergedLogs.includes('local-log')||!logic.mergedLogs.includes('cloud-lo
 if(!logic.mergedMeals.includes('meal-local')||!logic.mergedMeals.includes('meal-cloud'))throw new Error('Cloud meal merge failed: '+JSON.stringify(logic));
 if(logic.mergedName!=='LOCAL')throw new Error('Local profile precedence failed: '+JSON.stringify(logic));
 if(errors.length)throw new Error('Runtime errors: '+errors.join(' | '));
-console.log('Athlete OS E2E + decision logic + barcode + technique entrypoint OK',logic);
+console.log('Athlete OS final 7.5 E2E OK',logic);
 await browser.close();
