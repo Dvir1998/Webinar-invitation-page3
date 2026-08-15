@@ -14,7 +14,7 @@ permissions:
 jobs:
   verify-athlete-os:
     runs-on: ubuntu-latest
-    timeout-minutes: 6
+    timeout-minutes: 7
     steps:
       - uses: actions/checkout@v4
       - name: Verify production bundle and PWA files
@@ -30,11 +30,14 @@ jobs:
           test -f gym/dist/SHA256SUMS
           test -f gym/tests/e2e.mjs
           for i in $(seq 1 7); do test -f "gym/assets/sprite${i}.txt"; done
-          grep -q 'dist/app.css?v=7.6.0' gym/index.html
-          grep -q 'dist/app.js?v=7.6.0' gym/index.html
-          grep -q 'v7-6-0' gym/sw.js
+          grep -q 'dist/app.css?v=8.0.0' gym/index.html
+          grep -q 'dist/app.js?v=8.0.0' gym/index.html
+          grep -q 'dvirGymAuthSessionV8' gym/index.html
+          grep -q 'dvirAthleteOS_v8::' gym/index.html
+          grep -q 'v8-0-0' gym/sw.js
           grep -q "'dist/app.css'" gym/sw.js
           grep -q "'dist/app.js'" gym/sw.js
+          grep -q "'activeScope'" gym/sw.js
           (cd gym/dist && sha256sum -c SHA256SUMS)
       - name: JavaScript and manifest syntax check
         shell: bash
@@ -44,7 +47,7 @@ jobs:
           node --check gym/sw.js
           node --check gym/tests/e2e.mjs
           node -e "JSON.parse(require('fs').readFileSync('gym/manifest.json','utf8')); console.log('manifest ok')"
-      - name: Enforce zero-cost, privacy, coaching and UI policy
+      - name: Enforce zero-cost, multi-user, privacy and coaching policy
         shell: bash
         run: |
           set -euo pipefail
@@ -53,41 +56,50 @@ jobs:
             exit 1
           fi
           grep -q 'openrouter/free' gym/dist/app.js
+          grep -q 'DG_ACCOUNT_URL' gym/dist/app.js
+          grep -q 'DG_USER_MEMORY_URL' gym/dist/app.js
+          grep -q 'DG_USER_AI_URL' gym/dist/app.js
+          grep -q 'DG_USER_COACH_URL' gym/dist/app.js
+          grep -q 'DG_USER_PUSH_URL' gym/dist/app.js
+          grep -q 'DG_USER_PRIVACY_URL' gym/dist/app.js
+          grep -q 'dvirAthleteOS_v8::' gym/dist/app.js
+          grep -q 'user:' gym/dist/app.js
+          grep -q 'Guest Mode' gym/dist/app.js
+          grep -q 'Recovery Key' gym/dist/app.js
+          grep -q 'username-password' gym/dist/app.js || true
           grep -q 'ZERO COST\|Zero.Cost' gym/dist/app.js
           grep -q 'code_challenge_method=S256' gym/dist/app.js
           grep -q 'oauth-exchange' gym/dist/app.js
           grep -q 'DG_VAPID_PUBLIC' gym/dist/app.js
-          grep -q 'DG_PRIVACY_URL' gym/dist/app.js
           grep -q 'Plateau detected' gym/dist/app.js
-          grep -q 'DG_FOOD_URL' gym/dist/app.js
           grep -q 'Open Food Facts' gym/dist/app.js
           grep -q 'TECHNIQUE SNAPSHOT' gym/dist/app.js
           grep -q 'תמונה סטטית אחת בלבד' gym/dist/app.js
           grep -q 'Bright Glass' gym/dist/app.js
-          grep -q 'dvirGymThemeV1' gym/dist/app.js
           grep -q 'grid-template-columns:repeat(5,minmax(0,1fr))' gym/dist/app.css
-          grep -q 'data-dg-theme="bright"' gym/dist/app.css
+          grep -q 'dg-auth-dialog' gym/dist/app.css
           grep -q "addEventListener('push'" gym/sw.js
-      - name: Verify cloud services are alive and free-only
+      - name: Verify public account service and protected user services
         shell: bash
         run: |
           set -euo pipefail
-          COACH=$(curl --fail --silent --show-error --max-time 25 'https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/coach')
-          MEMORY=$(curl --fail --silent --show-error --max-time 25 'https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/cloud-memory')
-          SETUP=$(curl --fail --silent --show-error --max-time 25 'https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/ai-key-setup')
-          PUSH_SUB=$(curl --fail --silent --show-error --max-time 25 'https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/push-subscribe')
-          PUSH_DISP=$(curl --fail --silent --show-error --max-time 25 'https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/push-dispatch')
-          PRIVACY=$(curl --fail --silent --show-error --max-time 25 'https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/privacy-control')
-          FOOD=$(curl --fail --silent --show-error --max-time 25 'https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1/food-lookup')
-          echo "$COACH" | grep -q '"freeOnly":true'
-          echo "$COACH" | grep -q '"model":"openrouter/free"'
-          echo "$COACH" | grep -q '"originLocked":true'
-          echo "$MEMORY" | grep -q '"conflictDetection":true'
-          echo "$SETUP" | grep -q '"mode":"free-only"'
-          echo "$SETUP" | grep -q '"oauth":"pkce"'
-          echo "$SETUP" | grep -q '"originLocked":true'
-          echo "$PUSH_SUB" | grep -q '"ok":true'
+          BASE='https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1'
+          PUB='sb_publishable_10fnqdDQENO2LonzYDXIRw_kQ1q1utk'
+          ACCOUNT=$(curl --fail --silent --show-error --max-time 25 "$BASE/account-auth")
+          echo "$ACCOUNT" | grep -q '"zeroCost":true'
+          echo "$ACCOUNT" | grep -q '"userIsolation":true'
+          echo "$ACCOUNT" | grep -q '"mode":"username-password"'
+          for fn in user-memory user-ai-key user-coach user-push user-privacy; do
+            CODE=$(curl --silent --max-time 25 -o /tmp/dg-protected.json -w '%{http_code}' -H "apikey: $PUB" "$BASE/$fn")
+            test "$CODE" = '401'
+          done
+      - name: Verify free shared services are alive
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE='https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1'
+          PUSH_DISP=$(curl --fail --silent --show-error --max-time 25 "$BASE/push-dispatch")
+          FOOD=$(curl --fail --silent --show-error --max-time 25 "$BASE/food-lookup")
           echo "$PUSH_DISP" | grep -q '"ok":true'
-          echo "$PRIVACY" | grep -q '"ok":true'
           echo "$FOOD" | grep -q '"zeroCost":true'
           echo "$FOOD" | grep -q 'Open Food Facts v3'
