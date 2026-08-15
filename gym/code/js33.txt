@@ -1,0 +1,7 @@
+/* Athlete OS 8.0 — Per-account preferences + final version truth */
+const DG_THEME_SCOPE_PREFIX='dvirGymThemeV8::';
+dgThemeChoice=function(){return localStorage.getItem(DG_THEME_SCOPE_PREFIX+dgScope())||localStorage.getItem(DG_THEME_KEY)||'bright'};
+dgApplyTheme=function(choice=dgThemeChoice(),persist=false){if(persist){localStorage.setItem(DG_THEME_SCOPE_PREFIX+dgScope(),choice);if(!dgIsAccount())localStorage.setItem(DG_THEME_KEY,choice)}const resolved=dgResolvedTheme(choice);document.documentElement.dataset.dgTheme=resolved;document.documentElement.dataset.dgThemeChoice=choice;document.querySelector('meta[name="theme-color"]')?.setAttribute('content',resolved==='bright'?'#eef8ff':'#05070b');$$('.dg-theme-option').forEach(b=>b.classList.toggle('active',b.dataset.theme===choice));return resolved};
+const dgShowScopeThemeV8=dgShowScopeBanner;dgShowScopeBanner=function(){dgShowScopeThemeV8();dgApplyTheme(dgThemeChoice())};
+const dgRenderMoreVersionV8=renderMore;renderMore=function(){dgRenderMoreVersionV8();setTimeout(()=>{const rows=$$('#screen-more .system-row');for(const r of rows){const b=r.querySelector('b');if(b?.textContent.trim()==='Version'){const badge=r.querySelector('.badge');if(badge)badge.textContent='v8.0.0'}}const hb=$('#dgHealthV7 .section-head .badge');if(hb)hb.textContent='8.0';const tb=$('#dgThemeCard .section-head .badge');if(tb)tb.textContent='8.0'},220)};
+document.documentElement.dataset.athleteOs=DG_MULTI_VERSION;S.appVersion=DG_MULTI_VERSION;S.version=DG_MULTI_VERSION;dgApplyTheme(dgThemeChoice());
