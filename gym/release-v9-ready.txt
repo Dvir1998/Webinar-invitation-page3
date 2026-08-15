@@ -1,0 +1,2 @@
+Athlete OS 9 production verification marker.
+This file intentionally triggers browser E2E, zero-cost QA and GitHub Pages after the generated bundle exists.
