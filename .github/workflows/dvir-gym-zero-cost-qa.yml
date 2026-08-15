@@ -25,21 +25,27 @@ jobs:
           test -f gym/index.html
           test -f gym/manifest.json
           test -f gym/sw.js
+          test -f gym/version.json
           test -f gym/dist/app.js
           test -f gym/dist/app.css
           test -f gym/dist/SHA256SUMS
           test -f gym/tests/e2e.mjs
           test -f gym/tests/multiuser-storage.mjs
           for i in $(seq 1 7); do test -f "gym/assets/sprite${i}.txt"; done
-          grep -q 'dist/app.css?v=8.0.0' gym/index.html
-          grep -q 'dist/app.js?v=8.0.0' gym/index.html
+          grep -q 'dist/app.css?v=9.0.0' gym/index.html
+          grep -q 'dist/app.js?v=9.0.0' gym/index.html
+          grep -q 'Athlete OS 9.0' gym/index.html
+          grep -q 'sessionStorage.getItem(SESSION)' gym/index.html
           grep -q 'dvirGymAuthSessionV8' gym/index.html
           grep -q 'dvirAthleteOS_v8::' gym/index.html
-          grep -q 'v8-theme-studio' gym/sw.js
+          grep -q 'v9-live-release' gym/sw.js
+          grep -q "'version.json'" gym/sw.js
+          grep -q '/version.json' gym/sw.js
           grep -q "'dist/app.css'" gym/sw.js
           grep -q "'dist/app.js'" gym/sw.js
           grep -q "'activeScope'" gym/sw.js
           grep -q 'name="referrer" content="no-referrer"' gym/index.html
+          node -e "const x=JSON.parse(require('fs').readFileSync('gym/version.json','utf8')); if(!x.build||x.appVersion!=='9.0.0')process.exit(1); console.log('version ok',x.build)"
           (cd gym/dist && sha256sum -c SHA256SUMS)
       - name: JavaScript and manifest syntax check
         shell: bash
@@ -58,6 +64,7 @@ jobs:
             echo 'Paid OpenAI path found in production artifacts'
             exit 1
           fi
+          grep -q 'DG_BUILD_ID' gym/dist/app.js
           grep -q 'openrouter/free' gym/dist/app.js
           grep -q 'DG_ACCOUNT_URL' gym/dist/app.js
           grep -q 'DG_USER_MEMORY_URL' gym/dist/app.js
@@ -67,12 +74,27 @@ jobs:
           grep -q 'DG_USER_PRIVACY_URL' gym/dist/app.js
           grep -q 'DG_USER_ACCOUNT_URL' gym/dist/app.js
           grep -q 'DG_USER_PHOTOS_URL' gym/dist/app.js
+          grep -q 'DG_ADMIN_CONTROL_URL' gym/dist/app.js
+          grep -q 'DG_ADMIN_EXPERIENCE_URL' gym/dist/app.js
+          grep -q 'DG_PUBLIC_CONFIG_URL' gym/dist/app.js
           grep -q 'dvirAthleteOS_v8::' gym/dist/app.js
           grep -q 'dgIdentityTransition' gym/dist/app.js
           grep -q 'dgPhotoScope' gym/dist/app.js
           grep -q 'Guest Mode' gym/dist/app.js
           grep -q 'Recovery Key' gym/dist/app.js
           grep -q 'מחק את החשבון לצמיתות' gym/dist/app.js
+          grep -q 'זכור אותי במכשיר הזה' gym/dist/app.js
+          grep -q 'שינוי סיסמה מאובטח' gym/dist/app.js
+          grep -q 'תמונת הפרופיל שלך' gym/dist/app.js
+          grep -q 'Admin Studio' gym/dist/app.js
+          grep -q 'שיתוף עם מנהל האפליקציה' gym/dist/app.js
+          grep -q 'צ׳אט AI ותמונות התקדמות' gym/dist/app.js
+          grep -q 'personal-motivation' gym/dist/app.js
+          grep -q 'maxConsecutiveStrengthDays:2' gym/dist/app.js
+          grep -q 'dgNeedsRecoveryV9' gym/dist/app.js
+          grep -q 'Dumbbell Split Squat' gym/dist/app.js
+          grep -q 'Standing Dumbbell Calf Raise' gym/dist/app.js
+          grep -q 'Incline Smith Press' gym/dist/app.js
           grep -q 'Theme Studio' gym/dist/app.js
           grep -q 'Ivory Cream' gym/dist/app.js
           grep -q 'Gold · White · Rose' gym/dist/app.js
@@ -91,6 +113,9 @@ jobs:
           grep -q 'תמונה סטטית אחת בלבד' gym/dist/app.js
           grep -q 'grid-template-columns:repeat(5,minmax(0,1fr))' gym/dist/app.css
           grep -q 'dg-auth-dialog' gym/dist/app.css
+          grep -q 'dg-admin-dialog' gym/dist/app.css
+          grep -q 'dg-personal-motivation' gym/dist/app.css
+          grep -q 'dg-update-banner' gym/dist/app.css
           grep -q 'data-dg-theme="cream"' gym/dist/app.css
           grep -q 'data-dg-theme="pearl"' gym/dist/app.css
           grep -q 'data-dg-theme="aurora"' gym/dist/app.css
@@ -109,7 +134,10 @@ jobs:
           echo "$ACCOUNT" | grep -q '"rateLimit":"ip+username"'
           echo "$ACCOUNT" | grep -q '"multiDevice":true'
           echo "$ACCOUNT" | grep -q '"cloudAutoUnlock":true'
-          for fn in user-memory user-ai-key user-coach user-push user-privacy user-account user-photos; do
+          CONFIG=$(curl --fail --silent --show-error --max-time 25 "$BASE/app-config")
+          echo "$CONFIG" | grep -q '"ok":true'
+          echo "$CONFIG" | grep -q '"public":true'
+          for fn in user-memory user-ai-key user-coach user-push user-privacy user-account user-photos admin-control admin-experience; do
             CODE=$(curl --silent --max-time 25 -o /tmp/dg-protected.json -w '%{http_code}' \
               -X POST -H "apikey: $PUB" -H 'Content-Type: application/json' \
               --data '{}' "$BASE/$fn")
