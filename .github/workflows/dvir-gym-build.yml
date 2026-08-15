@@ -32,21 +32,26 @@ jobs:
           set -euo pipefail
           mkdir -p gym/dist
           printf '/* Dvir Gym AI Athlete OS — generated production CSS. Do not edit directly. */\n' > gym/dist/app.css
-          for i in $(seq 1 12); do cat "gym/code/css${i}.txt" >> gym/dist/app.css; done
+          for i in $(seq 1 13); do cat "gym/code/css${i}.txt" >> gym/dist/app.css; done
+
           printf '/* Dvir Gym AI Athlete OS — generated production JS. Do not edit directly. */\n' > gym/dist/app.js
-          for i in $(seq 1 37); do cat "gym/code/js${i}.txt" >> gym/dist/app.js; done
+          cat gym/code/js1.txt >> gym/dist/app.js
+          printf "\nconst DG_BUILD_ID='%s';\n" "$GITHUB_SHA" >> gym/dist/app.js
+          for i in $(seq 2 38); do cat "gym/code/js${i}.txt" >> gym/dist/app.js; done
           node --check gym/dist/app.js
+
           printf '%s\n' "$(sha256sum gym/dist/app.js | cut -d' ' -f1)  app.js" "$(sha256sum gym/dist/app.css | cut -d' ' -f1)  app.css" > gym/dist/SHA256SUMS
+          printf '{"build":"%s","builtAt":"%s","channel":"production","appVersion":"9.0.0"}\n' "$GITHUB_SHA" "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" > gym/version.json
       - name: Commit bundle when changed
         shell: bash
         run: |
           set -euo pipefail
-          if [ -z "$(git status --porcelain -- gym/dist)" ]; then
+          if [ -z "$(git status --porcelain -- gym/dist gym/version.json)" ]; then
             echo 'Bundle already current'
             exit 0
           fi
           git config user.name 'dvir-gym-build-bot'
           git config user.email '156288344+Dvir1998@users.noreply.github.com'
-          git add gym/dist
+          git add gym/dist gym/version.json
           git commit -m 'build: refresh Dvir Gym AI production bundle [skip ci]'
           git push
