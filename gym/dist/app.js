@@ -1,6 +1,6 @@
 /* Dvir Gym AI Athlete OS — generated production JS. Do not edit directly. */
 'use strict';
-const DG_BUILD_ID='d071ae02246e2cafae0eb79af9593f077977553c';
+const DG_BUILD_ID='4c379e32784023b273514fa41f10460e11f055e5';
 const VERSION='6.0.0';
 const STORE='dvirAthleteOS_v6';
 const LEGACY=['dvirAthleteLiveV1','dvirGymAthleteOSV4','dvirGym2027V3'];
@@ -1258,3 +1258,30 @@ async function dgApplyReleaseV9(){try{if(S?.activeWorkout){toast('העדכון �
 async function dgCheckReleaseV9(){try{const r=await fetch(`version.json?t=${Date.now()}`,{cache:'no-store'});if(!r.ok)return;const j=await r.json(),local=typeof DG_BUILD_ID!=='undefined'?DG_BUILD_ID:'';if(j?.build&&local&&j.build!==local){const b=dgEnsureUpdateBannerV9();b.classList.add('show');if(!S?.activeWorkout&&!document.querySelector('dialog[open]')){clearTimeout(dgReleaseTimerV9);dgReleaseTimerV9=setTimeout(dgApplyReleaseV9,9000)}}}catch{}}
 async function dgV9Boot(){try{await dgLoadPersonalControlV9()}catch{}try{await dgLoadAvatarV9(true)}catch{}try{dgRefreshPersonalReminderV9()}catch{}try{await dgCheckReleaseV9()}catch{}setInterval(dgCheckReleaseV9,DG_RELEASE_POLL_MS);document.addEventListener('visibilitychange',()=>{if(!document.hidden){dgCheckReleaseV9();if(dgIsAccount())dgLoadAvatarV9()}})}
 setTimeout(dgV9Boot,650);
+/* Athlete OS 9.0.1 — atomic identity transitions: never let an account state save into Guest during logout. */
+dgLogout=async function(){
+ if(!dgIsAccount())return;
+ const accountScope=dgScope();
+ dgIdentityTransition=true;
+ try{
+  dgWriteScopedState(S,accountScope);
+  try{await dgRemoveCurrentPushRegistration()}catch{}
+  try{const s=dgAuthSession();if(s?.access_token)await fetch(`${DG_SUPABASE_URL}/auth/v1/logout`,{method:'POST',headers:{apikey:DG_SUPABASE_PUBLISHABLE,Authorization:`Bearer ${s.access_token}`}})}catch{}
+  localStorage.removeItem(DG_AUTH_SESSION_KEY);
+  sessionStorage.removeItem(DG_AUTH_SESSION_KEY);
+  localStorage.setItem(DG_ACTIVE_SCOPE_KEY,'guest');
+  const guest=dgGuestState()||dgFreshUserState('');
+  S=dgNormalizeState(guest);
+  dgWriteScopedState(S,'guest');
+  try{if(typeof dgCloudPushTimer!=='undefined')clearTimeout(dgCloudPushTimer)}catch{}
+  try{if(typeof dgPushSyncTimer!=='undefined')clearTimeout(dgPushSyncTimer)}catch{}
+  dgAdminRoleV9='user';
+  dgAdminShareV9={allow_admin:false,scopes:['workouts','nutrition','progress','profile']};
+  dgAvatarUrlV9=S.profile?.avatarData||'';
+ }finally{
+  dgIdentityTransition=false;
+ }
+ try{renderCurrent();dgApplyAvatarV9();dgShowScopeBanner()}catch{}
+ toast('יצאת מהחשבון · חוזר למצב אורח');
+ setTimeout(()=>location.reload(),180);
+};
