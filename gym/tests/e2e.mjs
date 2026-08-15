@@ -44,7 +44,6 @@ if(dock.count!==5||dock.left<0||dock.right>dock.viewport||dock.items.some(x=>x.l
 if(await page.evaluate(()=>dgIsAccount()))throw new Error('Fresh browser must start in Guest mode');
 await page.evaluate(()=>{S.profile.name='Guest QA';S.meals=[{id:'guest-meal',ts:Date.now(),description:'Guest only'}];save()});
 
-// Account A signup through the actual UI.
 await page.evaluate(()=>dgOpenAccount('signup'));
 await page.locator('#dgSignupName').fill('Dvir QA');await page.locator('#dgAuthUser').fill('dvirqa');await page.locator('#dgAuthPassword').fill('Password123!');await domClick('#dgAuthSubmit');
 await page.waitForSelector('#dgRecoverySaved',{timeout:10000});await domClick('#dgRecoverySaved');await page.waitForSelector('#dgAccountLogout',{timeout:10000});
@@ -55,12 +54,10 @@ const aScope=await page.evaluate(()=>({scope:dgScope(),meals:S.meals.map(x=>x.id
 if(!aScope.scope.startsWith('user:')||!aScope.meals.includes('a-meal')||!aScope.key)throw new Error('Account A scoped state not persisted');
 await page.locator('#dgAccountDialog').evaluate(d=>d.close());
 
-// Logout A -> Guest. No A data may remain visible.
 await page.evaluate(()=>dgLogout());await page.waitForTimeout(850);await waitReady();
 if(await page.evaluate(()=>dgIsAccount()))throw new Error('Logout A failed');
 if(await page.evaluate(()=>S.meals.some(x=>x.id==='a-meal')))throw new Error('Account A leaked into Guest scope');
 
-// Account B login on the same browser. It must start isolated from A.
 await page.evaluate(()=>dgOpenAccount('login'));await page.locator('#dgAuthUser').fill('edenqa');await page.locator('#dgAuthPassword').fill('Password123!');await domClick('#dgAuthSubmit');await page.waitForSelector('#dgAccountLogout',{timeout:10000});
 if(!(await page.evaluate(()=>dgIsAccount()&&dgCurrentUsername()==='edenqa')))throw new Error('Account B login failed');
 if(await page.evaluate(()=>S.meals.some(x=>x.id==='a-meal'||x.id==='guest-meal')))throw new Error('A/Guest data leaked into B');
@@ -68,12 +65,10 @@ await page.evaluate(()=>{S.profile.name='Eden QA';S.meals=[{id:'b-meal',ts:Date.
 await page.locator('#dgAccountDialog').evaluate(d=>d.close());
 await page.evaluate(()=>dgLogout());await page.waitForTimeout(850);await waitReady();
 
-// Return to A. A must recover A data, never B data.
 await page.evaluate(()=>dgOpenAccount('login'));await page.locator('#dgAuthUser').fill('dvirqa');await page.locator('#dgAuthPassword').fill('Password123!');await domClick('#dgAuthSubmit');await page.waitForSelector('#dgAccountLogout',{timeout:10000});await page.locator('#dgAccountDialog').evaluate(d=>d.close());await page.waitForTimeout(300);
 const isolation=await page.evaluate(()=>({username:dgCurrentUsername(),mealIds:S.meals.map(x=>x.id),scope:dgScope(),account:dgIsAccount()}));
 if(isolation.username!=='dvirqa'||!isolation.mealIds.includes('a-meal')||isolation.mealIds.includes('b-meal'))throw new Error('Account isolation failed: '+JSON.stringify(isolation));
 
-// Existing fitness/nutrition product gates remain intact under an authenticated user.
 await domClick('[data-screen="fuel"]');await page.waitForSelector('#screen-fuel.active');await page.waitForSelector('#dgBarcodeFood');await domClick('#dgBarcodeFood');await page.waitForSelector('#mealDialog[open]');await page.locator('#dgBarcodeManual').fill('12345678');await domClick('#dgFoodLookupBtn');await page.waitForSelector('#dgFoodAmount',{timeout:10000});await page.locator('#dgFoodAmount').fill('150');await domClick('#dgAddScannedFood');await page.waitForFunction(()=>!document.querySelector('#mealDialog')?.open);const scanned=await page.evaluate(()=>S.meals.find(x=>x.barcode==='12345678'));if(!scanned||scanned.calories!==150||scanned.protein!==15)throw new Error('Barcode macro calculation failed');
 await domClick('[data-screen="more"]');await page.waitForSelector('#screen-more.active');await page.waitForSelector('#dgAccountCard',{timeout:10000});await page.waitForSelector('#dgPrivacyV73',{timeout:10000});await page.waitForSelector('#dgLaunchChecklist',{timeout:10000});await page.waitForSelector('#dgThemeCard',{timeout:10000});
 const accountCard=await page.locator('#dgAccountCard').innerText();if(!accountCard.includes('Dvir QA')||!accountCard.includes('@dvirqa'))throw new Error('Account card identity mismatch');
@@ -82,4 +77,4 @@ await domClick('[data-screen="home"]');await page.waitForSelector('#screen-home.
 const logic=await page.evaluate(()=>{const backup=JSON.parse(JSON.stringify(S)),now=Date.now();try{S.profile={...S.profile,weight:65,height:165,age:28,goal:'lean_gain',activity:'medium',manualCalories:'',manualProtein:''};S.weights=Array.from({length:6},(_,i)=>({id:'t'+i,ts:now-(25-i*5)*864e5,weight:65+i*.01}));const adaptive=nutritionTargets();S.readiness={sleep:5,energy:5,soreness:1,stress:1};const mk=(id,days)=>({id,ts:now-days*864e5,end:now-days*864e5,type:'upperA',location:'gym',exercises:[{exerciseId:'chest-press',name:'Chest Press',results:[{done:true,weight:30,reps:10,rir:2},{done:true,weight:30,reps:10,rir:2},{done:true,weight:30,reps:10,rir:2}]}]});S.logs=[mk('p1',1),mk('p2',4),mk('p3',7)];const plateau=progressionAdvice({exerciseId:'chest-press',name:'Chest Press',reps:'8–12'});return{adapt:adaptive.adapt,plateau:plateau.title}}finally{S=backup}});
 if(logic.adapt!==100||logic.plateau!=='Plateau detected')throw new Error('Decision Engine regression: '+JSON.stringify(logic));
 if(errors.length)throw new Error('Runtime errors: '+errors.join(' | '));
-console.log('Athlete OS 8.0 multi-user E2E OK',{dock,isolation,logic});await browser.close();
+console.log('Athlete OS 8.0 transition-safe multi-user E2E OK',{dock,isolation,logic});await browser.close();
