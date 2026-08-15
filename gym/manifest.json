@@ -1,8 +1,8 @@
 {
   "id":"./",
-  "name":"Dvir Gym AI — Athlete OS 7.5",
+  "name":"Dvir Gym AI — Athlete OS 8.0",
   "short_name":"Dvir Gym AI",
-  "description":"מאמן כושר ותזונה אישי עם זיכרון מוצפן, AI חינמי בלבד, Food Scanner, Technique Check, Push, Decision Engine, אימונים ותזונה",
+  "description":"מאמן כושר ותזונה רב-משתמשי עם חשבונות נפרדים, זיכרון מוצפן, AI חינמי בלבד, Food Scanner, Technique Check, Push, Decision Engine, אימונים ותזונה",
   "lang":"he",
   "dir":"rtl",
   "start_url":"./",
@@ -10,8 +10,8 @@
   "display":"standalone",
   "display_override":["standalone","minimal-ui"],
   "orientation":"portrait",
-  "background_color":"#05070b",
-  "theme_color":"#05070b",
+  "background_color":"#eef8ff",
+  "theme_color":"#eef8ff",
   "categories":["fitness","health","lifestyle"],
   "prefer_related_applications":false,
   "icons":[
@@ -19,8 +19,8 @@
     {"src":"assets/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
   ],
   "shortcuts":[
-    {"name":"התחל אימון","short_name":"אימון","description":"פתח את האימון המתאים להיום","url":"./?action=workout","icons":[{"src":"assets/icon-192.png","sizes":"192x192","type":"image/png"}]},
-    {"name":"שאל את המאמן","short_name":"AI","description":"פתח את Coach Intelligence החינמי","url":"./?action=coach","icons":[{"src":"assets/icon-192.png","sizes":"192x192","type":"image/png"}]},
-    {"name":"תעד אוכל","short_name":"אוכל","description":"תעד או סרוק ארוחה בזיכרון התזונתי","url":"./?action=fuel","icons":[{"src":"assets/icon-192.png","sizes":"192x192","type":"image/png"}]}
+    {"name":"התחל אימון","short_name":"אימון","description":"פתח את האימון המתאים לחשבון הנוכחי","url":"./?action=workout","icons":[{"src":"assets/icon-192.png","sizes":"192x192","type":"image/png"}]},
+    {"name":"שאל את המאמן","short_name":"AI","description":"פתח את Coach Intelligence האישי והחינמי","url":"./?action=coach","icons":[{"src":"assets/icon-192.png","sizes":"192x192","type":"image/png"}]},
+    {"name":"תעד אוכל","short_name":"אוכל","description":"תעד או סרוק ארוחה בזיכרון התזונתי האישי","url":"./?action=fuel","icons":[{"src":"assets/icon-192.png","sizes":"192x192","type":"image/png"}]}
   ]
 }
