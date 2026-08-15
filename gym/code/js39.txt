@@ -1,0 +1,27 @@
+/* Athlete OS 9.0.1 — atomic identity transitions: never let an account state save into Guest during logout. */
+dgLogout=async function(){
+ if(!dgIsAccount())return;
+ const accountScope=dgScope();
+ dgIdentityTransition=true;
+ try{
+  dgWriteScopedState(S,accountScope);
+  try{await dgRemoveCurrentPushRegistration()}catch{}
+  try{const s=dgAuthSession();if(s?.access_token)await fetch(`${DG_SUPABASE_URL}/auth/v1/logout`,{method:'POST',headers:{apikey:DG_SUPABASE_PUBLISHABLE,Authorization:`Bearer ${s.access_token}`}})}catch{}
+  localStorage.removeItem(DG_AUTH_SESSION_KEY);
+  sessionStorage.removeItem(DG_AUTH_SESSION_KEY);
+  localStorage.setItem(DG_ACTIVE_SCOPE_KEY,'guest');
+  const guest=dgGuestState()||dgFreshUserState('');
+  S=dgNormalizeState(guest);
+  dgWriteScopedState(S,'guest');
+  try{if(typeof dgCloudPushTimer!=='undefined')clearTimeout(dgCloudPushTimer)}catch{}
+  try{if(typeof dgPushSyncTimer!=='undefined')clearTimeout(dgPushSyncTimer)}catch{}
+  dgAdminRoleV9='user';
+  dgAdminShareV9={allow_admin:false,scopes:['workouts','nutrition','progress','profile']};
+  dgAvatarUrlV9=S.profile?.avatarData||'';
+ }finally{
+  dgIdentityTransition=false;
+ }
+ try{renderCurrent();dgApplyAvatarV9();dgShowScopeBanner()}catch{}
+ toast('יצאת מהחשבון · חוזר למצב אורח');
+ setTimeout(()=>location.reload(),180);
+};
