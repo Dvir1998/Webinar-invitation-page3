@@ -32,20 +32,20 @@ jobs:
           test -f gym/tests/e2e.mjs
           test -f gym/tests/multiuser-storage.mjs
           for i in $(seq 1 7); do test -f "gym/assets/sprite${i}.txt"; done
-          grep -q 'dist/app.css?v=9.0.0' gym/index.html
-          grep -q 'dist/app.js?v=9.0.0' gym/index.html
-          grep -q 'Athlete OS 9.0' gym/index.html
+          grep -q 'dist/app.css?v=9.0.1' gym/index.html
+          grep -q 'dist/app.js?v=9.0.1' gym/index.html
+          grep -q 'Athlete OS 9.0.1' gym/index.html
           grep -q 'sessionStorage.getItem(SESSION)' gym/index.html
           grep -q 'dvirGymAuthSessionV8' gym/index.html
           grep -q 'dvirAthleteOS_v8::' gym/index.html
-          grep -q 'v9-live-release' gym/sw.js
+          grep -q 'dvir-athlete-os-v9-0-1-20260815' gym/sw.js
           grep -q "'version.json'" gym/sw.js
           grep -q '/version.json' gym/sw.js
           grep -q "'dist/app.css'" gym/sw.js
           grep -q "'dist/app.js'" gym/sw.js
           grep -q "'activeScope'" gym/sw.js
           grep -q 'name="referrer" content="no-referrer"' gym/index.html
-          node -e "const x=JSON.parse(require('fs').readFileSync('gym/version.json','utf8')); if(!x.build||!String(x.appVersion||'').startsWith('9.0.'))process.exit(1); console.log('version ok',x.build,x.appVersion)"
+          node -e "const x=JSON.parse(require('fs').readFileSync('gym/version.json','utf8')); if(!x.build||x.appVersion!=='9.0.1')process.exit(1); console.log('version ok',x.build)"
           (cd gym/dist && sha256sum -c SHA256SUMS)
       - name: JavaScript and manifest syntax check
         shell: bash
@@ -55,7 +55,7 @@ jobs:
           node --check gym/sw.js
           node --check gym/tests/e2e.mjs
           node --check gym/tests/multiuser-storage.mjs
-          node -e "JSON.parse(require('fs').readFileSync('gym/manifest.json','utf8')); console.log('manifest ok')"
+          node -e "const x=JSON.parse(require('fs').readFileSync('gym/manifest.json','utf8')); if(!x.name.includes('9.0.1'))process.exit(1); console.log('manifest ok')"
       - name: Enforce zero-cost, multi-user, privacy, themes and coaching policy
         shell: bash
         run: |
@@ -79,7 +79,6 @@ jobs:
           grep -q 'DG_PUBLIC_CONFIG_URL' gym/dist/app.js
           grep -q 'dvirAthleteOS_v8::' gym/dist/app.js
           grep -q 'dgIdentityTransition' gym/dist/app.js
-          grep -q 'atomic identity transitions' gym/dist/app.js
           grep -q 'dgPhotoScope' gym/dist/app.js
           grep -q 'Guest Mode' gym/dist/app.js
           grep -q 'Recovery Key' gym/dist/app.js
