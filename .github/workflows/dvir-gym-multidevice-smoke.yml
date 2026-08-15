@@ -1,0 +1,89 @@
+name: Dvir Gym AI Multi-Device Smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/dvir-gym-multidevice-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Real account → second login → private photo → delete account
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE='https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1'
+          PUB='sb_publishable_10fnqdDQENO2LonzYDXIRw_kQ1q1utk'
+          USER="qa_device_${GITHUB_RUN_ID}_${RANDOM}"
+          PASS="CloudSync9!${RANDOM}Z"
+          TOKEN=''
+          cleanup() {
+            if [ -n "$TOKEN" ]; then
+              curl --silent --max-time 20 -X POST \
+                -H "apikey: $PUB" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+                --data "{\"action\":\"delete-account\",\"confirmUsername\":\"$USER\",\"password\":\"$PASS\"}" \
+                "$BASE/user-account" >/dev/null || true
+            fi
+          }
+          trap cleanup EXIT
+
+          SIGNUP=$(curl --fail --silent --show-error --max-time 30 -X POST \
+            -H "apikey: $PUB" -H 'Content-Type: application/json' \
+            --data "{\"action\":\"signup\",\"username\":\"$USER\",\"password\":\"$PASS\",\"displayName\":\"QA Device User\"}" \
+            "$BASE/account-auth")
+          REC1=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["recoveryKey"])' <<<"$SIGNUP")
+          TOKEN=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["session"]["access_token"])' <<<"$SIGNUP")
+          test -n "$REC1"
+          test -n "$TOKEN"
+
+          LOGIN=$(curl --fail --silent --show-error --max-time 30 -X POST \
+            -H "apikey: $PUB" -H 'Content-Type: application/json' \
+            --data "{\"action\":\"login\",\"username\":\"$USER\",\"password\":\"$PASS\"}" \
+            "$BASE/account-auth")
+          REC2=$(python3 -c 'import json,sys; print(json.load(sys.stdin).get("recoveryKey", ""))' <<<"$LOGIN")
+          TOKEN2=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["session"]["access_token"])' <<<"$LOGIN")
+          test "$REC1" = "$REC2"
+          test -n "$TOKEN2"
+          TOKEN="$TOKEN2"
+
+          BAD_CODE=$(curl --silent --max-time 20 -o /tmp/bad-login.json -w '%{http_code}' -X POST \
+            -H "apikey: $PUB" -H 'Content-Type: application/json' \
+            --data "{\"action\":\"login\",\"username\":\"$USER\",\"password\":\"DefinitelyWrong123!\"}" \
+            "$BASE/account-auth")
+          test "$BAD_CODE" = '401'
+          python3 - <<'PY' /tmp/bad-login.json
+          import json,sys
+          j=json.load(open(sys.argv[1])); assert 'recoveryKey' not in j
+          PY
+
+          PNG='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
+          UPLOAD=$(curl --fail --silent --show-error --max-time 30 -X POST \
+            -H "apikey: $PUB" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+            --data "{\"action\":\"upload\",\"data\":\"$PNG\"}" \
+            "$BASE/user-photos")
+          PHOTO=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["name"])' <<<"$UPLOAD")
+          test -n "$PHOTO"
+
+          LIST=$(curl --fail --silent --show-error --max-time 30 -X POST \
+            -H "apikey: $PUB" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+            --data '{"action":"list"}' "$BASE/user-photos")
+          python3 -c 'import json,sys; j=json.load(sys.stdin); assert j["private"] is True and j["userScoped"] is True and len(j["items"])>=1' <<<"$LIST"
+
+          curl --fail --silent --show-error --max-time 30 -X POST \
+            -H "apikey: $PUB" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+            --data "{\"action\":\"delete\",\"name\":\"$PHOTO\"}" "$BASE/user-photos" >/dev/null
+
+          DELETE=$(curl --fail --silent --show-error --max-time 30 -X POST \
+            -H "apikey: $PUB" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+            --data "{\"action\":\"delete-account\",\"confirmUsername\":\"$USER\",\"password\":\"$PASS\"}" \
+            "$BASE/user-account")
+          python3 -c 'import json,sys; j=json.load(sys.stdin); assert j["ok"] is True and j["deleted"] is True' <<<"$DELETE"
+          TOKEN=''
+          echo 'Multi-device + private photo smoke OK'
