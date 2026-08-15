@@ -1016,3 +1016,40 @@ dgApplyTheme=function(choice=dgThemeChoice(),persist=false){if(persist){localSto
 const dgShowScopeThemeV8=dgShowScopeBanner;dgShowScopeBanner=function(){dgShowScopeThemeV8();dgApplyTheme(dgThemeChoice())};
 const dgRenderMoreVersionV8=renderMore;renderMore=function(){dgRenderMoreVersionV8();setTimeout(()=>{const rows=$$('#screen-more .system-row');for(const r of rows){const b=r.querySelector('b');if(b?.textContent.trim()==='Version'){const badge=r.querySelector('.badge');if(badge)badge.textContent='v8.0.0'}}const hb=$('#dgHealthV7 .section-head .badge');if(hb)hb.textContent='8.0';const tb=$('#dgThemeCard .section-head .badge');if(tb)tb.textContent='8.0'},220)};
 document.documentElement.dataset.athleteOs=DG_MULTI_VERSION;S.appVersion=DG_MULTI_VERSION;S.version=DG_MULTI_VERSION;dgApplyTheme(dgThemeChoice());
+/* Athlete OS 8.0 — Identity Transition Lock: never persist one user's state into another scope */
+let dgIdentityTransition=false;
+const dgSaveStableV8=save;
+save=function(){if(dgIdentityTransition)return false;return dgSaveStableV8()};
+
+// Logout is atomic from the app's perspective: freeze autosave, persist account explicitly,
+// switch S to Guest before the session disappears, then reopen persistence only for Guest.
+dgLogout=async function(){
+ if(!dgIsAccount())return;
+ const session=dgAuthSession(),uid=session?.user?.id||'',accountScope='user:'+uid;
+ const guest=dgReadScopedState('guest')||dgFreshUserState('');
+ try{dgWriteScopedState(S,accountScope)}catch{}
+ dgIdentityTransition=true;
+ try{clearTimeout(dgCloudTimer);clearTimeout(dgPushTimer)}catch{}
+ try{await dgRemoveCurrentPushRegistration()}catch{}
+ try{if(session?.access_token)await fetch(`${DG_SUPABASE_URL}/auth/v1/logout`,{method:'POST',headers:{apikey:DG_SUPABASE_PUBLISHABLE,Authorization:`Bearer ${session.access_token}`}})}catch{}
+ localStorage.removeItem(DG_AUTH_SESSION_KEY);
+ localStorage.setItem(DG_ACTIVE_SCOPE_KEY,'guest');
+ S=dgNormalizeState(guest);
+ dgWriteScopedState(S,'guest');
+ try{localStorage.setItem(STORE,JSON.stringify(S))}catch{}
+ dgIdentityTransition=false;
+ try{dgNotifyServiceWorkerScope();syncRemindersToSW()}catch{}
+ toast('יצאת מהחשבון · חוזר למצב אורח');
+ setTimeout(()=>location.reload(),180);
+};
+
+// Account activation is protected as well. Any delayed save from Guest cannot land in the
+// newly selected account while its state is being loaded.
+const dgStoreSessionStableV8=dgStoreSession;
+dgStoreSession=function(session,meta={}){
+ dgIdentityTransition=true;
+ try{return dgStoreSessionStableV8(session,meta)}finally{queueMicrotask(()=>{dgIdentityTransition=false})}
+};
+
+// Guard page lifecycle writes during an identity hand-off.
+window.addEventListener('pagehide',()=>{if(dgIdentityTransition)return;try{dgWriteScopedState(S,dgScope())}catch{}},{capture:true});
