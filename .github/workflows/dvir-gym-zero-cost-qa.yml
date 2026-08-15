@@ -96,7 +96,9 @@ jobs:
           echo "$ACCOUNT" | grep -q '10+ chars, letter + number'
           echo "$ACCOUNT" | grep -q '"rateLimit":"ip+username"'
           for fn in user-memory user-ai-key user-coach user-push user-privacy user-account; do
-            CODE=$(curl --silent --max-time 25 -o /tmp/dg-protected.json -w '%{http_code}' -H "apikey: $PUB" "$BASE/$fn")
+            CODE=$(curl --silent --max-time 25 -o /tmp/dg-protected.json -w '%{http_code}' \
+              -X POST -H "apikey: $PUB" -H 'Content-Type: application/json' \
+              --data '{}' "$BASE/$fn")
             test "$CODE" = '401'
           done
       - name: Verify free shared services are alive
