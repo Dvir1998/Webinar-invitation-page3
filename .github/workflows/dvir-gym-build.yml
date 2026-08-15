@@ -35,7 +35,7 @@ jobs:
           for i in $(seq 1 13); do cat "gym/code/css${i}.txt" >> gym/dist/app.css; done
 
           printf '/* Dvir Gym AI Athlete OS — generated production JS. Do not edit directly. */\n' > gym/dist/app.js
-          for i in $(seq 1 38); do cat "gym/code/js${i}.txt" >> gym/dist/app.js; done
+          for i in $(seq 1 39); do cat "gym/code/js${i}.txt" >> gym/dist/app.js; done
           BUILD_ID="$GITHUB_SHA" node - <<'NODE'
           const fs=require('fs');
           const p='gym/dist/app.js';
@@ -48,7 +48,7 @@ jobs:
           node --check gym/dist/app.js
 
           printf '%s\n' "$(sha256sum gym/dist/app.js | cut -d' ' -f1)  app.js" "$(sha256sum gym/dist/app.css | cut -d' ' -f1)  app.css" > gym/dist/SHA256SUMS
-          printf '{"build":"%s","builtAt":"%s","channel":"production","appVersion":"9.0.0"}\n' "$GITHUB_SHA" "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" > gym/version.json
+          printf '{"build":"%s","builtAt":"%s","channel":"production","appVersion":"9.0.1"}\n' "$GITHUB_SHA" "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" > gym/version.json
       - name: Commit bundle when changed
         shell: bash
         run: |
