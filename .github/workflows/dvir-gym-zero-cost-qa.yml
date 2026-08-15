@@ -14,7 +14,7 @@ permissions:
 jobs:
   verify-athlete-os:
     runs-on: ubuntu-latest
-    timeout-minutes: 7
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
       - name: Verify production bundle and PWA files
@@ -29,6 +29,7 @@ jobs:
           test -f gym/dist/app.css
           test -f gym/dist/SHA256SUMS
           test -f gym/tests/e2e.mjs
+          test -f gym/tests/multiuser-storage.mjs
           for i in $(seq 1 7); do test -f "gym/assets/sprite${i}.txt"; done
           grep -q 'dist/app.css?v=8.0.0' gym/index.html
           grep -q 'dist/app.js?v=8.0.0' gym/index.html
@@ -46,6 +47,7 @@ jobs:
           node --check gym/dist/app.js
           node --check gym/sw.js
           node --check gym/tests/e2e.mjs
+          node --check gym/tests/multiuser-storage.mjs
           node -e "JSON.parse(require('fs').readFileSync('gym/manifest.json','utf8')); console.log('manifest ok')"
       - name: Enforce zero-cost, multi-user, privacy and coaching policy
         shell: bash
@@ -62,11 +64,13 @@ jobs:
           grep -q 'DG_USER_COACH_URL' gym/dist/app.js
           grep -q 'DG_USER_PUSH_URL' gym/dist/app.js
           grep -q 'DG_USER_PRIVACY_URL' gym/dist/app.js
+          grep -q 'DG_USER_ACCOUNT_URL' gym/dist/app.js
           grep -q 'dvirAthleteOS_v8::' gym/dist/app.js
-          grep -q 'user:' gym/dist/app.js
+          grep -q 'dgIdentityTransition' gym/dist/app.js
+          grep -q 'dgPhotoScope' gym/dist/app.js
           grep -q 'Guest Mode' gym/dist/app.js
           grep -q 'Recovery Key' gym/dist/app.js
-          grep -q 'username-password' gym/dist/app.js || true
+          grep -q 'מחק את החשבון לצמיתות' gym/dist/app.js
           grep -q 'ZERO COST\|Zero.Cost' gym/dist/app.js
           grep -q 'code_challenge_method=S256' gym/dist/app.js
           grep -q 'oauth-exchange' gym/dist/app.js
@@ -89,7 +93,9 @@ jobs:
           echo "$ACCOUNT" | grep -q '"zeroCost":true'
           echo "$ACCOUNT" | grep -q '"userIsolation":true'
           echo "$ACCOUNT" | grep -q '"mode":"username-password"'
-          for fn in user-memory user-ai-key user-coach user-push user-privacy; do
+          echo "$ACCOUNT" | grep -q '10+ chars, letter + number'
+          echo "$ACCOUNT" | grep -q '"rateLimit":"ip+username"'
+          for fn in user-memory user-ai-key user-coach user-push user-privacy user-account; do
             CODE=$(curl --silent --max-time 25 -o /tmp/dg-protected.json -w '%{http_code}' -H "apikey: $PUB" "$BASE/$fn")
             test "$CODE" = '401'
           done
