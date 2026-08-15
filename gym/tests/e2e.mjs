@@ -20,6 +20,12 @@ await page.goto(base,{waitUntil:'domcontentloaded'});
 await page.waitForSelector('body.ready',{timeout:30000});
 await page.waitForSelector('#screen-home.active',{timeout:10000});
 if(await page.locator('#onboardDialog[open]').count())await page.locator('#obBack').click();
+
+const dock=await page.evaluate(()=>{const d=document.querySelector('.dock'),items=[...document.querySelectorAll('.dock-item')].map(x=>{const r=x.getBoundingClientRect();return{left:r.left,right:r.right,width:r.width,label:x.querySelector('b')?.textContent||''}}),r=d.getBoundingClientRect();return{left:r.left,right:r.right,width:r.width,count:items.length,items,viewport:innerWidth,columns:getComputedStyle(d).gridTemplateColumns}});
+if(dock.count!==5)throw new Error('Dock must have five items: '+JSON.stringify(dock));
+if(dock.left<0||dock.right>dock.viewport)throw new Error('Dock overflows viewport: '+JSON.stringify(dock));
+if(dock.items.some(x=>x.left<0||x.right>dock.viewport||x.width<45))throw new Error('Dock item clipped or too narrow: '+JSON.stringify(dock));
+
 await domClick('[data-screen="fuel"]');
 await page.waitForSelector('#screen-fuel.active');
 await page.waitForSelector('#dgBarcodeFood');
@@ -33,12 +39,21 @@ await domClick('#dgAddScannedFood');
 await page.waitForFunction(()=>!document.querySelector('#mealDialog')?.open);
 const scanned=await page.evaluate(()=>S.meals.find(x=>x.barcode==='12345678'));
 if(!scanned||scanned.calories!==150||scanned.protein!==15)throw new Error('Barcode macro calculation failed: '+JSON.stringify(scanned));
+
 await domClick('[data-screen="more"]');
 await page.waitForSelector('#screen-more.active');
 await page.waitForSelector('#dgPrivacyV73',{timeout:10000});
 await page.waitForSelector('#dgLaunchChecklist',{timeout:10000});
+await page.waitForSelector('#dgThemeCard',{timeout:10000});
 const checklistText=await page.locator('#dgLaunchChecklist').innerText();
 if(!checklistText.includes('Launch Checklist'))throw new Error('Launch Checklist missing from bundled app');
+const initialTheme=await page.evaluate(()=>document.documentElement.dataset.dgTheme);
+if(initialTheme!=='bright')throw new Error('Bright theme should be default for new install: '+initialTheme);
+await domClick('.dg-theme-option[data-theme="night"]');
+if(await page.evaluate(()=>document.documentElement.dataset.dgTheme)!=='night')throw new Error('Night theme switch failed');
+await domClick('.dg-theme-option[data-theme="bright"]');
+if(await page.evaluate(()=>document.documentElement.dataset.dgTheme)!=='bright')throw new Error('Bright theme switch failed');
+
 await domClick('#profileBtn');
 await page.waitForSelector('#profileDialog[open]');
 await domClick('#profileDialog .close');
@@ -74,5 +89,5 @@ if(!logic.mergedLogs.includes('local-log')||!logic.mergedLogs.includes('cloud-lo
 if(!logic.mergedMeals.includes('meal-local')||!logic.mergedMeals.includes('meal-cloud'))throw new Error('Cloud meal merge failed: '+JSON.stringify(logic));
 if(logic.mergedName!=='LOCAL')throw new Error('Local profile precedence failed: '+JSON.stringify(logic));
 if(errors.length)throw new Error('Runtime errors: '+errors.join(' | '));
-console.log('Athlete OS final 7.5 E2E OK',logic);
+console.log('Athlete OS final 7.6 E2E OK',{dock,logic});
 await browser.close();
