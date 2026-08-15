@@ -45,7 +45,7 @@ jobs:
           grep -q "'dist/app.js'" gym/sw.js
           grep -q "'activeScope'" gym/sw.js
           grep -q 'name="referrer" content="no-referrer"' gym/index.html
-          node -e "const x=JSON.parse(require('fs').readFileSync('gym/version.json','utf8')); if(!x.build||x.appVersion!=='9.0.0')process.exit(1); console.log('version ok',x.build)"
+          node -e "const x=JSON.parse(require('fs').readFileSync('gym/version.json','utf8')); if(!x.build||!String(x.appVersion||'').startsWith('9.0.'))process.exit(1); console.log('version ok',x.build,x.appVersion)"
           (cd gym/dist && sha256sum -c SHA256SUMS)
       - name: JavaScript and manifest syntax check
         shell: bash
@@ -79,6 +79,7 @@ jobs:
           grep -q 'DG_PUBLIC_CONFIG_URL' gym/dist/app.js
           grep -q 'dvirAthleteOS_v8::' gym/dist/app.js
           grep -q 'dgIdentityTransition' gym/dist/app.js
+          grep -q 'atomic identity transitions' gym/dist/app.js
           grep -q 'dgPhotoScope' gym/dist/app.js
           grep -q 'Guest Mode' gym/dist/app.js
           grep -q 'Recovery Key' gym/dist/app.js
