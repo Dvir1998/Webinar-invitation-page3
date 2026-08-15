@@ -32,9 +32,9 @@ jobs:
           set -euo pipefail
           mkdir -p gym/dist
           printf '/* Dvir Gym AI Athlete OS — generated production CSS. Do not edit directly. */\n' > gym/dist/app.css
-          for i in $(seq 1 11); do cat "gym/code/css${i}.txt" >> gym/dist/app.css; done
+          for i in $(seq 1 12); do cat "gym/code/css${i}.txt" >> gym/dist/app.css; done
           printf '/* Dvir Gym AI Athlete OS — generated production JS. Do not edit directly. */\n' > gym/dist/app.js
-          for i in $(seq 1 36); do cat "gym/code/js${i}.txt" >> gym/dist/app.js; done
+          for i in $(seq 1 37); do cat "gym/code/js${i}.txt" >> gym/dist/app.js; done
           node --check gym/dist/app.js
           printf '%s\n' "$(sha256sum gym/dist/app.js | cut -d' ' -f1)  app.js" "$(sha256sum gym/dist/app.css | cut -d' ' -f1)  app.css" > gym/dist/SHA256SUMS
       - name: Commit bundle when changed
