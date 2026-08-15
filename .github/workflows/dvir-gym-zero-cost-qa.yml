@@ -35,10 +35,11 @@ jobs:
           grep -q 'dist/app.js?v=8.0.0' gym/index.html
           grep -q 'dvirGymAuthSessionV8' gym/index.html
           grep -q 'dvirAthleteOS_v8::' gym/index.html
-          grep -q 'v8-0-0' gym/sw.js
+          grep -q 'v8-theme-studio' gym/sw.js
           grep -q "'dist/app.css'" gym/sw.js
           grep -q "'dist/app.js'" gym/sw.js
           grep -q "'activeScope'" gym/sw.js
+          grep -q 'name="referrer" content="no-referrer"' gym/index.html
           (cd gym/dist && sha256sum -c SHA256SUMS)
       - name: JavaScript and manifest syntax check
         shell: bash
@@ -49,7 +50,7 @@ jobs:
           node --check gym/tests/e2e.mjs
           node --check gym/tests/multiuser-storage.mjs
           node -e "JSON.parse(require('fs').readFileSync('gym/manifest.json','utf8')); console.log('manifest ok')"
-      - name: Enforce zero-cost, multi-user, privacy and coaching policy
+      - name: Enforce zero-cost, multi-user, privacy, themes and coaching policy
         shell: bash
         run: |
           set -euo pipefail
@@ -65,12 +66,21 @@ jobs:
           grep -q 'DG_USER_PUSH_URL' gym/dist/app.js
           grep -q 'DG_USER_PRIVACY_URL' gym/dist/app.js
           grep -q 'DG_USER_ACCOUNT_URL' gym/dist/app.js
+          grep -q 'DG_USER_PHOTOS_URL' gym/dist/app.js
           grep -q 'dvirAthleteOS_v8::' gym/dist/app.js
           grep -q 'dgIdentityTransition' gym/dist/app.js
           grep -q 'dgPhotoScope' gym/dist/app.js
           grep -q 'Guest Mode' gym/dist/app.js
           grep -q 'Recovery Key' gym/dist/app.js
           grep -q 'מחק את החשבון לצמיתות' gym/dist/app.js
+          grep -q 'Theme Studio' gym/dist/app.js
+          grep -q 'Ivory Cream' gym/dist/app.js
+          grep -q 'Gold · White · Rose' gym/dist/app.js
+          grep -q 'Aurora Fusion' gym/dist/app.js
+          grep -q 'מייסד קהילת Explain' gym/dist/app.js
+          grep -q 'דוני (עדן) כהן' gym/dist/app.js
+          grep -q 'Multi‑Device Sync' gym/dist/app.js
+          grep -q 'user-photos' gym/dist/app.js
           grep -q 'ZERO COST\|Zero.Cost' gym/dist/app.js
           grep -q 'code_challenge_method=S256' gym/dist/app.js
           grep -q 'oauth-exchange' gym/dist/app.js
@@ -79,9 +89,11 @@ jobs:
           grep -q 'Open Food Facts' gym/dist/app.js
           grep -q 'TECHNIQUE SNAPSHOT' gym/dist/app.js
           grep -q 'תמונה סטטית אחת בלבד' gym/dist/app.js
-          grep -q 'Bright Glass' gym/dist/app.js
           grep -q 'grid-template-columns:repeat(5,minmax(0,1fr))' gym/dist/app.css
           grep -q 'dg-auth-dialog' gym/dist/app.css
+          grep -q 'data-dg-theme="cream"' gym/dist/app.css
+          grep -q 'data-dg-theme="pearl"' gym/dist/app.css
+          grep -q 'data-dg-theme="aurora"' gym/dist/app.css
           grep -q "addEventListener('push'" gym/sw.js
       - name: Verify public account service and protected user services
         shell: bash
@@ -95,7 +107,9 @@ jobs:
           echo "$ACCOUNT" | grep -q '"mode":"username-password"'
           echo "$ACCOUNT" | grep -q '10+ chars, letter + number'
           echo "$ACCOUNT" | grep -q '"rateLimit":"ip+username"'
-          for fn in user-memory user-ai-key user-coach user-push user-privacy user-account; do
+          echo "$ACCOUNT" | grep -q '"multiDevice":true'
+          echo "$ACCOUNT" | grep -q '"cloudAutoUnlock":true'
+          for fn in user-memory user-ai-key user-coach user-push user-privacy user-account user-photos; do
             CODE=$(curl --silent --max-time 25 -o /tmp/dg-protected.json -w '%{http_code}' \
               -X POST -H "apikey: $PUB" -H 'Content-Type: application/json' \
               --data '{}' "$BASE/$fn")
