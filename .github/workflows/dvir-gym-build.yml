@@ -35,9 +35,16 @@ jobs:
           for i in $(seq 1 13); do cat "gym/code/css${i}.txt" >> gym/dist/app.css; done
 
           printf '/* Dvir Gym AI Athlete OS — generated production JS. Do not edit directly. */\n' > gym/dist/app.js
-          cat gym/code/js1.txt >> gym/dist/app.js
-          printf "\nconst DG_BUILD_ID='%s';\n" "$GITHUB_SHA" >> gym/dist/app.js
-          for i in $(seq 2 38); do cat "gym/code/js${i}.txt" >> gym/dist/app.js; done
+          for i in $(seq 1 38); do cat "gym/code/js${i}.txt" >> gym/dist/app.js; done
+          BUILD_ID="$GITHUB_SHA" node - <<'NODE'
+          const fs=require('fs');
+          const p='gym/dist/app.js';
+          let s=fs.readFileSync(p,'utf8');
+          const marker="'use strict';";
+          if(!s.includes(marker)) throw new Error('strict marker missing');
+          s=s.replace(marker, marker+"\nconst DG_BUILD_ID='"+process.env.BUILD_ID+"';");
+          fs.writeFileSync(p,s);
+          NODE
           node --check gym/dist/app.js
 
           printf '%s\n' "$(sha256sum gym/dist/app.js | cut -d' ' -f1)  app.js" "$(sha256sum gym/dist/app.css | cut -d' ' -f1)  app.css" > gym/dist/SHA256SUMS
