@@ -1,0 +1,27 @@
+import { chromium } from 'playwright';
+const browser=await chromium.launch({headless:true});
+const context=await browser.newContext({viewport:{width:390,height:844},locale:'he-IL'});
+await context.addInitScript(()=>localStorage.setItem('dvirGymMultiWelcomeV8','1'));
+const page=await context.newPage();
+const errors=[];page.on('pageerror',e=>errors.push(String(e)));
+await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
+await page.waitForSelector('body.ready',{timeout:30000});
+if(await page.locator('#onboardDialog[open]').count())await page.locator('#obBack').click().catch(()=>{});
+await page.evaluate(()=>{S.location='home';S.profile={...S.profile,complete:true,days:4,goal:'lean_gain',weight:65,height:165,age:28};S.logs=[];S.readiness={sleep:4,energy:4,soreness:2,stress:2};save();renderCurrent()});
+await page.locator('#buildToday').evaluate(el=>el.click());
+await page.waitForSelector('#workoutDialog[open]',{timeout:15000});
+await page.waitForSelector('.dg-home-technique-card',{timeout:10000});
+await page.waitForFunction(()=>getComputedStyle(document.querySelector('.dg-home-technique-card')).backgroundImage.includes('data:image/webp;base64,'),null,{timeout:10000});
+const result=await page.evaluate(()=>{
+ const ids=Object.keys(DG_HOME_VISUAL_INDEX),mapped=ids.map(id=>{const e=document.createElement('i');return{id,position:dgHomeSpritePosition(id),painted:dgPaintHomeSprite(e,id),image:e.style.backgroundImage.slice(0,30)}});
+ const w=S.activeWorkout,first=w?.exercises?.[w.currentIndex||0];
+ return{ids,mapped,first:first?.exerciseId,rootClass:document.querySelector('.home-visual')?.className||'',text:document.querySelector('.home-visual')?.innerText||'',homeIds:HOME_EX.map(x=>x.id),upperA:TEMPLATES.home.upperA.map(x=>x[0]),split:homeMap['home-split']?.pro};
+});
+if(result.ids.length!==13)throw new Error('Expected 13 exact home exercise visuals: '+JSON.stringify(result));
+if(result.mapped.some(x=>!x.position||!x.painted||!x.image.includes('data:image/webp')))throw new Error('Home visual mapping failure: '+JSON.stringify(result.mapped));
+if(!result.rootClass.includes('dg-home-visual-v9')||!result.text.includes('AI TECHNIQUE CARD'))throw new Error('Workout did not render AI technique card');
+if(result.homeIds.includes('home-squeeze')||result.homeIds.includes('home-lunge'))throw new Error('Exercises without exact visuals still offered');
+if(result.split!=='Bulgarian Split Squat')throw new Error('Split squat visual/program mismatch');
+if(!result.upperA.includes('home-floor-press'))throw new Error('Upper A was not aligned with exact visual library');
+if(errors.length)throw new Error('Runtime errors: '+errors.join(' | '));
+console.log('AI home exercise visual E2E OK',result);await browser.close();
