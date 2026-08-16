@@ -32,20 +32,30 @@ jobs:
           test -f gym/tests/e2e.mjs
           test -f gym/tests/multiuser-storage.mjs
           for i in $(seq 1 7); do test -f "gym/assets/sprite${i}.txt"; done
-          grep -q 'dist/app.css?v=9.0.1' gym/index.html
-          grep -q 'dist/app.js?v=9.0.1' gym/index.html
-          grep -q 'Athlete OS 9.0.1' gym/index.html
+          for i in 1 2; do test -s "gym/assets/home-sprite${i}.txt"; done
+          grep -q 'dist/app.css?v=9.0.2' gym/index.html
+          grep -q 'dist/app.js?v=9.0.2' gym/index.html
+          grep -q 'Athlete OS 9.0.2' gym/index.html
           grep -q 'sessionStorage.getItem(SESSION)' gym/index.html
           grep -q 'dvirGymAuthSessionV8' gym/index.html
           grep -q 'dvirAthleteOS_v8::' gym/index.html
-          grep -q 'dvir-athlete-os-v9-0-1-20260815' gym/sw.js
+          grep -q 'dvir-athlete-os-v9-0-2-home-visuals-20260816' gym/sw.js
+          grep -q "'assets/home-sprite1.txt'" gym/sw.js
+          grep -q "'assets/home-sprite2.txt'" gym/sw.js
           grep -q "'version.json'" gym/sw.js
           grep -q '/version.json' gym/sw.js
           grep -q "'dist/app.css'" gym/sw.js
           grep -q "'dist/app.js'" gym/sw.js
           grep -q "'activeScope'" gym/sw.js
           grep -q 'name="referrer" content="no-referrer"' gym/index.html
-          node -e "const x=JSON.parse(require('fs').readFileSync('gym/version.json','utf8')); if(!x.build||x.appVersion!=='9.0.1')process.exit(1); console.log('version ok',x.build)"
+          node -e "const x=JSON.parse(require('fs').readFileSync('gym/version.json','utf8')); if(!x.build||x.appVersion!=='9.0.2')process.exit(1); console.log('version ok',x.build)"
+          node - <<'NODE'
+          const fs=require('fs');
+          const b=fs.readFileSync('gym/assets/home-sprite1.txt','utf8').trim()+fs.readFileSync('gym/assets/home-sprite2.txt','utf8').trim();
+          const x=Buffer.from(b,'base64');
+          if(x.length<15000||x.slice(0,4).toString()!=='RIFF'||x.slice(8,12).toString()!=='WEBP') throw new Error('home sprite invalid');
+          console.log('home sprite ok',x.length);
+          NODE
           (cd gym/dist && sha256sum -c SHA256SUMS)
       - name: JavaScript and manifest syntax check
         shell: bash
@@ -55,7 +65,7 @@ jobs:
           node --check gym/sw.js
           node --check gym/tests/e2e.mjs
           node --check gym/tests/multiuser-storage.mjs
-          node -e "const x=JSON.parse(require('fs').readFileSync('gym/manifest.json','utf8')); if(!x.name.includes('9.0.1'))process.exit(1); console.log('manifest ok')"
+          node -e "const x=JSON.parse(require('fs').readFileSync('gym/manifest.json','utf8')); if(!x.name.includes('9.0.2'))process.exit(1); console.log('manifest ok')"
       - name: Enforce zero-cost, multi-user, privacy, themes and coaching policy
         shell: bash
         run: |
@@ -92,7 +102,7 @@ jobs:
           grep -q 'personal-motivation' gym/dist/app.js
           grep -q 'maxConsecutiveStrengthDays:2' gym/dist/app.js
           grep -q 'dgNeedsRecoveryV9' gym/dist/app.js
-          grep -q 'Dumbbell Split Squat' gym/dist/app.js
+          grep -q 'Bulgarian Split Squat' gym/dist/app.js
           grep -q 'Standing Dumbbell Calf Raise' gym/dist/app.js
           grep -q 'Incline Smith Press' gym/dist/app.js
           grep -q 'Theme Studio' gym/dist/app.js
@@ -111,6 +121,13 @@ jobs:
           grep -q 'Open Food Facts' gym/dist/app.js
           grep -q 'TECHNIQUE SNAPSHOT' gym/dist/app.js
           grep -q 'תמונה סטטית אחת בלבד' gym/dist/app.js
+          grep -q 'DG_HOME_VISUAL_INDEX' gym/dist/app.js
+          grep -q 'AI TECHNIQUE CARD' gym/dist/app.js
+          grep -q 'home-sprite1.txt' gym/dist/app.js
+          grep -q 'home-pushup' gym/dist/app.js
+          grep -q 'home-legraise' gym/dist/app.js
+          grep -q 'dg-home-technique-card' gym/dist/app.css
+          grep -q 'dg-home-swap-thumb' gym/dist/app.css
           grep -q 'grid-template-columns:repeat(5,minmax(0,1fr))' gym/dist/app.css
           grep -q 'dg-auth-dialog' gym/dist/app.css
           grep -q 'dg-admin-dialog' gym/dist/app.css
