@@ -1,6 +1,6 @@
 /* Dvir Gym AI Athlete OS — generated production JS. Do not edit directly. */
 'use strict';
-const DG_BUILD_ID='1517cc85a9b6eb0700259ff74e7afc6d8e8a09fb';
+const DG_BUILD_ID='b8a52e67eef0301440e611380ba73723ffb45752';
 const VERSION='6.0.0';
 const STORE='dvirAthleteOS_v6';
 const LEGACY=['dvirAthleteLiveV1','dvirGymAthleteOSV4','dvirGym2027V3'];
@@ -1285,3 +1285,56 @@ dgLogout=async function(){
  toast('יצאת מהחשבון · חוזר למצב אורח');
  setTimeout(()=>location.reload(),180);
 };
+
+/* Athlete OS 9 — AI Home Exercise Visuals: real technique cards, zero abstract-arrow fallback */
+const DG_HOME_SPRITE_PARTS=['assets/home-sprite1.txt','assets/home-sprite2.txt'];
+const DG_HOME_VISUAL_INDEX={
+ 'home-pushup':0,'home-pullup':1,'home-db-row':2,'home-floor-press':3,
+ 'home-shoulder':4,'home-lateral':5,'home-goblet':6,'home-rdl':7,
+ 'home-split':8,'home-calf':9,'home-curl':10,'home-triceps':11,'home-legraise':12
+};
+let dgHomeSpriteUrl='';
+async function dgLoadHomeExerciseSprite(){
+ if(dgHomeSpriteUrl)return dgHomeSpriteUrl;
+ try{
+  const parts=await Promise.all(DG_HOME_SPRITE_PARTS.map(async u=>{const r=await fetch(u,{cache:'force-cache'});if(!r.ok)throw new Error('home_sprite_'+r.status);return(await r.text()).trim()}));
+  dgHomeSpriteUrl=`url("data:image/webp;base64,${parts.join('')}")`;
+  dgApplyHomeWorkoutVisual();dgEnhanceHomeSwapVisuals();
+  return dgHomeSpriteUrl;
+ }catch(e){try{dgRecordError?.('home-exercise-sprite',e)}catch{}return''}
+}
+function dgHomeSpritePosition(id){const i=DG_HOME_VISUAL_INDEX[id];if(i==null)return null;const col=i%4,row=Math.floor(i/4);return`${(col/3*100).toFixed(4)}% ${(row/3*100).toFixed(4)}%`}
+function dgPaintHomeSprite(el,id){const pos=dgHomeSpritePosition(id);if(!el||!pos||!dgHomeSpriteUrl)return false;el.style.backgroundImage=dgHomeSpriteUrl;el.style.backgroundSize='400% 400%';el.style.backgroundPosition=pos;el.style.backgroundRepeat='no-repeat';return true}
+function dgApplyHomeWorkoutVisual(){
+ const w=S.activeWorkout,e=w?.exercises?.[w.currentIndex||0],root=$('#workoutContent .home-visual');
+ if(!root||!e||w?.location!=='home')return;
+ const info=workoutInfo(e),has=DG_HOME_VISUAL_INDEX[e.exerciseId]!=null;
+ root.classList.add('dg-home-visual-v9');
+ root.innerHTML=`<div class="dg-home-technique-card" data-home-photo="${esc(e.exerciseId)}"></div><div class="dg-home-photo-meta"><span>AI TECHNIQUE CARD</span><b>${esc(info.pro||e.name)}</b><small>הדגמה חזותית · בצע לפי ה־cue וה־setup שמתחת לתמונה</small></div>`;
+ const box=root.querySelector('[data-home-photo]');
+ if(has&&dgPaintHomeSprite(box,e.exerciseId)){root.classList.add('loaded')}else{root.classList.remove('loaded');box.innerHTML='<div class="dg-home-photo-loading"><span>◌</span><b>טוען הדגמת תרגיל…</b></div>';dgLoadHomeExerciseSprite()}
+}
+const dgRenderWorkoutHomeVisualBase=renderWorkout;
+renderWorkout=function(){const r=dgRenderWorkoutHomeVisualBase();setTimeout(dgApplyHomeWorkoutVisual,0);return r};
+
+function dgEnhanceHomeSwapVisuals(){
+ if(S.location!=='home')return;
+ $$('.dg-swap-option[data-dg-swap]').forEach(b=>{if(b.querySelector('.dg-home-swap-thumb'))return;const id=b.dataset.dgSwap;if(DG_HOME_VISUAL_INDEX[id]==null)return;const thumb=document.createElement('i');thumb.className='dg-home-swap-thumb';b.prepend(thumb);dgPaintHomeSprite(thumb,id)})
+}
+const dgSwapExerciseHomeVisualBase=swapExercise;
+swapExercise=function(e){const r=dgSwapExerciseHomeVisualBase(e);setTimeout(dgEnhanceHomeSwapVisuals,0);return r};
+
+// Keep the home program aligned with the visuals and actual exercise technique.
+if(homeMap['home-split']){
+ homeMap['home-split'].simple='סקוואט בולגרי עם משקולות';
+ homeMap['home-split'].pro='Bulgarian Split Squat';
+ homeMap['home-split'].setup='הנח את הרגל האחורית על כיסא/משטח יציב. הרגל הקדמית רחוקה מספיק כדי לרדת בשליטה.';
+ homeMap['home-split'].cue='רד כמעט אנכית דרך הרגל הקדמית; דחוף את כל כף הרגל לרצפה. אם אין משטח יציב — החלף ל־Goblet Squat.';
+}
+// Exercises without an exact photo are not offered by Smart Swap.
+for(const id of ['home-lunge','home-squeeze']){const i=HOME_EX.findIndex(x=>x.id===id);if(i>=0)HOME_EX.splice(i,1);delete homeMap[id]}
+TEMPLATES.home.upperA=[['home-pushup','Push-up',4,'8–20',90],['home-pullup','Pull-up',3,'5–10',120],['home-db-row','Dumbbell Row',3,'8–12',90],['home-shoulder','Dumbbell Shoulder Press',3,'8–12',90],['home-lateral','Dumbbell Lateral Raise',3,'12–20',60],['home-curl','Dumbbell Curl',3,'8–15',60],['home-triceps','Overhead Triceps Extension',3,'10–15',60],['home-floor-press','Dumbbell Floor Press',2,'10–15',75]];
+TEMPLATES.home.lowerA=[['home-goblet','Goblet Squat',4,'8–15',120],['home-rdl','Dumbbell RDL',4,'8–12',120],['home-split','Bulgarian Split Squat',3,'8–12 לכל רגל',100],['home-calf','Standing Dumbbell Calf Raise',3,'12–20',60],['home-legraise','Lying Leg Raise',3,'10–20',60]];
+TEMPLATES.home.upperB=[['home-floor-press','Dumbbell Floor Press',4,'8–15',90],['home-pullup','Pull-up',4,'5–10',120],['home-db-row','Dumbbell Row',3,'8–12',90],['home-pushup','Push-up',3,'10–20',75],['home-lateral','Dumbbell Lateral Raise',3,'12–20',60],['home-curl','Dumbbell Curl',3,'10–15',60],['home-triceps','Overhead Triceps Extension',3,'10–15',60]];
+TEMPLATES.home.lowerB=[['home-rdl','Dumbbell RDL',4,'8–12',120],['home-split','Bulgarian Split Squat',4,'8–12 לכל רגל',100],['home-goblet','Goblet Squat',3,'10–15',100],['home-calf','Standing Dumbbell Calf Raise',3,'12–20',60],['home-legraise','Lying Leg Raise',3,'10–20',60]];
+setTimeout(dgLoadHomeExerciseSprite,900);
