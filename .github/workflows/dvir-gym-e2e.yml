@@ -33,3 +33,5 @@ jobs:
         run: node gym/tests/e2e.mjs
       - name: Run scoped-storage E2E
         run: node gym/tests/multiuser-storage.mjs
+      - name: Run AI home exercise visual E2E
+        run: node gym/tests/home-visuals.mjs
