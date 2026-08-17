@@ -48,7 +48,7 @@ jobs:
           node --check gym/dist/app.js
 
           printf '%s\n' "$(sha256sum gym/dist/app.js | cut -d' ' -f1)  app.js" "$(sha256sum gym/dist/app.css | cut -d' ' -f1)  app.css" > gym/dist/SHA256SUMS
-          printf '{"build":"%s","builtAt":"%s","channel":"production","appVersion":"9.1.0"}\n' "$GITHUB_SHA" "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" > gym/version.json
+          printf '{"build":"%s","builtAt":"%s","channel":"production","appVersion":"9.1.1"}\n' "$GITHUB_SHA" "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" > gym/version.json
       - name: Commit bundle when changed
         shell: bash
         run: |
