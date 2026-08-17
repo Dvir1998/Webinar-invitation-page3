@@ -10,7 +10,7 @@ const browser=await chromium.launch({headless:true});
 for(const viewport of viewports){
  const context=await browser.newContext({viewport,locale:'he-IL'});
  await context.addInitScript(()=>{
-  const state={version:'9.1.0',profile:{name:'Gym QA',complete:true,days:4,goal:'lean_gain',weight:65,height:165,age:28},prefs:{theme:'bright'},logs:[],meals:[],weights:[],measures:[],chat:[],photos:[]};
+  const state={version:'9.1.1',profile:{name:'Gym QA',complete:true,days:4,goal:'lean_gain',weight:65,height:165,age:28},prefs:{theme:'bright'},logs:[],meals:[],weights:[],measures:[],chat:[],photos:[]};
   localStorage.setItem('dvirGymMultiWelcomeV8','1');
   localStorage.setItem('dvirAthleteOS_v6',JSON.stringify(state));
   localStorage.setItem('dvirAthleteOS_v8::guest',JSON.stringify(state));

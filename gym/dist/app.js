@@ -1,6 +1,6 @@
 /* Dvir Gym AI Athlete OS — generated production JS. Do not edit directly. */
 'use strict';
-const DG_BUILD_ID='db3d410a4df9b8ba605c020370c371c82cc1283f';
+const DG_BUILD_ID='local-production-9.1.1';
 const VERSION='6.0.0';
 const STORE='dvirAthleteOS_v6';
 const LEGACY=['dvirAthleteLiveV1','dvirGymAthleteOSV4','dvirGym2027V3'];
@@ -17,7 +17,7 @@ function dayKey(ts=Date.now()){const d=new Date(ts),y=d.getFullYear(),m=String(d
 
 let machineSprite='';
 async function loadMachineSprite(){
- machineSprite='assets/gym-machines.webp?v=9.1.0';
+ machineSprite='assets/gym-machines.webp?v=9.1.1';
  return machineSprite;
 }
 function photoStyle(i){const c=i%4,r=Math.floor(i/4);return machineSprite?`background-image:url(${machineSprite});background-size:400% 500%;background-position:${c*33.333}% ${r*25}%;background-repeat:no-repeat`:''}
@@ -1340,7 +1340,7 @@ TEMPLATES.home.upperB=[['home-floor-press','Dumbbell Floor Press',4,'8–15',90]
 TEMPLATES.home.lowerB=[['home-rdl','Dumbbell RDL',4,'8–12',120],['home-split','Bulgarian Split Squat',4,'8–12 לכל רגל',100],['home-goblet','Goblet Squat',3,'10–15',100],['home-calf','Standing Dumbbell Calf Raise',3,'12–20',60],['home-legraise','Lying Leg Raise',3,'10–20',60]];
 setTimeout(dgLoadHomeExerciseSprite,900);
 /* Athlete OS 9.1 — production gym equipment library, authentic-photo cards and cardio protocol */
-const DG_GYM_LIBRARY_VERSION='9.1.0';
+const DG_GYM_LIBRARY_VERSION='9.1.1';
 const DG_MACHINE_SPRITE_URL=`assets/gym-machines.webp?v=${DG_GYM_LIBRARY_VERSION}`;
 const DG_HOME_SPRITE_URL=`assets/home-exercises.webp?v=${DG_GYM_LIBRARY_VERSION}`;
 
@@ -1448,3 +1448,19 @@ const dgRenderWorkoutCardioV91Base=renderWorkout;
 renderWorkout=function(){const r=dgRenderWorkoutCardioV91Base();setTimeout(dgInjectCardioProtocol,0);return r};
 
 setTimeout(()=>{loadMachineSprite();dgLoadHomeExerciseSprite()},350);
+
+function dgInjectAccountEntryV911(){
+ const home=$('#screen-home');if(!home)return;
+ home.querySelector('#dgAccountEntryV911')?.remove();
+ const profile=$('#profileBtn');if(profile){profile.onclick=()=>dgOpenAccount('home');profile.setAttribute('aria-label',dgIsAccount()?'פתח חשבון אישי':'כניסה או הרשמה')}
+ if(dgIsAccount())return;
+ const button=document.createElement('button');button.id='dgAccountEntryV911';button.className='dg-account-entry-v911';button.type='button';button.setAttribute('aria-label','כניסה או הרשמה לחשבון');button.innerHTML='<span>↳</span><span><b>כניסה או הרשמה</b><small>חשבון אישי, שמירה וסנכרון בין מכשירים</small></span>';button.onclick=()=>dgOpenAccount('home');
+ home.prepend(button);
+}
+const dgUpdateIdentityChromeV911Base=dgUpdateIdentityChrome;
+dgUpdateIdentityChrome=function(){const r=dgUpdateIdentityChromeV911Base();const profile=$('#profileBtn');if(profile){profile.onclick=()=>dgOpenAccount('home');profile.setAttribute('aria-label',dgIsAccount()?'פתח חשבון אישי':'כניסה או הרשמה')}return r};
+const dgRenderHomeV911Base=renderHome;
+renderHome=function(){const r=dgRenderHomeV911Base();setTimeout(dgInjectAccountEntryV911,0);return r};
+const dgRenderCurrentV911Base=renderCurrent;
+renderCurrent=function(){const r=dgRenderCurrentV911Base();setTimeout(dgInjectAccountEntryV911,0);return r};
+setTimeout(dgInjectAccountEntryV911,450);
