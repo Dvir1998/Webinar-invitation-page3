@@ -1,6 +1,6 @@
 /* Dvir Gym AI Athlete OS — generated production JS. Do not edit directly. */
 'use strict';
-const DG_BUILD_ID='b8a52e67eef0301440e611380ba73723ffb45752';
+const DG_BUILD_ID='local-production-9.1.0';
 const VERSION='6.0.0';
 const STORE='dvirAthleteOS_v6';
 const LEGACY=['dvirAthleteLiveV1','dvirGymAthleteOSV4','dvirGym2027V3'];
@@ -17,8 +17,8 @@ function dayKey(ts=Date.now()){const d=new Date(ts),y=d.getFullYear(),m=String(d
 
 let machineSprite='';
 async function loadMachineSprite(){
- try{machineSprite='data:image/webp;base64,'+(await Promise.all(Array.from({length:7},(_,i)=>fetch(`assets/sprite${i+1}.txt?v=6`).then(r=>{if(!r.ok)throw Error(r.status);return r.text()})))).join('')}
- catch(e){console.warn('machine sprite unavailable',e);machineSprite=''}
+ machineSprite='assets/gym-machines.webp?v=9.1.0';
+ return machineSprite;
 }
 function photoStyle(i){const c=i%4,r=Math.floor(i/4);return machineSprite?`background-image:url(${machineSprite});background-size:400% 500%;background-position:${c*33.333}% ${r*25}%;background-repeat:no-repeat`:''}
 function machineVisual(m,cls='machine-sprite'){return `<div class="${cls}" role="img" aria-label="${esc(m.simple)}" style="${photoStyle(m.photoIndex||0)}"></div>`}
@@ -68,7 +68,8 @@ const TARGET_SETS={chest:10,back:12,shoulders:10,biceps:6,triceps:6,quads:8,hams
 const TEMPLATES={
  gym:{
   upperA:[['chest-press','Chest Press',3,'6–10',120],['lat-pulldown','Lat Pulldown',3,'8–12',120],['seated-row','Seated Row',3,'8–12',100],['pec-rear','Pec Fly',2,'10–15',75],['shoulder-press','Shoulder Press',3,'8–12',100],['cable','Cable Lateral Raise',3,'12–20',60],['preacher','Preacher Curl',3,'8–12',75],['cable','Triceps Pushdown',3,'10–15',60]],
-  lowerA:[['smith','Smith Squat',3,'6–10',150],['leg-extension','Leg Extension',3,'10–15',90],['leg-curl','Seated Leg Curl',3,'8–12',100],['smith','Smith RDL',3,'8–12',120],['hip','Hip Adduction',2,'12–20',60],['ab-crunch','Ab Crunch',3,'10–15',60]],
+  lowerA:[['smith','Smith Squat',3,'6–10',150],['leg-extension','Leg Extension',3,'10–15',90],['leg-curl','Seated Leg Curl',3,'8–12',100],['smith','Smith RDL',3,'8–12',120],['hip','Hip Adduction',2,'12–20',60],['ab-crunch','Ab Crunch',3
+,'10–15',60]],
   upperB:[['assisted','Assisted Pull-up',3,'6–10',120],['seated-row','Seated Row',3,'8–12',100],['chest-press','Chest Press',3,'8–12',100],['pec-rear','Rear Delt Fly',3,'12–20',60],['cable','Cable Lateral Raise',3,'12–20',60],['preacher','Preacher Curl',3,'10–15',60],['cable','Overhead Triceps Extension',3,'10–15',60]],
   lowerB:[['smith','Smith RDL',3,'6–10',150],['smith','Smith Squat',3,'8–12',130],['leg-curl','Seated Leg Curl',3,'10–15',90],['leg-extension','Leg Extension',2,'12–15',75],['hip','Hip Abduction',3,'12–20',60],['ab-crunch','Ab Crunch',3,'10–15',60]]
  },
@@ -1338,3 +1339,112 @@ TEMPLATES.home.lowerA=[['home-goblet','Goblet Squat',4,'8–15',120],['home-rdl'
 TEMPLATES.home.upperB=[['home-floor-press','Dumbbell Floor Press',4,'8–15',90],['home-pullup','Pull-up',4,'5–10',120],['home-db-row','Dumbbell Row',3,'8–12',90],['home-pushup','Push-up',3,'10–20',75],['home-lateral','Dumbbell Lateral Raise',3,'12–20',60],['home-curl','Dumbbell Curl',3,'10–15',60],['home-triceps','Overhead Triceps Extension',3,'10–15',60]];
 TEMPLATES.home.lowerB=[['home-rdl','Dumbbell RDL',4,'8–12',120],['home-split','Bulgarian Split Squat',4,'8–12 לכל רגל',100],['home-goblet','Goblet Squat',3,'10–15',100],['home-calf','Standing Dumbbell Calf Raise',3,'12–20',60],['home-legraise','Lying Leg Raise',3,'10–20',60]];
 setTimeout(dgLoadHomeExerciseSprite,900);
+/* Athlete OS 9.1 — production gym equipment library, authentic-photo cards and cardio protocol */
+const DG_GYM_LIBRARY_VERSION='9.1.0';
+const DG_MACHINE_SPRITE_URL=`assets/gym-machines.webp?v=${DG_GYM_LIBRARY_VERSION}`;
+const DG_HOME_SPRITE_URL=`assets/home-exercises.webp?v=${DG_GYM_LIBRARY_VERSION}`;
+
+// The original photos are one 4×5 contact sheet. A fixed 3:4 tile ratio keeps every
+// photographed machine faithful instead of stretching it differently in each view.
+loadMachineSprite=async function(){machineSprite=DG_MACHINE_SPRITE_URL;return machineSprite};
+dgLoadHomeExerciseSprite=async function(){
+ if(!dgHomeSpriteUrl)dgHomeSpriteUrl=`url("${DG_HOME_SPRITE_URL}")`;
+ dgApplyHomeWorkoutVisual();dgEnhanceHomeSwapVisuals();return dgHomeSpriteUrl;
+};
+
+const DG_MACHINE_DETAILS={
+ 'lat-pulldown':{tip:'התחל במשקל שמאפשר עצירה של שנייה בחזה העליון בלי להטות את הגוף לאחור.',bestFor:'בניית רוחב גב ולמידת משיכה אנכית לפני מתח חופשי.',programUse:'תרגיל גב מרכזי ב־Upper B, אחרי החימום ולפני תרגילי הידיים.'},
+ 'leg-extension':{tip:'שמור 1–3 חזרות ברזרבה והשתמש בירידה איטית של 2–3 שניות.',bestFor:'העמסה ממוקדת על הארבע־ראשי בלי עייפות גדולה של הגב.',programUse:'תרגיל משלים ב־Lower A/B; לא תחליף לסקוואט או לתנועה חד־צדדית.'},
+ 'pec-rear':{tip:'בחר מראש מצב אחד בלבד בכל סט: סגירה לחזה או פתיחה לכתף אחורית.',bestFor:'תוספת נפח לחזה או לכתף האחורית במסלול יציב.',programUse:'Pec Fly מסיים עבודת חזה; Rear Delt Fly משלים משיכות וכתפיים.'},
+ 'lat-row-combo':{tip:'בדוק את חיבור הידית והכבל לפני הישיבה, ובחר תחנה לפי כיוון המשיכה בתוכנית.',bestFor:'משיכה אנכית ואופקית בתחנה אחת כאשר מכשיר אחר תפוס.',programUse:'תחליף ל־Lat Pulldown או Seated Row, לא שניהם באותו סט.'},
+ 'hip':{tip:'עבוד בטווח שאפשר לשלוט בו בלי שהאגן מסתובב או קופץ מהמושב.',bestFor:'נפח ממוקד למרחיקים, לגלוטס ולמקרבי הירך.',programUse:'תרגיל משלים בסוף Lower A/B לאחר התרגילים הכבדים.'},
+ 'seated-row':{tip:'השהה את הידיות ליד הגוף ושמור את הצוואר ארוך במקום למשוך כתפיים לאוזניים.',bestFor:'בניית עובי גב ושליטה בשכמות במשיכה אופקית.',programUse:'תרגיל גב מרכזי ב־Upper A/B, לפני כפיפות מרפקים.'},
+ 'ab-crunch':{tip:'נשוף בזמן הכיפוף כדי לקרב צלעות לאגן בלי למשוך בצוואר.',bestFor:'העמסה מדידה ומתקדמת על שרירי הבטן.',programUse:'2–3 סטים בסוף אימון רגליים; אין צורך לבצע בכל יום.'},
+ 'leg-curl':{tip:'עצור בכיווץ ואל תאפשר למשקולות להיטרק בדרך חזרה.',bestFor:'בידוד הירך האחורית דרך כפיפת הברך.',programUse:'תרגיל מרכזי לירך האחורית ב־Lower A/B לצד תנועת RDL.'},
+ 'shoulder-press':{tip:'בחר אחיזה ומנח מרפקים שאינם יוצרים צביטה בכתף.',bestFor:'העמסה יציבה על הכתף הקדמית והאמצעית ועל הטרייספס.',programUse:'לחיצה עיקרית ב־Upper A לאחר משיכות ולחיצת חזה.'},
+ 'chest-press':{tip:'כוון את המושב לפני המשקל; הידיות צריכות להתחיל סביב אמצע החזה.',bestFor:'בניית חזה עם יציבות גבוהה ומעקב עומס פשוט.',programUse:'לחיצת החזה המרכזית ב־Upper A; התקדמות בטווח 6–10 חזרות.'},
+ 'smith':{tip:'הצב סטופרים לפני הסט ובצע חימום הדרגתי למסלול הספציפי שבחרת.',bestFor:'סקוואט, RDL, לחיצת חזה בשיפוע ועליות תאומים עם מסילה קבועה.',programUse:'משמש בתוכנית לפי שם התרגיל; מיקום הרגליים והספסל משתנה בכל תנועה.'},
+ 'preacher':{tip:'השאר מעט כיפוף במרפק בתחתית אם יישור מלא גורם לאובדן שליטה.',bestFor:'בידוד הבייספס והפחתת תנופה מהגוף.',programUse:'תרגיל יד קדמית בסוף Upper A/B לאחר תרגילי הגב.'},
+ 'cable':{tip:'עמוד כך שהכבל נשאר במתח גם בתחילת וגם בסוף הטווח.',bestFor:'הרחקות כתף, פשיטות מרפק, כפיפות מרפק ותרגילי חזה בזוויות שונות.',programUse:'תחנה משלימה; בחר רק את התרגיל שמופיע בשם האימון הפעיל.'},
+ 'assisted':{tip:'רשום את רמת הסיוע: התקדמות פירושה פחות סיוע תוך שמירת טכניקה.',bestFor:'בניית כוח למתח ולדיפס לפני מעבר למשקל גוף מלא.',programUse:'Assisted Pull-up פותח את Upper A; דיפס רק כתחליף מתאים ללחיצת חזה.'},
+ 'treadmill':{tip:'לחימום כוח שמור קצב דיבור נוח; שיפוע קטן עדיף על ריצה מעייפת.',bestFor:'חימום כללי, הליכה בשיפוע ואירובי מתון.',programUse:'5–8 דקות לפני כוח או 20–30 דקות ביום התאוששות. לא ריצה קשה לפני Lower.'},
+ 'elliptical':{tip:'הפעל גם ידיים וגם רגליים ושמור מאמץ קל עד בינוני.',bestFor:'חימום גוף מלא עם מעט זעזועים למפרקים.',programUse:'5–7 דקות כחלופה לחימום; 20–30 דקות קלות ביום התאוששות.'},
+ 'stair':{tip:'הישען מעט ככל האפשר על הידיות כדי שהרגליים יבצעו את העבודה.',bestFor:'אירובי עצים יותר וסבולת של גלוטס וארבע־ראשי.',programUse:'8–12 דקות אחרי אימון פלג גוף עליון. אסור לפני אימון רגליים כבד.'},
+ 'recumbent':{tip:'בחר התנגדות שמאפשרת דיווש חלק ורציף בלי לדחוף בכוח בכל סיבוב.',bestFor:'התאוששות פעילה ואירובי נוח עם תמיכת גב.',programUse:'20–30 דקות בקצב קל ביום מנוחה פעילה; 5 דקות בלבד כחימום Lower.'},
+ 'rower':{tip:'כל משיכה מתחילה בדחיפת הרגליים; הידיים מסיימות ואינן מובילות.',bestFor:'חימום קצר לכל הגוף ושיפור תיאום בין רגליים, גו וידיים.',programUse:'4–6 דקות קלות לפני Upper. הימנע מנפח קשה לפני אימון גב או RDL.'},
+ 'bike':{tip:'גובה מושב נכון משאיר כיפוף קטן בברך בנקודה התחתונה.',bestFor:'העלאת טמפרטורת הרגליים בלי עומס פגיעה.',programUse:'5–7 דקות קלות לפני Lower; ספרינטים נשמרים ליום נפרד מאימון רגליים כבד.'}
+};
+
+for(const m of MACHINES){
+ Object.assign(m,DG_MACHINE_DETAILS[m.id]||{});
+ m.isCardio=(m.muscles||[]).includes('cardio');
+ m.photoSource='צילום אמיתי מהמכון';
+}
+
+function dgMachineMuscles(m){
+ const names=(m.muscles||[]).map(x=>x==='cardio'?'לב־ריאה':x==='legs'?'רגליים':(MUSCLE_NAMES[x]||x));
+ return [...new Set(names)].join(' · ');
+}
+function dgMachineSearchText(m){return[m.simple,m.pro,m.cat,dgMachineMuscles(m),m.setup,m.cue,m.bestFor,m.programUse].join(' ').toLowerCase()}
+function dgMachinePhoto(m,cls=''){return`<div class="dg-machine-photo-frame ${cls}">${machineVisual(m,'machine-sprite dg-machine-photo')}<span class="dg-real-photo-badge">צילום מהמכון</span></div>`}
+
+renderMachineGrid=function(arr){
+ const g=$('#machineGrid');if(!g)return;
+ g.setAttribute('aria-live','polite');g.setAttribute('aria-label','ספריית מכשירי המכון');
+ if(!arr.length){g.innerHTML='<div class="dg-machine-empty">לא נמצאו מכשירים שמתאימים לחיפוש.</div>';return}
+ g.innerHTML=arr.map(m=>`<button class="card machine-card dg-machine-card-v91" type="button" data-machine="${esc(m.id)}" aria-label="פתח מדריך ${esc(m.simple)}">${dgMachinePhoto(m,'dg-machine-card-photo')}<div class="body"><span class="dg-machine-kind ${m.isCardio?'cardio':'strength'}">${m.isCardio?'אירובי וחימום':'אימון כוח'}</span><b>${esc(m.simple)}</b><small>${esc(m.pro)}</small><em>${esc(dgMachineMuscles(m)||m.cat)}</em></div></button>`).join('');
+ $$('[data-machine]',g).forEach(b=>b.onclick=()=>openMachine(b.dataset.machine));
+};
+
+openMachine=function(id){
+ const m=machineMap[id];if(!m)return;
+ const dialog=$('#machineDialog');
+ $('#machineContent').innerHTML=`<div class="dg-machine-modal-v91">${dgMachinePhoto(m,'dg-machine-modal-photo')}<button class="close dg-machine-close" id="dgMachineClose" type="button" aria-label="סגור מדריך">×</button><div class="sheet dg-machine-sheet"><div class="dg-machine-title-row"><div><div class="eyebrow">${m.isCardio?'CARDIO & WARM-UP':'MACHINE GUIDE'}</div><h2>${esc(m.simple)}</h2><p>${esc(m.pro)} · ${esc(m.cat)}</p></div><span class="dg-machine-kind ${m.isCardio?'cardio':'strength'}">${m.isCardio?'אירובי':'כוח'}</span></div><div class="dg-muscle-strip"><small>שרירים ומערכת</small><b>${esc(dgMachineMuscles(m)||m.cat)}</b></div><div class="dg-guide-grid"><section><span>1</span><div><b>כיוון והכנה</b><p>${esc(m.setup)}</p></div></section><section><span>2</span><div><b>ביצוע נכון</b><p>${esc(m.cue)}</p></div></section><section><span>3</span><div><b>טיפ מקצועי</b><p>${esc(m.tip)}</p></div></section><section class="warn"><span>!</span><div><b>אזהרה וטעות נפוצה</b><p>${esc(m.mistake)}</p></div></section></div><div class="dg-program-fit"><div><small>שילוב בתוכנית</small><b>${esc(m.programUse)}</b></div><div><small>למי מתאים</small><b>${esc(m.bestFor)}</b></div></div><button class="primary" id="machineAsk" type="button">שאל את המאמן על המכשיר</button></div></div>`;
+ dialog.showModal();
+ $('#dgMachineClose').onclick=()=>dialog.close();
+ $('#machineAsk').onclick=()=>{dialog.close();openCoachWith(`אני עומד מול ${m.pro} (${m.simple}). הסבר איך לכוון אותו ואיך לשלב אותו באימון הפעיל בלי לפגוע בהתאוששות.`)};
+};
+
+let dgMachineFilter='all';
+function dgApplyMachineFilters(){
+ const q=String($('#machineSearch')?.value||'').trim().toLowerCase();
+ const arr=MACHINES.filter(m=>(dgMachineFilter==='all'||(dgMachineFilter==='cardio'&&m.isCardio)||(dgMachineFilter==='strength'&&!m.isCardio))&&(!q||dgMachineSearchText(m).includes(q)));
+ renderMachineGrid(arr);
+ const count=$('#dgMachineResultCount');if(count)count.textContent=`${arr.length} מתוך ${MACHINES.length} מכשירים`;
+}
+function dgEnhanceMachineLibrary(){
+ const search=$('#machineSearch'),grid=$('#machineGrid');if(!search||!grid)return;
+ search.setAttribute('aria-label','חיפוש מכשיר');search.placeholder='חיפוש לפי שם, שריר או שימוש…';
+ const head=search.previousElementSibling?.querySelector('small');if(head)head.textContent='20 צילומים אמיתיים · 14 כוח · 6 אירובי וחימום';
+ if(!$('#dgMachineFilters')){
+  search.insertAdjacentHTML('afterend','<div class="dg-machine-library-meta"><div id="dgMachineFilters" class="dg-machine-filters" role="group" aria-label="סינון מכשירים"><button type="button" data-dg-machine-filter="all" class="active">הכול</button><button type="button" data-dg-machine-filter="strength">כוח</button><button type="button" data-dg-machine-filter="cardio">אירובי וחימום</button></div><small id="dgMachineResultCount">20 מתוך 20 מכשירים</small></div>');
+ }
+ search.oninput=dgApplyMachineFilters;
+ $$('[data-dg-machine-filter]').forEach(b=>b.onclick=()=>{dgMachineFilter=b.dataset.dgMachineFilter;$$('[data-dg-machine-filter]').forEach(x=>x.classList.toggle('active',x===b));dgApplyMachineFilters()});
+ dgApplyMachineFilters();
+}
+const dgRenderMoreGymV91Base=renderMore;
+renderMore=function(){const r=dgRenderMoreGymV91Base();dgEnhanceMachineLibrary();return r};
+
+const DG_CARDIO_PROTOCOLS={
+ upper:{machineId:'rower',title:'חימום Upper',dose:'4–6 דקות · מאמץ 2–3 מתוך 10',text:'חתירה קלה בקצב טכני. המטרה היא חום ותנועה, לא עייפות. אלטרנטיבה: אליפטיקל קל.',after:'אופציונלי אחרי האימון: Stair Climber למשך 8–12 דקות בלבד.'},
+ lower:{machineId:'bike',title:'חימום Lower',dose:'5–7 דקות · התנגדות קלה',text:'דיווש חלק שמעלה טמפרטורה בלי לשרוף את הארבע־ראשי. אלטרנטיבה: הליכון בהליכה קלה.',after:'אין Stair Climber לפני אימון רגליים. אירובי עצים עובר ליום אחר.'},
+ recovery:{machineId:'recumbent',title:'התאוששות פעילה',dose:'20–30 דקות · קצב דיבור מלא',text:'אופני ישיבה או אליפטיקל קל. שמור מאמץ נמוך; זה יום התאוששות, לא מבחן כושר.',after:'ללא אימון כוח כבד באותו יום.'}
+};
+function dgCardioProtocolFor(w){
+ if(!w||w.location!=='gym')return null;
+ if(w.type==='recovery'||/recovery/i.test(w.title||''))return DG_CARDIO_PROTOCOLS.recovery;
+ return /lower/i.test(w.type||w.title||'')?DG_CARDIO_PROTOCOLS.lower:DG_CARDIO_PROTOCOLS.upper;
+}
+const dgLocalWorkoutCardioV91Base=localWorkout;
+localWorkout=function(){const w=dgLocalWorkoutCardioV91Base();const p=dgCardioProtocolFor(w);if(p)w.cardioProtocol={...p};return w};
+function dgInjectCardioProtocol(){
+ const w=S.activeWorkout,p=w?.cardioProtocol||dgCardioProtocolFor(w),root=$('#workoutContent');if(!p||!root||root.querySelector('#dgConditioningProtocol'))return;
+ const anchor=root.querySelector('.exercise-photo,.home-visual,.exercise-panel');if(!anchor)return;
+ const card=document.createElement('section');card.id='dgConditioningProtocol';card.className='dg-cardio-protocol';card.innerHTML=`<button type="button" data-machine="${esc(p.machineId)}" aria-label="פתח מדריך מכשיר חימום"><span>WARM-UP</span><b>${esc(p.title)}</b><small>${esc(p.dose)}</small></button><div><p>${esc(p.text)}</p><em>${esc(p.after)}</em></div>`;
+ anchor.before(card);card.querySelector('[data-machine]').onclick=()=>openMachine(p.machineId);
+}
+const dgRenderWorkoutCardioV91Base=renderWorkout;
+renderWorkout=function(){const r=dgRenderWorkoutCardioV91Base();setTimeout(dgInjectCardioProtocol,0);return r};
+
+setTimeout(()=>{loadMachineSprite();dgLoadHomeExerciseSprite()},350);

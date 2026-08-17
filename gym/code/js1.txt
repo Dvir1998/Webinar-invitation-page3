@@ -15,8 +15,8 @@ function dayKey(ts=Date.now()){const d=new Date(ts),y=d.getFullYear(),m=String(d
 
 let machineSprite='';
 async function loadMachineSprite(){
- try{machineSprite='data:image/webp;base64,'+(await Promise.all(Array.from({length:7},(_,i)=>fetch(`assets/sprite${i+1}.txt?v=6`).then(r=>{if(!r.ok)throw Error(r.status);return r.text()})))).join('')}
- catch(e){console.warn('machine sprite unavailable',e);machineSprite=''}
+ machineSprite='assets/gym-machines.webp?v=9.1.0';
+ return machineSprite;
 }
 function photoStyle(i){const c=i%4,r=Math.floor(i/4);return machineSprite?`background-image:url(${machineSprite});background-size:400% 500%;background-position:${c*33.333}% ${r*25}%;background-repeat:no-repeat`:''}
 function machineVisual(m,cls='machine-sprite'){return `<div class="${cls}" role="img" aria-label="${esc(m.simple)}" style="${photoStyle(m.photoIndex||0)}"></div>`}
@@ -32,4 +32,4 @@ const MACHINES=[
 {id:'leg-curl',simple:'המכשיר שמכופפים בו ברכיים',pro:'Seated Leg Curl',cat:'רגליים',muscles:['hamstrings'],img:'assets/machines/leg-curl.webp',setup:'ציר המכונה מול הברך, כרית מעל הקרסול וירכיים מקובעות.',cue:'כופף עד לטווח נוח וחזור לאט.',mistake:'אל תנתק את הירכיים מהמושב.'},
 {id:'shoulder-press',simple:'המכשיר שדוחפים מעל הראש',pro:'Shoulder Press',cat:'כתפיים',muscles:['shoulders','triceps'],img:'assets/machines/shoulder-press.webp',setup:'כוון מושב כך שהידיות מתחילות בערך בגובה הכתפיים.',cue:'דחוף למעלה בשליטה ושמור צלעות ואגן יציבים.',mistake:'אל תקשת את הגב כדי לסיים חזרה.'},
 {id:'chest-press',simple:'המכשיר שדוחפים קדימה',pro:'Chest Press',cat:'חזה',muscles:['chest','triceps'],img:'assets/machines/chest-press.webp',setup:'כוון מושב כך שהידיות בערך בגובה אמצע החזה. שכמות מעט אחורה.',cue:'דחוף קדימה תוך שמירת החזה פתוח והמרפקים במסלול נוח.',mistake:'אל תרים כתפיים ואל תנתק שכמות בצורה אגרסיבית.'},
-{id:'smith',simple:'המוט שנע על מסילה',pro:'Smith Machine',cat:'רגליים · חזה',muscles:['quads','hamstrings','glutes','chest'],img:'assets/machines/smith.webp',setup:'למד קודם את מנגנון הנעילה ואת גובה הסטופרים. התאם מיקום רגליים לתרגיל.',cue:'מסילה קבועה דורשת למצוא עמידה שמתאימה לך; אל תכפה טווח לא נוח.',mistake:'אל תעמיס לפני שאתה בטוח בנע
+{id:'smith',simple:'המוט שנע על מסילה',pro:'Smith Machine',cat:'רגליים · חזה',muscles:['quads','hamstrings','glutes','chest'],img:'assets/machines/smith.webp',setup:'למד קודם את מנגנון הנעילה ואת גובה הסטופרים. התאם מיקום רגליים לתרגיל.',cue:'מסילה קבועה דורשת למצוא עמידה שמתאימה לך; אל תכפה טווח לא נוח.',mistake:'אל תעמיס לפני שאתה בטוח בנעילה ובמסלול.'},
