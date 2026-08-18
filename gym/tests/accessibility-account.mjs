@@ -9,10 +9,10 @@ const luminance=color=>{
 };
 const contrast=(foreground,background)=>{const a=luminance(parseRgb(foreground)),b=luminance(parseRgb(background));return(Math.max(a,b)+.05)/(Math.min(a,b)+.05)};
 
-for(const viewport of [{name:'mobile',width:390,height:844},{name:'desktop',width:1440,height:1000}]){
+for(const viewport of [{name:'compact',width:320,height:700},{name:'mobile',width:390,height:844},{name:'desktop',width:1440,height:1000}]){
  const context=await browser.newContext({viewport,locale:'he-IL',reducedMotion:'reduce'});
  await context.addInitScript(()=>{
-  const state={version:'9.1.1',profile:{name:'',complete:false,days:4,goal:'lean_gain',weight:65,height:165,age:28},location:'gym',prefs:{theme:'bright'},logs:[],meals:[],weights:[],measures:[],chat:[],photos:[],reminders:[]};
+  const state={version:'9.1.2',profile:{name:'',complete:false,days:4,goal:'lean_gain',weight:65,height:165,age:28},location:'gym',prefs:{theme:'bright'},logs:[],meals:[],weights:[],measures:[],chat:[],photos:[],reminders:[]};
   localStorage.setItem('dvirGymMultiWelcomeV8','1');
   localStorage.setItem('dvirAthleteOS_v6',JSON.stringify(state));
   localStorage.setItem('dvirAthleteOS_v8::guest',JSON.stringify(state));
@@ -21,7 +21,7 @@ for(const viewport of [{name:'mobile',width:390,height:844},{name:'desktop',widt
  page.on('pageerror',error=>errors.push(String(error)));
  await page.goto(base,{waitUntil:'domcontentloaded'});
  await page.waitForSelector('body.ready',{timeout:30000});
- await page.waitForSelector('#dgAccountEntryV911');
+ await page.waitForSelector('#dgAccountEntryV912');
  await page.waitForSelector('#onboardDialog[open]',{timeout:2000}).catch(()=>{});
  if(await page.locator('#onboardDialog[open]').count())await page.locator('#obBack').click();
 
@@ -35,8 +35,12 @@ for(const viewport of [{name:'mobile',width:390,height:844},{name:'desktop',widt
  if(!accountText.includes('צור חשבון אישי')||!accountText.includes('יש לי כבר חשבון'))throw new Error(`${viewport.name}: account choices missing`);
  await page.locator('#dgAuthClose').click();
 
- const avatar=page.getByRole('button',{name:'כניסה או הרשמה',exact:true});
- await avatar.click();
+ const headerAccount=page.getByRole('button',{name:'חשבון וכניסה',exact:true});
+ if(!await headerAccount.isVisible())throw new Error(`${viewport.name}: persistent header account button missing`);
+ const headerBox=await headerAccount.boundingBox();
+ const headerLabel=await headerAccount.evaluate(element=>getComputedStyle(element,'::after').content);
+ if(!headerBox||headerBox.width<82||headerBox.height<44||!headerLabel.includes('חשבון'))throw new Error(`${viewport.name}: header account control failed ${JSON.stringify({headerBox,headerLabel})}`);
+ await headerAccount.click();
  await page.waitForSelector('#dgAccountDialog[open]');
  await page.locator('#dgAuthClose').click();
 
@@ -67,5 +71,26 @@ for(const viewport of [{name:'mobile',width:390,height:844},{name:'desktop',widt
  await context.close();
  console.log(`Accessibility and account entry ${viewport.name} OK`,{colors,guide,warmup});
 }
+
+const accountContext=await browser.newContext({viewport:{width:390,height:844},locale:'he-IL',reducedMotion:'reduce'});
+await accountContext.addInitScript(()=>{
+ const userId='22222222-2222-4222-8222-222222222222';
+ const state={version:'9.1.2',profile:{name:'דביר',complete:true,days:4,goal:'lean_gain',weight:65,height:165,age:28},location:'gym',prefs:{theme:'bright'},logs:[],meals:[],weights:[],measures:[],chat:[],photos:[],reminders:[]};
+ const session={access_token:'local-test-token',refresh_token:'local-test-refresh',expires_at:Math.floor(Date.now()/1000)+3600,accountUsername:'dvirqa',displayName:'דביר',user:{id:userId,user_metadata:{username:'dvirqa',full_name:'דביר'}}};
+ localStorage.setItem('dvirGymMultiWelcomeV8','1');
+ localStorage.setItem('dvirGymAuthSessionV8',JSON.stringify(session));
+ localStorage.setItem('dvirAthleteOS_v8::user:'+userId,JSON.stringify(state));
+});
+const accountPage=await accountContext.newPage();
+await accountPage.goto(base,{waitUntil:'domcontentloaded'});
+await accountPage.waitForSelector('body.ready',{timeout:30000});
+const accountEntry=accountPage.getByRole('button',{name:'פתיחת החשבון שלי'});
+await accountEntry.waitFor({state:'visible',timeout:5000});
+if(!await accountEntry.isVisible()||!(await accountEntry.innerText()).includes('החשבון שלי'))throw new Error('signed-in: persistent account entry missing');
+await accountEntry.click();
+await accountPage.waitForSelector('#dgAccountDialog[open]');
+if(!(await accountPage.locator('#dgAccountDialog').innerText()).includes('dvirqa'))throw new Error('signed-in: account home did not open');
+await accountContext.close();
+console.log('Accessibility signed-in account entry OK');
 
 await browser.close();
