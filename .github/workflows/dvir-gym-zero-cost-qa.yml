@@ -37,13 +37,13 @@ jobs:
           test -f gym/code/css15.txt
           test -f gym/tests/machine-library.mjs
           test -f gym/tests/accessibility-account.mjs
-          grep -q 'dist/app.css?v=9.1.1' gym/index.html
-          grep -q 'dist/app.js?v=9.1.1' gym/index.html
-          grep -q 'Athlete OS 9.1.1' gym/index.html
+          grep -q 'dist/app.css?v=9.1.2' gym/index.html
+          grep -q 'dist/app.js?v=9.1.2' gym/index.html
+          grep -q 'Athlete OS 9.1.2' gym/index.html
           grep -q 'sessionStorage.getItem(SESSION)' gym/index.html
           grep -q 'dvirGymAuthSessionV8' gym/index.html
           grep -q 'dvirAthleteOS_v8::' gym/index.html
-          grep -q 'dvir-athlete-os-v9-1-1-accessibility-20260817' gym/sw.js
+          grep -q 'dvir-athlete-os-v9-1-2-account-discovery-20260818' gym/sw.js
           grep -q "'assets/gym-machines.webp'" gym/sw.js
           grep -q "'assets/home-exercises.webp'" gym/sw.js
           grep -q "'version.json'" gym/sw.js
@@ -52,7 +52,7 @@ jobs:
           grep -q "'dist/app.js'" gym/sw.js
           grep -q "'activeScope'" gym/sw.js
           grep -q 'name="referrer" content="no-referrer"' gym/index.html
-          node -e "const x=JSON.parse(require('fs').readFileSync('gym/version.json','utf8')); if(!x.build||x.appVersion!=='9.1.1')process.exit(1); console.log('version ok',x.build)"
+          node -e "const x=JSON.parse(require('fs').readFileSync('gym/version.json','utf8')); if(!x.build||x.appVersion!=='9.1.2')process.exit(1); console.log('version ok',x.build)"
           node - <<'NODE'
           const fs=require('fs');
           for(const p of ['gym/assets/gym-machines.webp','gym/assets/home-exercises.webp']){
@@ -71,7 +71,7 @@ jobs:
           node --check gym/tests/e2e.mjs
           node --check gym/tests/multiuser-storage.mjs
           node --check gym/tests/accessibility-account.mjs
-          node -e "const x=JSON.parse(require('fs').readFileSync('gym/manifest.json','utf8')); if(!x.name.includes('9.1.1'))process.exit(1); console.log('manifest ok')"
+          node -e "const x=JSON.parse(require('fs').readFileSync('gym/manifest.json','utf8')); if(!x.name.includes('9.1.2'))process.exit(1); console.log('manifest ok')"
       - name: Enforce zero-cost, multi-user, privacy, themes and coaching policy
         shell: bash
         run: |
