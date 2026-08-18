@@ -44,7 +44,7 @@ jobs:
           grep -q 'sessionStorage.getItem(SESSION)' gym/index.html
           grep -q 'dvirGymAuthSessionV8' gym/index.html
           grep -q 'dvirAthleteOS_v8::' gym/index.html
-          grep -q 'dvir-athlete-os-v9-2-0-daily-recovery-20260818' gym/sw.js
+          grep -q 'dvir-athlete-os-v9-2-0-daily-recovery-contrast-20260818' gym/sw.js
           grep -q "'assets/gym-machines.webp'" gym/sw.js
           grep -q "'assets/home-exercises.webp'" gym/sw.js
           grep -q "'version.json'" gym/sw.js

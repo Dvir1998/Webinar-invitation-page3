@@ -36,6 +36,8 @@ for(const viewport of [{name:'mobile',width:390,height:844},{name:'desktop',widt
  const dialog=page.locator('#dgRecoveryDialogV92'),text=await dialog.innerText();
  if(!text.includes('האימון הושלם')||!text.includes('במכון')||!text.includes('גרם חלבון'))throw new Error(`${viewport.name}: recovery context missing`);
  if(await dialog.locator('.dg-recovery-option').count()!==3)throw new Error(`${viewport.name}: expected three recovery options`);
+ const recoveryTitleColor=await dialog.locator('.dg-recovery-option h4').first().evaluate(element=>getComputedStyle(element).color);
+ if(recoveryTitleColor!=='rgb(19, 34, 56)')throw new Error(`${viewport.name}: light recovery title contrast failed ${recoveryTitleColor}`);
  const proteins=await dialog.locator('.dg-recovery-option').evaluateAll(nodes=>nodes.map(n=>Number((n.innerText.match(/(\d+) גרם חלבון/)||[])[1])));
  if(proteins.some(x=>!x||x<25))throw new Error(`${viewport.name}: weak protein option ${proteins.join(',')}`);
  await dialog.getByRole('button',{name:'תעד שאכלתי'}).first().click();
