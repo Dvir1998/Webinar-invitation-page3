@@ -16,7 +16,7 @@ html:is([data-dg-theme="bright"],[data-dg-theme="cream"],[data-dg-theme="pearl"]
 html:is([data-dg-theme="bright"],[data-dg-theme="cream"],[data-dg-theme="pearl"],[data-dg-theme="aurora"]) .dg-account-entry-v911{background:linear-gradient(115deg,#e7faff,#eef0ff);color:#132238;border-color:rgba(32,155,196,.35)}
 html:is([data-dg-theme="bright"],[data-dg-theme="cream"],[data-dg-theme="pearl"],[data-dg-theme="aurora"]) .dg-account-entry-v911 small{color:#40566f}
 
-/* Athlete OS 9.1.2 — account access must stay obvious in every identity state */
+/* Athlete OS 9.2.0 — account access must stay obvious in every identity state */
 .topbar{grid-template-columns:92px minmax(0,1fr) 46px}
 #profileBtn.dg-account-header-v912{width:92px!important;height:48px!important;min-height:48px!important;padding:5px 8px!important;display:flex!important;align-items:center;justify-content:flex-start;gap:7px;border-radius:17px!important;overflow:visible!important;white-space:nowrap}
 #profileBtn.dg-account-header-v912::after{content:"חשבון";display:block;font-size:11px;font-weight:950;line-height:1;color:#081018}

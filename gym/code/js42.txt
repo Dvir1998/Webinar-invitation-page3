@@ -1,0 +1,138 @@
+/* Athlete OS 9.2 — daily consistency tracker and adaptive post-workout recovery game */
+const DG_DAILY_TRACKER_VERSION='9.2.0';
+const DG_RECOVERY_MEALS=[
+ {id:'morning-skyr',slots:['morning'],locations:['home','gym'],title:'קערת סקיר, שיבולת שועל ובננה',description:'סקיר, מנת אבקת חלבון, שיבולת שועל, בננה וקינמון',protein:40,calories:520,carbs:66,fat:8,keys:['milk','whey','gluten'],plant:false,highCarb:true},
+ {id:'morning-eggs',slots:['morning'],locations:['home'],title:'חביתה, קוטג׳ ופיתה מלאה',description:'שלוש ביצים, קוטג׳, פיתה מלאה וסלט ירקות',protein:38,calories:560,carbs:48,fat:22,keys:['egg','milk','gluten'],plant:false,highCarb:false},
+ {id:'morning-oats',slots:['morning'],locations:['home','gym'],title:'דייסת חלבון ופירות',description:'שיבולת שועל, חלב, מנת אבקת חלבון, פירות וטחינה',protein:36,calories:570,carbs:72,fat:15,keys:['milk','whey','gluten','sesame'],plant:false,highCarb:true},
+ {id:'morning-sandwich',slots:['morning'],locations:['gym'],title:'כריך טונה ויוגורט',description:'כריך מלחם מלא עם טונה, ירקות ויוגורט עשיר בחלבון בצד',protein:42,calories:510,carbs:55,fat:12,keys:['fish','milk','gluten'],plant:false,highCarb:true},
+ {id:'morning-tofu',slots:['morning'],locations:['home','gym'],title:'טופו מקושקש וטוסט מלא',description:'טופו מוקפץ עם ירקות, שתי פרוסות לחם מלא ופרי',protein:32,calories:500,carbs:62,fat:15,keys:['soy','gluten'],plant:true,highCarb:true},
+ {id:'noon-chicken',slots:['noon'],locations:['home','gym'],title:'עוף, אורז וסלט',description:'חזה עוף, אורז, סלט גדול ושמן זית מדוד',protein:48,calories:690,carbs:82,fat:17,keys:[],plant:false,highCarb:true},
+ {id:'noon-tuna-potato',slots:['noon'],locations:['home','gym'],title:'טונה, תפוחי אדמה וירקות',description:'טונה במים, תפוחי אדמה אפויים, ירקות וטחינה מדודה',protein:41,calories:610,carbs:70,fat:17,keys:['fish','sesame'],plant:false,highCarb:true},
+ {id:'noon-beef',slots:['noon'],locations:['home'],title:'בקר רזה וקוסקוס',description:'בקר רזה, קוסקוס מלא, ירקות וטחינה מדודה',protein:43,calories:720,carbs:78,fat:24,keys:['gluten','sesame'],plant:false,highCarb:true},
+ {id:'noon-wrap',slots:['noon'],locations:['gym'],title:'טורטייה עוף וקערת פרי',description:'טורטייה מלאה עם עוף וירקות, לצד פרי ויוגורט חלבון',protein:45,calories:650,carbs:76,fat:17,keys:['milk','gluten'],plant:false,highCarb:true},
+ {id:'noon-tofu',slots:['noon'],locations:['home','gym'],title:'טופו, אורז ואדממה',description:'טופו, אורז, אדממה וירקות מוקפצים',protein:36,calories:660,carbs:86,fat:19,keys:['soy'],plant:true,highCarb:true},
+ {id:'evening-salmon',slots:['evening'],locations:['home'],title:'סלמון, תפוח אדמה וירקות',description:'פילה סלמון, תפוח אדמה אפוי וירקות בתנור',protein:42,calories:650,carbs:58,fat:25,keys:['fish'],plant:false,highCarb:false},
+ {id:'evening-omelet',slots:['evening'],locations:['home'],title:'חביתה, קוטג׳ ולחם מלא',description:'חביתה משלוש ביצים, קוטג׳, לחם מלא וסלט',protein:40,calories:590,carbs:45,fat:25,keys:['egg','milk','gluten'],plant:false,highCarb:false},
+ {id:'evening-skyr',slots:['evening'],locations:['home','gym'],title:'קערת לילה עשירה בחלבון',description:'סקיר או יוגורט סמיך, מנת אבקת חלבון, שיבולת שועל ופירות יער',protein:39,calories:470,carbs:50,fat:8,keys:['milk','whey','gluten'],plant:false,highCarb:false},
+ {id:'evening-chicken',slots:['evening'],locations:['home','gym'],title:'קערת עוף ובורגול',description:'חזה עוף, בורגול, ירקות וטחינה מדודה',protein:46,calories:630,carbs:65,fat:18,keys:['gluten','sesame'],plant:false,highCarb:true},
+ {id:'evening-tofu',slots:['evening'],locations:['home','gym'],title:'טופו, קינואה וירקות',description:'טופו צרוב, קינואה, ירקות ועלים ירוקים',protein:34,calories:570,carbs:60,fat:20,keys:['soy'],plant:true,highCarb:false},
+ {id:'portable-shake',slots:['morning','noon','evening'],locations:['gym'],title:'פתרון מהיר בדרך הביתה',description:'שייק חלבון, בננה וכריך קוטג׳ מלחם מלא',protein:38,calories:540,carbs:70,fat:10,keys:['milk','whey','gluten'],plant:false,highCarb:true},
+ {id:'portable-soy',slots:['morning','noon','evening'],locations:['gym'],title:'פתרון צמחי מהיר',description:'משקה סויה עשיר בחלבון, בננה וכריך טופו מלחם מלא',protein:31,calories:530,carbs:72,fat:13,keys:['soy','gluten'],plant:true,highCarb:true}
+];
+
+function dgTrackerDateV92(ts=Date.now()){return dayKey(ts)}
+function dgEnsureDailyTrackingV92(){
+ S.dailyTracking=S.dailyTracking&&typeof S.dailyTracking==='object'?S.dailyTracking:{};
+ S.postWorkoutPlans=Array.isArray(S.postWorkoutPlans)?S.postWorkoutPlans.slice(0,40):[];
+ S.recoveryGame=S.recoveryGame&&typeof S.recoveryGame==='object'?S.recoveryGame:{points:0,awards:{}};
+ const today=dgTrackerDateV92(),entry=S.dailyTracking[today]||{protein:false,creatine:false,workout:false,workoutManual:false,recoveryMeal:false,updatedAt:Date.now()};
+ if(S.daily?.date===nowDay()){
+  entry.protein=entry.protein||!!S.daily.proteinChecked;
+  entry.creatine=entry.creatine||!!S.daily.creatine;
+ }
+ const completed=S.logs.some(w=>dgTrackerDateV92(w.finishedAt||w.end||w.ts||w.createdAt)===today);
+ entry.workout=completed||!!entry.workoutManual;entry.updatedAt=entry.updatedAt||Date.now();S.dailyTracking[today]=entry;
+ const keys=Object.keys(S.dailyTracking).sort().reverse();for(const key of keys.slice(120))delete S.dailyTracking[key];
+ return entry;
+}
+function dgTrackerDayV92(date=dgTrackerDateV92()){dgEnsureDailyTrackingV92();return S.dailyTracking[date]||{protein:false,creatine:false,workout:false,recoveryMeal:false}}
+function dgTrackerProgressV92(day=dgTrackerDayV92()){return['protein','creatine','workout'].filter(k=>day[k]).length}
+function dgToggleDailyV92(kind){
+ const day=dgTrackerDayV92(),today=dgTrackerDateV92();
+ if(kind==='workout'){
+  const logged=S.logs.some(w=>dgTrackerDateV92(w.finishedAt||w.end||w.ts||w.createdAt)===today);
+  if(logged){toast('האימון כבר סומן אוטומטית מסיום האימון');return}
+  day.workoutManual=!day.workoutManual;day.workout=day.workoutManual;
+ }else if(kind==='protein'||kind==='creatine')day[kind]=!day[kind];
+ day.updatedAt=Date.now();
+ S.daily=S.daily||{date:nowDay(),creatine:false,proteinChecked:false};
+ if(S.daily.date!==nowDay())S.daily={date:nowDay(),creatine:false,proteinChecked:false};
+ if(kind==='protein')S.daily.proteinChecked=day.protein;
+ if(kind==='creatine')S.daily.creatine=day.creatine;
+ save();haptic(day[kind]?[35,30,55]:18);dgInjectDailyTrackerV92();
+ toast(day[kind]?'סומן להיום ✓':'הסימון הוסר');
+}
+function dgRecentTrackerDatesV92(){
+ const out=[],d=new Date();d.setHours(12,0,0,0);
+ for(let i=6;i>=0;i--){const x=new Date(d);x.setDate(d.getDate()-i);out.push({key:dayKey(x),label:x.toLocaleDateString('he-IL',{weekday:'short'}),day:x.getDate()})}
+ return out;
+}
+function dgTrackerButtonV92(kind,icon,title,subtitle,done,locked=false){return`<button type="button" class="dg-daily-task ${done?'done':''}" data-dg-daily="${kind}" aria-pressed="${done?'true':'false'}" aria-label="${esc(title)}: ${done?'בוצע':'לא בוצע'}"><span class="dg-task-check" aria-hidden="true">${done?'✓':icon}</span><span><b>${esc(title)}</b><small>${esc(subtitle)}</small></span>${locked?'<em>אוטומטי</em>':''}</button>`}
+function dgInjectDailyTrackerV92(){
+ const home=$('#screen-home');if(!home)return;home.querySelector('#dgDailyTrackerV92')?.remove();
+ const day=dgTrackerDayV92(),progress=dgTrackerProgressV92(day),logged=S.logs.some(w=>dgTrackerDateV92(w.finishedAt||w.end||w.ts||w.createdAt)===dgTrackerDateV92());
+ const card=document.createElement('section');card.id='dgDailyTrackerV92';card.className=`card dg-daily-tracker ${progress===3?'complete':''}`;card.setAttribute('aria-labelledby','dgDailyTitleV92');
+ card.innerHTML=`<div class="dg-daily-head"><div><div class="eyebrow">DAILY CONSISTENCY</div><h2 id="dgDailyTitleV92">המשימות של היום</h2><p>${progress===3?'היום נסגר. עקביות מנצחת ימים מושלמים.':'כל סימון קטן בונה את התוצאה של דביר.'}</p></div><div class="dg-daily-score" aria-label="${progress} מתוך 3 משימות"><b>${progress}/3</b><small>${progress===3?'הושלם':'להיום'}</small></div></div><div class="dg-daily-tasks">${dgTrackerButtonV92('protein','P','חלבון','סמן אחרי מנת החלבון או סגירת היעד',day.protein)}${dgTrackerButtonV92('creatine','◆','קריאטין','מנה יומית של 3–5 גרם',day.creatine)}${dgTrackerButtonV92('workout','↗','אימון','נסגר אוטומטית בסיום אימון',day.workout,logged)}</div><div class="dg-week-strip" aria-label="היסטוריית עקביות לשבעה ימים">${dgRecentTrackerDatesV92().map(x=>{const d=dgTrackerDayV92(x.key),n=dgTrackerProgressV92(d);return`<div class="${x.key===dgTrackerDateV92()?'today':''}" title="${n} מתוך 3"><span>${esc(x.label)}</span><b>${x.day}</b><i data-score="${n}">${n===3?'✓':n}</i></div>`}).join('')}</div>`;
+ const hero=home.querySelector('.hero');if(hero)hero.before(card);else home.appendChild(card);
+ $$('[data-dg-daily]',card).forEach(b=>b.onclick=()=>dgToggleDailyV92(b.dataset.dgDaily));
+}
+
+function dgWorkoutSlotV92(ts=Date.now()){const h=new Date(ts).getHours();return h<11?'morning':h<17?'noon':'evening'}
+function dgSlotLabelV92(slot){return{morning:'בוקר',noon:'צהריים',evening:'ערב'}[slot]||'עכשיו'}
+function dgNormalizeV92(s){return String(s||'').toLowerCase().replace(/[\s,.;:/_-]+/g,' ')}
+function dgRestrictionKeysV92(){
+ const a=dgNormalizeV92(S.profile?.allergies),d=dgNormalizeV92(S.profile?.dislikes),text=`${a} ${d}`,keys=[];
+ const map={milk:['חלב','לקטוז','גבינה','יוגורט','קוטג'],whey:['ווי','whey','אבקת חלבון'],egg:['ביצה','ביצים'],fish:['דג','דגים','טונה','סלמון'],soy:['סויה','טופו'],gluten:['גלוטן','לחם','חיטה'],sesame:['שומשום','טחינה']};
+ for(const[key,words]of Object.entries(map))if(words.some(w=>text.includes(w)))keys.push(key);return keys;
+}
+function dgDietAllowsV92(meal){const style=dgNormalizeV92(S.profile?.dietStyle);if(style.includes('טבעונ')||style.includes('vegan'))return meal.plant;if(style.includes('צמחונ')||style.includes('vegetarian'))return meal.plant||!meal.keys.includes('fish')&&!/עוף|בקר|טונה|סלמון/.test(meal.description);return true}
+function dgHashV92(s){let h=17;for(const c of String(s||''))h=(h*31+c.charCodeAt(0))>>>0;return h}
+function dgBuildPostWorkoutPlanV92(w){
+ const ts=w.finishedAt||w.end||Date.now(),slot=dgWorkoutSlotV92(ts),location=w.location==='home'?'home':'gym',type=/lower/i.test(`${w.type||''} ${w.title||''}`)?'lower':'upper',target=nutritionTargets(),totals=mealTotals(),weight=+S.profile?.weight||65;
+ const proteinTarget=clamp(Math.round(weight*.4),25,40),proteinRemaining=Math.max(0,Math.round(target.protein-totals.protein)),calorieRemaining=Math.max(0,Math.round(target.calories-totals.calories)),blocked=dgRestrictionKeysV92();
+ let pool=DG_RECOVERY_MEALS.filter(m=>m.slots.includes(slot)&&m.locations.includes(location)&&dgDietAllowsV92(m)&&!m.keys.some(k=>blocked.includes(k)));
+ if(pool.length<3)pool=DG_RECOVERY_MEALS.filter(m=>m.slots.includes(slot)&&dgDietAllowsV92(m)&&!m.keys.some(k=>blocked.includes(k)));
+ if(type==='lower')pool.sort((a,b)=>Number(b.highCarb)-Number(a.highCarb));
+ const recentFirst=S.postWorkoutPlans?.[0]?.options?.[0]?.id,rotation=pool.length?dgHashV92(`${w.id}-${dgTrackerDateV92(ts)}-${slot}-${location}`)%pool.length:0;pool=[...pool.slice(rotation),...pool.slice(0,rotation)];
+ if(pool[0]?.id===recentFirst&&pool.length>1)pool.push(pool.shift());
+ let options=pool.slice(0,3);
+ while(options.length<3){const i=options.length+1;options.push({id:`custom-${i}`,title:'צלחת התאוששות מותאמת',description:'מקור חלבון שמתאים להגבלות שלך, פחמימה זמינה וירקות',protein:proteinTarget,calories:550,carbs:65,fat:15,keys:[],plant:true,highCarb:true})}
+ const restrictions=String(S.profile?.allergies||S.profile?.dislikes||'').trim();
+ return{id:`recovery-${w.id||Date.now()}`,workoutId:w.id||'',createdAt:Date.now(),finishedAt:ts,date:dgTrackerDateV92(ts),slot,location,type,goal:S.profile?.goal||'lean_gain',proteinTarget,proteinRemaining,calorieRemaining,restrictions,options:options.map(x=>({...x})),loggedMealId:'',pointsAwarded:false};
+}
+function dgRecoveryContextV92(plan){const where=plan.location==='home'?'בבית':'במכון',kind=plan.type==='lower'?'אימון רגליים':'אימון פלג גוף עליון';return`${dgSlotLabelV92(plan.slot)} · ${where} · ${kind}`}
+function dgEnsureRecoveryDialogV92(){let d=$('#dgRecoveryDialogV92');if(d)return d;d=document.createElement('dialog');d.id='dgRecoveryDialogV92';d.className='sheet-dialog dg-recovery-dialog';d.innerHTML='<div id="dgRecoveryContentV92"></div>';document.body.appendChild(d);return d}
+function dgFindPlanV92(id){return(S.postWorkoutPlans||[]).find(p=>p.id===id)||(S.logs||[]).map(w=>w.postWorkoutFuelV92).find(p=>p?.id===id)}
+function dgOpenPostWorkoutV92(id){
+ const plan=dgFindPlanV92(id);if(!plan)return;const d=dgEnsureRecoveryDialogV92(),logged=!!plan.loggedMealId;
+ $('#dgRecoveryContentV92').innerHTML=`<div class="sheet dg-recovery-sheet"><div class="dg-recovery-celebrate"><button class="close" id="dgRecoveryCloseV92" type="button" aria-label="סגור המלצת התאוששות">×</button><div class="dg-xp-burst">+25</div><div class="eyebrow">RECOVERY UNLOCKED</div><h2>${esc(S.profile?.name||'דביר')}, האימון הושלם</h2><p>${esc(dgRecoveryContextV92(plan))}</p><div class="dg-recovery-target"><b>${plan.proteinTarget} גרם חלבון</b><span>יעד מעשי לארוחה הקרובה</span></div></div><div class="dg-recovery-copy"><h3>${logged?'הארוחה תועדה בהצלחה ✓':'בחר את מה שמתאים לך עכשיו'}</h3><p>אין צורך להילחץ מחלון קצר. בחר ארוחה בשעות הקרובות והמשך לסגור את יעד החלבון היומי.</p></div><div class="dg-recovery-options">${plan.options.map((m,i)=>`<article class="dg-recovery-option ${plan.loggedOption===m.id?'selected':''}"><div class="dg-option-number">${i+1}</div><div><h4>${esc(m.title)}</h4><p>${esc(m.description)}</p><div class="dg-option-macros"><span>${m.protein} גרם חלבון</span><span>${m.calories} קלוריות</span><span>${m.carbs} גרם פחמימה</span></div></div><button type="button" data-dg-log-recovery="${esc(m.id)}" ${logged?'disabled':''}>${plan.loggedOption===m.id?'תועד ✓':logged?'נבחרה ארוחה אחרת':'תעד שאכלתי'}</button></article>`).join('')}</div>${plan.restrictions?`<div class="dg-restriction-note">המערכת סיננה לפי מה שנכתב בפרופיל. במקרה של אלרגיה, יש לבדוק בעצמך את האריזה והמטבח לפני אכילה.</div>`:''}<div class="dg-recovery-footer"><div><b>${S.recoveryGame?.points||0}</b><small>נקודות עקביות</small></div><button class="secondary" id="dgRecoveryLaterV92" type="button">אשמור לאחר כך</button></div></div>`;
+ $('#dgRecoveryCloseV92').onclick=()=>d.close();$('#dgRecoveryLaterV92').onclick=()=>d.close();$$('[data-dg-log-recovery]',d).forEach(b=>b.onclick=()=>dgLogRecoveryMealV92(plan.id,b.dataset.dgLogRecovery));
+ if(!d.open)d.showModal();
+}
+function dgLogRecoveryMealV92(planId,mealId){
+ const plan=dgFindPlanV92(planId),meal=plan?.options?.find(x=>x.id===mealId);if(!plan||!meal||plan.loggedMealId)return;
+ const id=`recovery-meal-${plan.workoutId||plan.createdAt}`;
+ if(!S.meals.some(m=>m.id===id))S.meals.unshift({id,ts:Date.now(),description:meal.description,protein:meal.protein,calories:meal.calories,carbs:meal.carbs,fat:meal.fat,confidence:'הערכה לפי המנה המוצעת',source:'post-workout-plan',workoutId:plan.workoutId});
+ for(const p of S.postWorkoutPlans||[])if(p.id===planId){p.loggedMealId=id;p.loggedOption=mealId;p.loggedAt=Date.now()}
+ for(const w of S.logs||[])if(w.postWorkoutFuelV92?.id===planId){w.postWorkoutFuelV92.loggedMealId=id;w.postWorkoutFuelV92.loggedOption=mealId;w.postWorkoutFuelV92.loggedAt=Date.now()}
+ const day=dgTrackerDayV92(plan.date);day.recoveryMeal=true;day.protein=true;day.updatedAt=Date.now();S.daily.proteinChecked=true;
+ const award=`meal:${planId}`;if(!S.recoveryGame.awards[award]){S.recoveryGame.awards[award]=15;S.recoveryGame.points+=15}
+ save();haptic([70,45,110]);toast('הארוחה והחלבון תועדו ✓');dgOpenPostWorkoutV92(planId);renderFuel();
+}
+function dgLatestRecoveryPlanV92(){return(S.postWorkoutPlans||[]).find(p=>Date.now()-(p.finishedAt||p.createdAt)<24*36e5)||null}
+function dgInjectRecoveryFuelV92(){
+ const screen=$('#screen-fuel'),plan=dgLatestRecoveryPlanV92();if(!screen||!plan)return;screen.querySelector('#dgRecoveryCardV92')?.remove();
+ const card=document.createElement('section');card.id='dgRecoveryCardV92';card.className=`card dg-recovery-card ${plan.loggedMealId?'logged':''}`;card.innerHTML=`<div><div class="eyebrow">${plan.loggedMealId?'RECOVERY LOGGED':'RECOVERY READY'}</div><h2>${plan.loggedMealId?'ההתאוששות תועדה ✓':'ההמלצה שלך מחכה'}</h2><p>${esc(dgRecoveryContextV92(plan))} · ${plan.proteinTarget} גרם חלבון לארוחה</p></div><button type="button" id="dgOpenRecoveryV92">${plan.loggedMealId?'צפה במה שתועד':'פתח 3 אפשרויות'}</button>`;
+ const anchor=screen.querySelector('.section-head');if(anchor)anchor.before(card);else screen.prepend(card);$('#dgOpenRecoveryV92').onclick=()=>dgOpenPostWorkoutV92(plan.id);
+}
+function dgCompleteWorkoutRecoveryV92(w){
+ const day=dgTrackerDayV92(dgTrackerDateV92(w.finishedAt||w.end));day.workout=true;day.workoutManual=false;day.updatedAt=Date.now();
+ const plan=dgBuildPostWorkoutPlanV92(w);w.postWorkoutFuelV92=plan;S.postWorkoutPlans=S.postWorkoutPlans.filter(p=>p.id!==plan.id);S.postWorkoutPlans.unshift(plan);S.postWorkoutPlans=S.postWorkoutPlans.slice(0,40);
+ const award=`workout:${w.id||w.finishedAt}`;if(!S.recoveryGame.awards[award]){S.recoveryGame.awards[award]=25;S.recoveryGame.points+=25;plan.pointsAwarded=true}
+ save();return plan;
+}
+
+dgEnsureDailyTrackingV92();
+const dgRenderHomeDailyV92Base=renderHome;
+renderHome=function(){const r=dgRenderHomeDailyV92Base();setTimeout(dgInjectDailyTrackerV92,18);return r};
+const dgRenderCurrentDailyV92Base=renderCurrent;
+renderCurrent=function(){const r=dgRenderCurrentDailyV92Base();setTimeout(dgInjectDailyTrackerV92,18);return r};
+const dgRenderFuelRecoveryV92Base=renderFuel;
+renderFuel=function(){const r=dgRenderFuelRecoveryV92Base();setTimeout(dgInjectRecoveryFuelV92,0);return r};
+const dgFinishWorkoutRecoveryV92Base=finishWorkout;
+finishWorkout=function(){
+ const activeId=S.activeWorkout?.id;dgFinishWorkoutRecoveryV92Base();
+ const w=S.logs.find(x=>x.id===activeId)||S.logs[0];if(!w)return;
+ const plan=dgCompleteWorkoutRecoveryV92(w);renderFuel();setTimeout(()=>dgOpenPostWorkoutV92(plan.id),80);
+};
+setTimeout(()=>{dgEnsureDailyTrackingV92();dgInjectDailyTrackerV92()},520);

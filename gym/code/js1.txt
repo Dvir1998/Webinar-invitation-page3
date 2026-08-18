@@ -15,7 +15,7 @@ function dayKey(ts=Date.now()){const d=new Date(ts),y=d.getFullYear(),m=String(d
 
 let machineSprite='';
 async function loadMachineSprite(){
- machineSprite='assets/gym-machines.webp?v=9.1.2';
+ machineSprite='assets/gym-machines.webp?v=9.2.0';
  return machineSprite;
 }
 function photoStyle(i){const c=i%4,r=Math.floor(i/4);return machineSprite?`background-image:url(${machineSprite});background-size:400% 500%;background-position:${c*33.333}% ${r*25}%;background-repeat:no-repeat`:''}
