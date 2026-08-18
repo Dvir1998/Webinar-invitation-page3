@@ -26,6 +26,7 @@ for(const viewport of [{name:'compact',width:320,height:700},{name:'mobile',widt
  if(await page.locator('#onboardDialog[open]').count())await page.locator('#obBack').click();
 
  const entry=page.getByRole('button',{name:'כניסה או הרשמה לחשבון'});
+ await entry.waitFor({state:'visible',timeout:5000});
  if(!await entry.isVisible())throw new Error(`${viewport.name}: visible account entry missing`);
  const entryBox=await entry.boundingBox();
  if(!entryBox||entryBox.height<44||entryBox.x<0||entryBox.x+entryBox.width>viewport.width)throw new Error(`${viewport.name}: account entry geometry failed ${JSON.stringify(entryBox)}`);
