@@ -1,6 +1,6 @@
 import { chromium } from 'playwright';
 
-const base='http://127.0.0.1:4173/';
+const base=process.env.DG_TEST_BASE||'http://127.0.0.1:4173/';
 const browser=await chromium.launch({headless:true});
 
 for(const viewport of [
@@ -33,7 +33,7 @@ for(const viewport of [
  await page.waitForFunction(()=>performance.now()-window.__dgVisualStability.lastMutation>700,{timeout:6000});
 
  const result=await page.evaluate(()=>{
-  const stability=window.__dgVisualStability,afterReady=stability.shifts.filter(entry=>entry.startTime>=stability.readyAt),home=document.querySelector('#screen-home');
+  const stability=window.__dgVisualStability,afterReady=stability.shifts.filter(entry=>entry.startTime>=stability.readyAt),home=document.querySelector('#screen-home'),dock=document.querySelector('.dock')?.getBoundingClientRect();
   return{
    readyAt:stability.readyAt,
    settledAt:stability.lastMutation,
@@ -42,12 +42,15 @@ for(const viewport of [
    hasAccountEntry:!!document.querySelector('#dgAccountEntryV912'),
    hasDailyTracker:!!document.querySelector('#dgDailyTrackerV92'),
    homeHeight:home?.getBoundingClientRect().height||0,
+   dock:dock?{left:dock.left,right:dock.right,width:dock.width,viewport:innerWidth}:null,
+   clientWidth:document.documentElement.clientWidth,
    overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,
    errors:stability.errors
   };
  });
  if(!result.readyAt||!result.hasAccountEntry||!result.hasDailyTracker||result.homeHeight<500)throw new Error(`${viewport.name}: first frame was incomplete ${JSON.stringify(result)}`);
  if(result.clsAfterReady>.02)throw new Error(`${viewport.name}: visible layout shift is too high ${JSON.stringify(result)}`);
+ if(!result.dock||result.dock.left<0||result.dock.right>result.clientWidth)throw new Error(`${viewport.name}: dock is outside the visible viewport ${JSON.stringify(result)}`);
  if(result.overflow>1)throw new Error(`${viewport.name}: horizontal overflow ${result.overflow}`);
  if(result.errors.length)throw new Error(`${viewport.name}: runtime errors ${result.errors.join(' | ')}`);
  console.log(`Visual stability ${viewport.name} OK`,result);
