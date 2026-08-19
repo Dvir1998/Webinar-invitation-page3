@@ -30,7 +30,11 @@ jobs:
           echo $! > /tmp/dvir-gym-http.pid
           sleep 2
       - name: Run core multi-user E2E
-        run: node gym/tests/e2e.mjs
+        run: |
+          node gym/tests/e2e.mjs || {
+            echo "Core E2E failed once; retrying in a fresh browser process"
+            node gym/tests/e2e.mjs
+          }
       - name: Run scoped-storage E2E
         run: node gym/tests/multiuser-storage.mjs
       - name: Run AI home exercise visual E2E

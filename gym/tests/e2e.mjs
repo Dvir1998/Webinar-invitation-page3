@@ -1,5 +1,9 @@
 import { chromium } from 'playwright';
-const base='http://127.0.0.1:4173/';
+const annotationText=value=>String(value||'Unknown core E2E failure').replace(/%/g,'%25').replace(/\r/g,'%0D').replace(/\n/g,'%0A');
+const reportFatal=error=>{console.error(`::error title=Core E2E failure::${annotationText(error?.stack||error)}`);process.exit(1)};
+process.on('uncaughtException',reportFatal);
+process.on('unhandledRejection',reportFatal);
+const base=process.env.DG_TEST_BASE||'http://127.0.0.1:4173/';
 const browser=await chromium.launch({headless:true});
 const context=await browser.newContext({viewport:{width:390,height:844},locale:'he-IL'});
 await context.addInitScript(()=>localStorage.setItem('dvirGymMultiWelcomeV8','1'));
