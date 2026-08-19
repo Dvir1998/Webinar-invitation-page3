@@ -16,4 +16,3 @@ const dgRenderHomeV7=renderHome;renderHome=function(){dgRenderHomeV7();setTimeou
 document.addEventListener('click',e=>{const b=e.target.closest('button,.action,.dock-item');if(!b)return;try{if(navigator.vibrate&&!matchMedia('(prefers-reduced-motion: reduce)').matches)navigator.vibrate(7)}catch{}},{capture:true});
 try{$('#toast')?.setAttribute('aria-live','polite');document.querySelector('main')?.setAttribute('aria-live','off')}catch{}
 if('serviceWorker'in navigator){navigator.serviceWorker.addEventListener('controllerchange',()=>{try{toast('Athlete OS עודכן לגרסה החדשה')}catch{}})}
-setTimeout(()=>{try{renderCurrent();dgEnhanceHomeV7()}catch{}},3200);

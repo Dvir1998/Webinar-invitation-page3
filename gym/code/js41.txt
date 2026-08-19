@@ -1,5 +1,5 @@
 /* Athlete OS 9.1 — production gym equipment library, authentic-photo cards and cardio protocol */
-const DG_GYM_LIBRARY_VERSION='9.1.2';
+const DG_GYM_LIBRARY_VERSION='9.2.1';
 const DG_MACHINE_SPRITE_URL=`assets/gym-machines.webp?v=${DG_GYM_LIBRARY_VERSION}`;
 const DG_HOME_SPRITE_URL=`assets/home-exercises.webp?v=${DG_GYM_LIBRARY_VERSION}`;
 
@@ -110,11 +110,12 @@ setTimeout(()=>{loadMachineSprite();dgLoadHomeExerciseSprite()},350);
 
 function dgInjectAccountEntryV912(){
  const home=$('#screen-home');if(!home)return;
- home.querySelector('#dgAccountEntryV911')?.remove();home.querySelector('#dgAccountEntryV912')?.remove();
+ home.querySelector('#dgAccountEntryV911')?.remove();
  const account=dgIsAccount(),profile=$('#profileBtn');
  if(profile){profile.classList.add('dg-account-header-v912');profile.onclick=()=>dgOpenAccount('home');profile.setAttribute('aria-label','חשבון וכניסה');profile.title='חשבון וכניסה'}
- const button=document.createElement('button');button.id='dgAccountEntryV912';button.className='dg-account-entry-v911 dg-account-entry-v912';button.type='button';button.setAttribute('aria-label',account?'פתיחת החשבון שלי':'כניסה או הרשמה לחשבון');button.innerHTML=account?`<span>✓</span><span><b>החשבון שלי</b><small>${esc(dgCurrentDisplayName())} · ניהול החשבון והתנתקות</small></span>`:'<span>↳</span><span><b>כניסה או הרשמה</b><small>חשבון אישי, שמירה וסנכרון בין מכשירים</small></span>';button.onclick=()=>dgOpenAccount('home');
- home.prepend(button);
+ let button=home.querySelector('#dgAccountEntryV912');
+ if(!button){button=document.createElement('button');button.id='dgAccountEntryV912';button.className='dg-account-entry-v911 dg-account-entry-v912';button.type='button';home.prepend(button)}
+ button.setAttribute('aria-label',account?'פתיחת החשבון שלי':'כניסה או הרשמה לחשבון');button.innerHTML=account?`<span>✓</span><span><b>החשבון שלי</b><small>${esc(dgCurrentDisplayName())} · ניהול החשבון והתנתקות</small></span>`:'<span>↳</span><span><b>כניסה או הרשמה</b><small>חשבון אישי, שמירה וסנכרון בין מכשירים</small></span>';button.onclick=()=>dgOpenAccount('home');
 }
 const dgUpdateIdentityChromeV911Base=dgUpdateIdentityChrome;
 dgUpdateIdentityChrome=function(){const r=dgUpdateIdentityChromeV911Base();const profile=$('#profileBtn');if(profile){profile.classList.add('dg-account-header-v912');profile.onclick=()=>dgOpenAccount('home');profile.setAttribute('aria-label','חשבון וכניסה');profile.title='חשבון וכניסה'}return r};
@@ -122,4 +123,3 @@ const dgRenderHomeV911Base=renderHome;
 renderHome=function(){const r=dgRenderHomeV911Base();setTimeout(dgInjectAccountEntryV912,0);return r};
 const dgRenderCurrentV911Base=renderCurrent;
 renderCurrent=function(){const r=dgRenderCurrentV911Base();setTimeout(dgInjectAccountEntryV912,0);return r};
-setTimeout(dgInjectAccountEntryV912,450);

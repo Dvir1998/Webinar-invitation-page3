@@ -33,17 +33,19 @@ jobs:
           test -f gym/tests/multiuser-storage.mjs
           test -s gym/assets/gym-machines.webp
           test -s gym/assets/home-exercises.webp
-          test -f gym/code/js41.txt
-          test -f gym/code/css15.txt
+          test -f gym/code/js43.txt
+          test -f gym/code/css17.txt
           test -f gym/tests/machine-library.mjs
           test -f gym/tests/accessibility-account.mjs
-          grep -q 'dist/app.css?v=9.1.2' gym/index.html
-          grep -q 'dist/app.js?v=9.1.2' gym/index.html
-          grep -q 'Athlete OS 9.1.2' gym/index.html
+          test -f gym/tests/daily-tracker-recovery.mjs
+          test -f gym/tests/visual-stability.mjs
+          grep -q 'dist/app.css?v=9.2.1' gym/index.html
+          grep -q 'dist/app.js?v=9.2.1' gym/index.html
+          grep -q 'Athlete OS 9.2.1' gym/index.html
           grep -q 'sessionStorage.getItem(SESSION)' gym/index.html
           grep -q 'dvirGymAuthSessionV8' gym/index.html
           grep -q 'dvirAthleteOS_v8::' gym/index.html
-          grep -q 'dvir-athlete-os-v9-1-2-account-discovery-20260818' gym/sw.js
+          grep -q 'dvir-athlete-os-v9-2-1-stable-first-paint-20260819' gym/sw.js
           grep -q "'assets/gym-machines.webp'" gym/sw.js
           grep -q "'assets/home-exercises.webp'" gym/sw.js
           grep -q "'version.json'" gym/sw.js
@@ -52,7 +54,7 @@ jobs:
           grep -q "'dist/app.js'" gym/sw.js
           grep -q "'activeScope'" gym/sw.js
           grep -q 'name="referrer" content="no-referrer"' gym/index.html
-          node -e "const x=JSON.parse(require('fs').readFileSync('gym/version.json','utf8')); if(!x.build||x.appVersion!=='9.1.2')process.exit(1); console.log('version ok',x.build)"
+          node -e "const x=JSON.parse(require('fs').readFileSync('gym/version.json','utf8')); if(!x.build||x.appVersion!=='9.2.1')process.exit(1); console.log('version ok',x.build)"
           node - <<'NODE'
           const fs=require('fs');
           for(const p of ['gym/assets/gym-machines.webp','gym/assets/home-exercises.webp']){
@@ -71,7 +73,9 @@ jobs:
           node --check gym/tests/e2e.mjs
           node --check gym/tests/multiuser-storage.mjs
           node --check gym/tests/accessibility-account.mjs
-          node -e "const x=JSON.parse(require('fs').readFileSync('gym/manifest.json','utf8')); if(!x.name.includes('9.1.2'))process.exit(1); console.log('manifest ok')"
+          node --check gym/tests/daily-tracker-recovery.mjs
+          node --check gym/tests/visual-stability.mjs
+          node -e "const x=JSON.parse(require('fs').readFileSync('gym/manifest.json','utf8')); if(!x.name.includes('9.2.1'))process.exit(1); console.log('manifest ok')"
       - name: Enforce zero-cost, multi-user, privacy, themes and coaching policy
         shell: bash
         run: |
@@ -135,6 +139,14 @@ jobs:
           grep -q 'DG_CARDIO_PROTOCOLS' gym/dist/app.js
           grep -q 'dg-machine-card-v91' gym/dist/app.css
           grep -q 'dg-cardio-protocol' gym/dist/app.css
+          grep -q 'DG_RECOVERY_MEALS' gym/dist/app.js
+          grep -q 'dgEnsureDailyTrackingV92' gym/dist/app.js
+          grep -q 'dgBuildPostWorkoutPlanV92' gym/dist/app.js
+          grep -q 'dg-daily-tracker' gym/dist/app.css
+          grep -q 'dg-recovery-option' gym/dist/app.css
+          grep -q 'dgPrepareStableFirstPaintV921' gym/dist/app.js
+          grep -q 'DG_EDEN_USERNAME_V921' gym/dist/app.js
+          grep -q 'body:not(.ready) #app' gym/dist/app.css
           grep -q 'home-pushup' gym/dist/app.js
           grep -q 'home-legraise' gym/dist/app.js
           grep -q 'dg-home-technique-card' gym/dist/app.css

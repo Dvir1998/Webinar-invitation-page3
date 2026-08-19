@@ -84,5 +84,3 @@ const dgRenderMoreV73=renderMore;renderMore=function(){dgRenderMoreV73();setTime
 
 // Surface adaptive nutrition calibration in Fuel screen.
 const dgRenderFuelV73=renderFuel;renderFuel=function(){dgRenderFuelV73();setTimeout(()=>{const s=$('#screen-fuel');if(!s||s.querySelector('#dgAdaptiveFuel'))return;const t=nutritionTargets(),hero=s.querySelector('.fuel-hero,.card');if(!hero)return;const d=document.createElement('div');d.id='dgAdaptiveFuel';d.className='dg-adaptive-fuel';d.innerHTML=`<small>ADAPTIVE CALORIES</small><b>${t.adapt>0?'+':''}${t.adapt} kcal calibration</b><span>${esc(t.adaptReason||'')}</span>${t.trendPct!=null?`<em>${t.trendPct>0?'+':''}${t.trendPct.toFixed(2)}% משקל/שבוע</em>`:''}`;hero.appendChild(d)},40)};
-
-setTimeout(()=>{try{renderCurrent()}catch{}},1800);

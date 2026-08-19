@@ -1,4 +1,4 @@
-const CACHE='dvir-athlete-os-v9-1-2-account-discovery-20260818';
+const CACHE='dvir-athlete-os-v9-2-1-stable-first-paint-20260819';
 const ASSETS=['./','index.html','manifest.json','version.json','assets/icon-192.png','assets/icon-512.png','dist/app.css','dist/app.js','dist/SHA256SUMS','assets/gym-machines.webp','assets/home-exercises.webp'];
 self.addEventListener('install',e=>{e.waitUntil((async()=>{const c=await caches.open(CACHE);await Promise.allSettled(ASSETS.map(a=>c.add(a)));await self.skipWaiting()})())});
 self.addEventListener('activate',e=>{e.waitUntil((async()=>{for(const k of await caches.keys())if(k!==CACHE)await caches.delete(k);await self.clients.claim()})())});

@@ -1,0 +1,58 @@
+/* Athlete OS 9.2.1 — stable first paint and Eden's dedicated experience */
+const DG_EDEN_USERNAME_V921='edenchoen';
+const DG_EDEN_EXPERIENCE_V921={
+ special:true,
+ nickname:'דוני',
+ banner:'המרחב האישי של עדן · כל אימון קטן הוא עוד צעד לגרסה החזקה שלך ✨',
+ motivationEnabled:true,
+ showDvirMentions:true,
+ tone:'warm-playful',
+ motivation:[
+  'את לא צריכה יום מושלם — רק צעד קטן שאת באמת עושה.',
+  'הכוח שלך נבנה בשקט, חזרה אחרי חזרה.',
+  'היום את משקיעה בעצמך, ומחר הגוף כבר ירגיש את זה.',
+  'עקביות עדינה מנצחת התלהבות שנעלמת.',
+  'דוני, גם אימון קצר נחשב כשהוא נעשה בכוונה.',
+  'את חזקה יותר ממה שנדמה לך בתחילת האימון.'
+ ]
+};
+
+function dgResolvedExperienceV921(){
+ if(dgCurrentUsername()!==DG_EDEN_USERNAME_V921)return dgExperienceV9;
+ const remote=dgExperienceV9||{},motivation=Array.isArray(remote.motivation)&&remote.motivation.length?remote.motivation:DG_EDEN_EXPERIENCE_V921.motivation;
+ return{...DG_EDEN_EXPERIENCE_V921,...remote,special:true,nickname:remote.nickname||DG_EDEN_EXPERIENCE_V921.nickname,banner:remote.banner||DG_EDEN_EXPERIENCE_V921.banner,motivationEnabled:true,motivation};
+}
+
+dgExperienceMessagesV9=function(){return Array.isArray(dgResolvedExperienceV921()?.motivation)?dgResolvedExperienceV921().motivation.filter(Boolean):[]};
+dgInjectPersonalHomeV9=function(){
+ const screen=$('#screen-home');if(!screen)return;
+ const experience=dgResolvedExperienceV921(),hero=screen.querySelector('.hero');if(!hero)return;
+ let banner=screen.querySelector('.dg-global-banner');
+ if(experience?.banner){
+  if(!banner){banner=document.createElement('div');banner.className='card dg-global-banner';hero.insertAdjacentElement('afterend',banner)}
+  banner.innerHTML=`<span>✦</span><p>${esc(experience.banner)}</p>`;
+ }else banner?.remove();
+ const msg=experience?.motivationEnabled!==false?dgMotivationMessageV9(dgMotivationCursorV9):'';
+ let card=screen.querySelector('.dg-personal-motivation');
+ if(!msg){card?.remove();return}
+ if(!card){card=document.createElement('div');card.className='card dg-personal-motivation';(banner||hero).insertAdjacentElement('afterend',card)}
+ card.innerHTML=`<div class="dg-personal-kicker">${experience.special?'FOR YOU · PERSONAL':'DAILY LIFT'}</div><div class="dg-personal-top"><div><h2>${experience.nickname?`רגע קטן בשבילך, ${esc(experience.nickname)} ✨`:'תזכורת קטנה ליום טוב יותר ✨'}</h2><p>${esc(msg)}</p></div><div class="dg-heart-orb">✦</div></div><div class="dg-personal-actions"><button id="dgAnotherSmile">עוד אחד</button>${dgCurrentUsername()===DG_EDEN_USERNAME_V921?`<button id="dgMotivationReminderToggle">${dgMotivationReminderV9()?.on?'תזכורות פעילות ✓':'הפעל תזכורות קטנות'}</button>`:''}</div>`;
+ card.querySelector('#dgAnotherSmile').onclick=()=>{dgMotivationCursorV9++;dgInjectPersonalHomeV9()};
+ card.querySelector('#dgMotivationReminderToggle')?.addEventListener('click',dgToggleMotivationReminderV9);
+};
+
+function dgPrepareStableFirstPaintV921(){
+ if(!$('#screen-home')?.classList.contains('active'))return;
+ dgInjectAccountEntryV912();
+ dgInjectDailyTrackerV92();
+ dgInjectPersonalHomeV9();
+ dgEnhanceHomeV7();
+ dgInjectCreatorSignature($('#screen-home'));
+ dgApplyAvatarV9();
+ document.documentElement.dataset.dgStablePaint='ready';
+}
+
+const dgRenderHomeStableV921Base=renderHome;
+renderHome=function(){const result=dgRenderHomeStableV921Base();dgPrepareStableFirstPaintV921();return result};
+const dgRenderCurrentStableV921Base=renderCurrent;
+renderCurrent=function(){const result=dgRenderCurrentStableV921Base();dgPrepareStableFirstPaintV921();return result};

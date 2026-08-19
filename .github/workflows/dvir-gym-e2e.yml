@@ -39,3 +39,7 @@ jobs:
         run: node gym/tests/machine-library.mjs
       - name: Run light-theme accessibility and account-entry E2E
         run: node gym/tests/accessibility-account.mjs
+      - name: Run daily tracking and recovery nutrition E2E
+        run: node gym/tests/daily-tracker-recovery.mjs
+      - name: Run first-paint visual stability E2E
+        run: node gym/tests/visual-stability.mjs

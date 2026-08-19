@@ -12,7 +12,7 @@ const contrast=(foreground,background)=>{const a=luminance(parseRgb(foreground))
 for(const viewport of [{name:'compact',width:320,height:700},{name:'mobile',width:390,height:844},{name:'desktop',width:1440,height:1000}]){
  const context=await browser.newContext({viewport,locale:'he-IL',reducedMotion:'reduce'});
  await context.addInitScript(()=>{
-  const state={version:'9.1.2',profile:{name:'',complete:false,days:4,goal:'lean_gain',weight:65,height:165,age:28},location:'gym',prefs:{theme:'bright'},logs:[],meals:[],weights:[],measures:[],chat:[],photos:[],reminders:[]};
+  const state={version:'9.2.1',profile:{name:'',complete:false,days:4,goal:'lean_gain',weight:65,height:165,age:28},location:'gym',prefs:{theme:'bright'},logs:[],meals:[],weights:[],measures:[],chat:[],photos:[],reminders:[]};
   localStorage.setItem('dvirGymMultiWelcomeV8','1');
   localStorage.setItem('dvirAthleteOS_v6',JSON.stringify(state));
   localStorage.setItem('dvirAthleteOS_v8::guest',JSON.stringify(state));
@@ -76,7 +76,7 @@ for(const viewport of [{name:'compact',width:320,height:700},{name:'mobile',widt
 const accountContext=await browser.newContext({viewport:{width:390,height:844},locale:'he-IL',reducedMotion:'reduce'});
 await accountContext.addInitScript(()=>{
  const userId='22222222-2222-4222-8222-222222222222';
- const state={version:'9.1.2',profile:{name:'דביר',complete:true,days:4,goal:'lean_gain',weight:65,height:165,age:28},location:'gym',prefs:{theme:'bright'},logs:[],meals:[],weights:[],measures:[],chat:[],photos:[],reminders:[]};
+ const state={version:'9.2.1',profile:{name:'דביר',complete:true,days:4,goal:'lean_gain',weight:65,height:165,age:28},location:'gym',prefs:{theme:'bright'},logs:[],meals:[],weights:[],measures:[],chat:[],photos:[],reminders:[]};
  const session={access_token:'local-test-token',refresh_token:'local-test-refresh',expires_at:Math.floor(Date.now()/1000)+3600,accountUsername:'dvirqa',displayName:'דביר',user:{id:userId,user_metadata:{username:'dvirqa',full_name:'דביר'}}};
  localStorage.setItem('dvirGymMultiWelcomeV8','1');
  localStorage.setItem('dvirGymAuthSessionV8',JSON.stringify(session));
