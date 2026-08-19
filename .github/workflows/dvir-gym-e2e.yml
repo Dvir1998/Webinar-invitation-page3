@@ -23,7 +23,7 @@ jobs:
       - name: Install Playwright Chromium
         run: |
           npm install --no-save playwright@1.55.0
-          npx playwright install --with-deps chromium
+          npx playwright install chromium
       - name: Serve Athlete OS
         run: |
           python3 -m http.server 4173 --directory gym >/tmp/dvir-gym-http.log 2>&1 &
