@@ -1,6 +1,6 @@
 /* Dvir Gym AI Athlete OS — generated production JS. Do not edit directly. */
 'use strict';
-const DG_BUILD_ID='3d5807b7be328644b0027170aa49573f51f22039';
+const DG_BUILD_ID='3789b8f346d03616d53bdcdcaeda79bdb5869f35';
 const VERSION='6.0.0';
 const STORE='dvirAthleteOS_v6';
 const LEGACY=['dvirAthleteLiveV1','dvirGymAthleteOSV4','dvirGym2027V3'];
@@ -1659,3 +1659,76 @@ const dgRenderHomeStableV921Base=renderHome;
 renderHome=function(){const result=dgRenderHomeStableV921Base();dgPrepareStableFirstPaintV921();return result};
 const dgRenderCurrentStableV921Base=renderCurrent;
 renderCurrent=function(){const result=dgRenderCurrentStableV921Base();dgPrepareStableFirstPaintV921();return result};
+/* Athlete OS 9.2.2 — stability hotfix: stale-bundle loop guard, safe storage and recovery */
+const DG_STABILITY_VERSION_V922='9.2.2';
+const DG_RELEASE_ATTEMPT_PREFIX_V922='dgReleaseAttemptV922:';
+let dgTargetBuildV922='';
+
+function dgCompactStateV922(){
+ try{
+  if(!S||typeof S!=='object')return;
+  const cap=(key,n)=>{if(Array.isArray(S[key])&&S[key].length>n)S[key]=S[key].slice(0,n)};
+  cap('logs',180);cap('meals',600);cap('weights',400);cap('measures',240);cap('chat',120);cap('postWorkoutPlans',60);cap('runtimeErrors',25);
+  if(S.dailyTracking&&typeof S.dailyTracking==='object'){
+   const keys=Object.keys(S.dailyTracking).sort().reverse();for(const key of keys.slice(180))delete S.dailyTracking[key];
+  }
+  if(Array.isArray(S.photos))S.photos=S.photos.slice(0,300).map(p=>{
+   if(!p||typeof p!=='object')return p;
+   const q={...p};
+   for(const key of ['data','dataUrl','imageData','base64','src'])if(typeof q[key]==='string'&&q[key].startsWith('data:image/'))delete q[key];
+   return q;
+  });
+ }catch{}
+}
+
+const dgSaveStabilityBaseV922=save;
+save=function(){
+ try{return dgSaveStabilityBaseV922()}
+ catch(e){
+  try{dgRecordError?.('safe-save-v922',e)}catch{}
+  const quota=e?.name==='QuotaExceededError'||/quota|storage/i.test(String(e?.message||e));
+  if(quota){
+   dgCompactStateV922();
+   try{return dgSaveStabilityBaseV922()}catch(e2){try{dgRecordError?.('safe-save-retry-v922',e2)}catch{}}
+  }
+  try{toast('המידע נשאר בזיכרון. מערכת השמירה תנסה שוב אוטומטית.')}catch{}
+  return null;
+ }
+};
+
+function dgReleaseAttemptKeyV922(build){return DG_RELEASE_ATTEMPT_PREFIX_V922+String(build||'unknown').slice(0,80)}
+function dgReleaseAttemptRecentV922(build){try{return Date.now()-(+localStorage.getItem(dgReleaseAttemptKeyV922(build))||0)<15*60*1000}catch{return false}}
+function dgMarkReleaseAttemptV922(build){try{localStorage.setItem(dgReleaseAttemptKeyV922(build),String(Date.now()))}catch{}}
+
+// Never auto-reload the same target build in a loop. A unique ?build= URL forces a fresh boot.
+dgApplyReleaseV9=async function(){
+ if(S?.activeWorkout){toast('העדכון יחכה עד שתסיים את האימון');return}
+ const target=dgTargetBuildV922||'';if(target)dgMarkReleaseAttemptV922(target);
+ try{
+  if('caches'in window){const keys=await caches.keys();await Promise.all(keys.filter(k=>k.startsWith('dvir-athlete-os')).map(k=>caches.delete(k)))}
+  const reg=await navigator.serviceWorker?.getRegistration();await reg?.update();reg?.waiting?.postMessage?.({type:'SKIP_WAITING'});
+ }catch{}
+ const u=new URL(location.href);if(target)u.searchParams.set('build',target);u.searchParams.set('reload',Date.now().toString(36));location.replace(u.toString());
+};
+
+dgCheckReleaseV9=async function(){
+ try{
+  const r=await fetch(`version.json?t=${Date.now()}`,{cache:'no-store'});if(!r.ok)return;
+  const j=await r.json(),local=typeof DG_BUILD_ID!=='undefined'?DG_BUILD_ID:'';
+  if(!j?.build||!local||j.build===local)return;
+  dgTargetBuildV922=j.build;
+  const b=dgEnsureUpdateBannerV9();b.classList.add('show');
+  const requested=new URL(location.href).searchParams.get('build');
+  if(requested===j.build||dgReleaseAttemptRecentV922(j.build))return;
+  if(!S?.activeWorkout&&!document.querySelector('dialog[open]')){
+   clearTimeout(dgReleaseTimerV9);dgReleaseTimerV9=setTimeout(()=>{if(!dgReleaseAttemptRecentV922(j.build))dgApplyReleaseV9()},9000);
+  }
+ }catch(e){try{dgRecordError?.('release-check-v922',e)}catch{}}
+};
+
+window.dgRepairAthleteOS=()=>location.assign('recover.html');
+setTimeout(()=>{
+ dgCompactStateV922();
+ try{window.__dgBootReady?.()}catch{}
+ const p=new URL(location.href).searchParams;if(p.get('recovered')==='1')try{toast('Athlete OS תוקן וה־cache נבנה מחדש ✓')}catch{}
+},1200);
