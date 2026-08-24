@@ -23,6 +23,7 @@ jobs:
           set -euo pipefail
           test -f .nojekyll
           test -f gym/index.html
+          test -f gym/recover.html
           test -f gym/manifest.json
           test -f gym/sw.js
           test -f gym/version.json
@@ -33,19 +34,22 @@ jobs:
           test -f gym/tests/multiuser-storage.mjs
           test -s gym/assets/gym-machines.webp
           test -s gym/assets/home-exercises.webp
-          test -f gym/code/js43.txt
+          test -f gym/code/js44.txt
           test -f gym/code/css17.txt
           test -f gym/tests/machine-library.mjs
           test -f gym/tests/accessibility-account.mjs
           test -f gym/tests/daily-tracker-recovery.mjs
           test -f gym/tests/visual-stability.mjs
-          grep -q 'dist/app.css?v=9.2.1' gym/index.html
-          grep -q 'dist/app.js?v=9.2.1' gym/index.html
-          grep -q 'Athlete OS 9.2.1' gym/index.html
+          grep -q 'dist/app.css?v=9.2.2' gym/index.html
+          grep -q 'dist/app.js?b=' gym/index.html
+          grep -q 'Athlete OS 9.2.2' gym/index.html
+          grep -q 'dvirGymBootGuardV922' gym/index.html
+          grep -q 'recover.html?auto=1' gym/index.html
           grep -q 'sessionStorage.getItem(SESSION)' gym/index.html
           grep -q 'dvirGymAuthSessionV8' gym/index.html
           grep -q 'dvirAthleteOS_v8::' gym/index.html
-          grep -q 'dvir-athlete-os-v9-2-1-stable-first-paint-20260819' gym/sw.js
+          grep -q 'dvir-athlete-os-v9-2-2-stability-20260824' gym/sw.js
+          grep -q "'recover.html'" gym/sw.js
           grep -q "'assets/gym-machines.webp'" gym/sw.js
           grep -q "'assets/home-exercises.webp'" gym/sw.js
           grep -q "'version.json'" gym/sw.js
@@ -53,8 +57,9 @@ jobs:
           grep -q "'dist/app.css'" gym/sw.js
           grep -q "'dist/app.js'" gym/sw.js
           grep -q "'activeScope'" gym/sw.js
+          grep -q "cache:'reload'" gym/sw.js
           grep -q 'name="referrer" content="no-referrer"' gym/index.html
-          node -e "const x=JSON.parse(require('fs').readFileSync('gym/version.json','utf8')); if(!x.build||x.appVersion!=='9.2.1')process.exit(1); console.log('version ok',x.build)"
+          node -e "const x=JSON.parse(require('fs').readFileSync('gym/version.json','utf8')); if(!x.build||x.appVersion!=='9.2.2')process.exit(1); console.log('version ok',x.build)"
           node - <<'NODE'
           const fs=require('fs');
           for(const p of ['gym/assets/gym-machines.webp','gym/assets/home-exercises.webp']){
@@ -75,7 +80,7 @@ jobs:
           node --check gym/tests/accessibility-account.mjs
           node --check gym/tests/daily-tracker-recovery.mjs
           node --check gym/tests/visual-stability.mjs
-          node -e "const x=JSON.parse(require('fs').readFileSync('gym/manifest.json','utf8')); if(!x.name.includes('9.2.1'))process.exit(1); console.log('manifest ok')"
+          node -e "const x=JSON.parse(require('fs').readFileSync('gym/manifest.json','utf8')); if(!x.name.includes('9.2.2'))process.exit(1); console.log('manifest ok')"
       - name: Enforce zero-cost, multi-user, privacy, themes and coaching policy
         shell: bash
         run: |
@@ -85,6 +90,9 @@ jobs:
             exit 1
           fi
           grep -q 'DG_BUILD_ID' gym/dist/app.js
+          grep -q 'DG_STABILITY_VERSION_V922' gym/dist/app.js
+          grep -q 'DG_RELEASE_ATTEMPT_PREFIX_V922' gym/dist/app.js
+          grep -q 'dgCompactStateV922' gym/dist/app.js
           grep -q 'openrouter/free' gym/dist/app.js
           grep -q 'DG_ACCOUNT_URL' gym/dist/app.js
           grep -q 'DG_USER_MEMORY_URL' gym/dist/app.js
@@ -160,6 +168,7 @@ jobs:
           grep -q 'data-dg-theme="pearl"' gym/dist/app.css
           grep -q 'data-dg-theme="aurora"' gym/dist/app.css
           grep -q "addEventListener('push'" gym/sw.js
+          grep -q 'לא מוחקים נתונים אישיים' gym/recover.html
       - name: Verify public account service and protected user services
         shell: bash
         run: |
