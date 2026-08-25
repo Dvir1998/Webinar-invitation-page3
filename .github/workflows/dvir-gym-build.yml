@@ -2,7 +2,7 @@ name: Dvir Gym AI Production Bundle
 
 on:
   push:
-    branches: [main]
+    branches: [main, athlete-os-9-3-fix]
     paths:
       - 'gym/code/**'
       - 'gym/assets/**'
@@ -13,7 +13,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: dvir-gym-bundle
+  group: dvir-gym-bundle-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
