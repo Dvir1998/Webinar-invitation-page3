@@ -1,6 +1,6 @@
 /* Dvir Gym AI Athlete OS — generated production JS. Do not edit directly. */
 'use strict';
-const DG_BUILD_ID='3789b8f346d03616d53bdcdcaeda79bdb5869f35';
+const DG_BUILD_ID='3177fd960fdfce1447ff218a60f2671f78db8c02';
 const VERSION='6.0.0';
 const STORE='dvirAthleteOS_v6';
 const LEGACY=['dvirAthleteLiveV1','dvirGymAthleteOSV4','dvirGym2027V3'];
