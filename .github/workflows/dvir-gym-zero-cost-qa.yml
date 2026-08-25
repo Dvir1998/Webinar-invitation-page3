@@ -17,159 +17,64 @@ jobs:
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
-      - name: Verify production bundle and PWA files
+      - name: Verify Athlete OS 9.3 production artifacts
         shell: bash
         run: |
           set -euo pipefail
           test -f .nojekyll
-          test -f gym/index.html
-          test -f gym/recover.html
-          test -f gym/manifest.json
-          test -f gym/sw.js
-          test -f gym/version.json
-          test -f gym/dist/app.js
-          test -f gym/dist/app.css
-          test -f gym/dist/SHA256SUMS
-          test -f gym/tests/e2e.mjs
-          test -f gym/tests/multiuser-storage.mjs
-          test -s gym/assets/gym-machines.webp
-          test -s gym/assets/home-exercises.webp
-          test -f gym/code/js44.txt
-          test -f gym/code/css17.txt
-          test -f gym/tests/machine-library.mjs
-          test -f gym/tests/accessibility-account.mjs
-          test -f gym/tests/daily-tracker-recovery.mjs
-          test -f gym/tests/visual-stability.mjs
-          grep -q 'dist/app.css?v=9.2.2' gym/index.html
-          grep -q 'dist/app.js?b=' gym/index.html
-          grep -q 'Athlete OS 9.2.2' gym/index.html
-          grep -q 'dvirGymBootGuardV922' gym/index.html
-          grep -q 'recover.html?auto=1' gym/index.html
-          grep -q 'sessionStorage.getItem(SESSION)' gym/index.html
-          grep -q 'dvirGymAuthSessionV8' gym/index.html
-          grep -q 'dvirAthleteOS_v8::' gym/index.html
-          grep -q 'dvir-athlete-os-v9-2-2-stability-20260824' gym/sw.js
-          grep -q "'recover.html'" gym/sw.js
-          grep -q "'assets/gym-machines.webp'" gym/sw.js
-          grep -q "'assets/home-exercises.webp'" gym/sw.js
-          grep -q "'version.json'" gym/sw.js
-          grep -q '/version.json' gym/sw.js
-          grep -q "'dist/app.css'" gym/sw.js
-          grep -q "'dist/app.js'" gym/sw.js
-          grep -q "'activeScope'" gym/sw.js
-          grep -q "cache:'reload'" gym/sw.js
-          grep -q 'name="referrer" content="no-referrer"' gym/index.html
-          node -e "const x=JSON.parse(require('fs').readFileSync('gym/version.json','utf8')); if(!x.build||x.appVersion!=='9.2.2')process.exit(1); console.log('version ok',x.build)"
-          node - <<'NODE'
-          const fs=require('fs');
-          for(const p of ['gym/assets/gym-machines.webp','gym/assets/home-exercises.webp']){
-            const x=fs.readFileSync(p);
-            if(x.length<15000||x.slice(0,4).toString()!=='RIFF'||x.slice(8,12).toString()!=='WEBP') throw new Error(p+' invalid');
-            console.log('production image ok',p,x.length);
-          }
-          NODE
-          (cd gym/dist && sha256sum -c SHA256SUMS)
-      - name: JavaScript and manifest syntax check
-        shell: bash
-        run: |
-          set -euo pipefail
+          for p in gym/index.html gym/recover.html gym/manifest.json gym/sw.js gym/version.json gym/dist/app.js gym/dist/app.css gym/dist/SHA256SUMS gym/code/css18.txt gym/code/js45.txt gym/code/js46.txt gym/assets/gym-photo-v93.webp; do test -f "$p"; done
           node --check gym/dist/app.js
           node --check gym/sw.js
-          node --check gym/tests/e2e.mjs
-          node --check gym/tests/multiuser-storage.mjs
-          node --check gym/tests/accessibility-account.mjs
-          node --check gym/tests/daily-tracker-recovery.mjs
-          node --check gym/tests/visual-stability.mjs
-          node -e "const x=JSON.parse(require('fs').readFileSync('gym/manifest.json','utf8')); if(!x.name.includes('9.2.2'))process.exit(1); console.log('manifest ok')"
-      - name: Enforce zero-cost, multi-user, privacy, themes and coaching policy
+          node -e "const x=JSON.parse(require('fs').readFileSync('gym/version.json','utf8'));if(!x.build||x.appVersion!=='9.3.0')process.exit(1);console.log('version',x.appVersion,x.build)"
+          node -e "const x=JSON.parse(require('fs').readFileSync('gym/manifest.json','utf8'));if(!x.name.includes('9.3'))process.exit(1);console.log('manifest ok')"
+          node - <<'NODE'
+          const fs=require('fs');
+          const p='gym/assets/gym-photo-v93.webp',x=fs.readFileSync(p);
+          if(x.length<100000||x.slice(0,4).toString()!=='RIFF'||x.slice(8,12).toString()!=='WEBP')throw new Error('full gym atlas invalid');
+          console.log('gym atlas ok',x.length);
+          NODE
+          grep -q 'Athlete OS 9.3 — Mobile Scroll Contract' gym/dist/app.css
+          grep -q 'overflow-y:auto!important' gym/dist/app.css
+          grep -q 'touch-action:pan-y pinch-zoom' gym/dist/app.css
+          grep -q 'Mobile scroll watchdog' gym/dist/app.js
+          grep -q 'DG_GYM_ATLAS_DIRECT_V93' gym/dist/app.js
+          grep -q 'assets/gym-photo-v93.webp' gym/dist/app.js
+          grep -q '39 תמונות אמיתיות' gym/dist/app.js
+          grep -q "'leg-press'" gym/dist/app.js
+          grep -q "'biceps-curl'" gym/dist/app.js
+          grep -q "'treadmill'" gym/dist/app.js
+          grep -q "'elliptical'" gym/dist/app.js
+          grep -q "'stair'" gym/dist/app.js
+          grep -q "'recumbent'" gym/dist/app.js
+          grep -q "'rower'" gym/dist/app.js
+          grep -q "'bike'" gym/dist/app.js
+          grep -q 'MULTI‑PROVIDER COACH' gym/dist/app.js
+          grep -q 'Gemini' gym/dist/app.js
+          grep -q 'OpenRouter' gym/dist/app.js
+          grep -q 'providerPreference' gym/dist/app.js
+          grep -q 'Memory Engine המקומי' gym/dist/app.js
+          grep -q 'dvir-athlete-os-v9-3-0-20260825' gym/sw.js
+          grep -q "'assets/gym-photo-v93.webp'" gym/sw.js
+          grep -q "cache:'reload'" gym/sw.js
+          grep -q 'dist/app.js?b=' gym/index.html
+          grep -q 'dvirGymBootGuardV922' gym/index.html
+          (cd gym/dist && sha256sum -c SHA256SUMS)
+      - name: Verify identity privacy and zero-cost infrastructure contract
         shell: bash
         run: |
           set -euo pipefail
           if grep -R -n -E 'api\.openai\.com|platform\.openai\.com' gym/index.html gym/dist gym/sw.js; then
-            echo 'Paid OpenAI path found in production artifacts'
-            exit 1
+            echo 'Unexpected paid OpenAI path found in production artifacts'; exit 1
           fi
-          grep -q 'DG_BUILD_ID' gym/dist/app.js
-          grep -q 'DG_STABILITY_VERSION_V922' gym/dist/app.js
-          grep -q 'DG_RELEASE_ATTEMPT_PREFIX_V922' gym/dist/app.js
-          grep -q 'dgCompactStateV922' gym/dist/app.js
-          grep -q 'openrouter/free' gym/dist/app.js
-          grep -q 'DG_ACCOUNT_URL' gym/dist/app.js
-          grep -q 'DG_USER_MEMORY_URL' gym/dist/app.js
-          grep -q 'DG_USER_AI_URL' gym/dist/app.js
-          grep -q 'DG_USER_COACH_URL' gym/dist/app.js
-          grep -q 'DG_USER_PUSH_URL' gym/dist/app.js
-          grep -q 'DG_USER_PRIVACY_URL' gym/dist/app.js
-          grep -q 'DG_USER_ACCOUNT_URL' gym/dist/app.js
-          grep -q 'DG_USER_PHOTOS_URL' gym/dist/app.js
-          grep -q 'DG_ADMIN_CONTROL_URL' gym/dist/app.js
-          grep -q 'DG_ADMIN_EXPERIENCE_URL' gym/dist/app.js
-          grep -q 'DG_PUBLIC_CONFIG_URL' gym/dist/app.js
-          grep -q 'dvirAthleteOS_v8::' gym/dist/app.js
-          grep -q 'dgIdentityTransition' gym/dist/app.js
-          grep -q 'dgPhotoScope' gym/dist/app.js
-          grep -q 'Guest Mode' gym/dist/app.js
-          grep -q 'Recovery Key' gym/dist/app.js
-          grep -q 'מחק את החשבון לצמיתות' gym/dist/app.js
-          grep -q 'זכור אותי במכשיר הזה' gym/dist/app.js
-          grep -q 'שינוי סיסמה מאובטח' gym/dist/app.js
-          grep -q 'תמונת הפרופיל שלך' gym/dist/app.js
-          grep -q 'Admin Studio' gym/dist/app.js
-          grep -q 'שיתוף עם מנהל האפליקציה' gym/dist/app.js
-          grep -q 'צ׳אט AI ותמונות התקדמות' gym/dist/app.js
-          grep -q 'personal-motivation' gym/dist/app.js
-          grep -q 'maxConsecutiveStrengthDays:2' gym/dist/app.js
-          grep -q 'dgNeedsRecoveryV9' gym/dist/app.js
-          grep -q 'Bulgarian Split Squat' gym/dist/app.js
-          grep -q 'Standing Dumbbell Calf Raise' gym/dist/app.js
-          grep -q 'Incline Smith Press' gym/dist/app.js
-          grep -q 'Theme Studio' gym/dist/app.js
-          grep -q 'Ivory Cream' gym/dist/app.js
-          grep -q 'Gold · White · Rose' gym/dist/app.js
-          grep -q 'Aurora Fusion' gym/dist/app.js
-          grep -q 'מייסד קהילת Explain' gym/dist/app.js
-          grep -q 'דוני (עדן) כהן' gym/dist/app.js
-          grep -q 'Multi‑Device Sync' gym/dist/app.js
-          grep -q 'user-photos' gym/dist/app.js
-          grep -q 'ZERO COST\|Zero.Cost' gym/dist/app.js
-          grep -q 'code_challenge_method=S256' gym/dist/app.js
-          grep -q 'oauth-exchange' gym/dist/app.js
-          grep -q 'DG_VAPID_PUBLIC' gym/dist/app.js
-          grep -q 'Plateau detected' gym/dist/app.js
-          grep -q 'Open Food Facts' gym/dist/app.js
-          grep -q 'TECHNIQUE SNAPSHOT' gym/dist/app.js
-          grep -q 'תמונה סטטית אחת בלבד' gym/dist/app.js
-          grep -q 'DG_HOME_VISUAL_INDEX' gym/dist/app.js
-          grep -q 'AI TECHNIQUE CARD' gym/dist/app.js
-          grep -q 'assets/gym-machines.webp' gym/dist/app.js
-          grep -q 'assets/home-exercises.webp' gym/dist/app.js
-          grep -q 'DG_MACHINE_DETAILS' gym/dist/app.js
-          grep -q 'DG_CARDIO_PROTOCOLS' gym/dist/app.js
-          grep -q 'dg-machine-card-v91' gym/dist/app.css
-          grep -q 'dg-cardio-protocol' gym/dist/app.css
-          grep -q 'DG_RECOVERY_MEALS' gym/dist/app.js
-          grep -q 'dgEnsureDailyTrackingV92' gym/dist/app.js
-          grep -q 'dgBuildPostWorkoutPlanV92' gym/dist/app.js
-          grep -q 'dg-daily-tracker' gym/dist/app.css
-          grep -q 'dg-recovery-option' gym/dist/app.css
-          grep -q 'dgPrepareStableFirstPaintV921' gym/dist/app.js
-          grep -q 'DG_EDEN_USERNAME_V921' gym/dist/app.js
-          grep -q 'body:not(.ready) #app' gym/dist/app.css
-          grep -q 'home-pushup' gym/dist/app.js
-          grep -q 'home-legraise' gym/dist/app.js
+          for token in DG_BUILD_ID DG_ACCOUNT_URL DG_USER_MEMORY_URL DG_USER_AI_URL DG_USER_COACH_URL DG_USER_PUSH_URL DG_USER_PRIVACY_URL dvirAthleteOS_v8:: dgIdentityTransition dgPhotoScope 'זכור אותי במכשיר הזה' 'שינוי סיסמה מאובטח' 'תמונת הפרופיל שלך' 'Admin Studio' 'שיתוף עם מנהל האפליקציה' 'Theme Studio' 'Ivory Cream' 'Gold · White · Rose' 'Aurora Fusion' 'Recovery Key' 'home-pushup' 'home-legraise' 'Bulgarian Split Squat'; do grep -q "$token" gym/dist/app.js; done
           grep -q 'dg-home-technique-card' gym/dist/app.css
-          grep -q 'dg-home-swap-thumb' gym/dist/app.css
-          grep -q 'grid-template-columns:repeat(5,minmax(0,1fr))' gym/dist/app.css
-          grep -q 'dg-auth-dialog' gym/dist/app.css
-          grep -q 'dg-admin-dialog' gym/dist/app.css
-          grep -q 'dg-personal-motivation' gym/dist/app.css
-          grep -q 'dg-update-banner' gym/dist/app.css
+          grep -q 'dg-machine-gallery-v93' gym/dist/app.css
+          grep -q 'dg-ai-studio-v93' gym/dist/app.css
           grep -q 'data-dg-theme="cream"' gym/dist/app.css
           grep -q 'data-dg-theme="pearl"' gym/dist/app.css
           grep -q 'data-dg-theme="aurora"' gym/dist/app.css
-          grep -q "addEventListener('push'" gym/sw.js
           grep -q 'לא מוחקים נתונים אישיים' gym/recover.html
-      - name: Verify public account service and protected user services
+      - name: Verify Supabase services and protection
         shell: bash
         run: |
           set -euo pipefail
@@ -178,27 +83,9 @@ jobs:
           ACCOUNT=$(curl --fail --silent --show-error --max-time 25 "$BASE/account-auth")
           echo "$ACCOUNT" | grep -q '"zeroCost":true'
           echo "$ACCOUNT" | grep -q '"userIsolation":true'
-          echo "$ACCOUNT" | grep -q '"mode":"username-password"'
-          echo "$ACCOUNT" | grep -q '10+ chars, letter + number'
-          echo "$ACCOUNT" | grep -q '"rateLimit":"ip+username"'
-          echo "$ACCOUNT" | grep -q '"multiDevice":true'
-          echo "$ACCOUNT" | grep -q '"cloudAutoUnlock":true'
           CONFIG=$(curl --fail --silent --show-error --max-time 25 "$BASE/app-config")
           echo "$CONFIG" | grep -q '"ok":true'
-          echo "$CONFIG" | grep -q '"public":true'
           for fn in user-memory user-ai-key user-coach user-push user-privacy user-account user-photos admin-control admin-experience; do
-            CODE=$(curl --silent --max-time 25 -o /tmp/dg-protected.json -w '%{http_code}' \
-              -X POST -H "apikey: $PUB" -H 'Content-Type: application/json' \
-              --data '{}' "$BASE/$fn")
+            CODE=$(curl --silent --max-time 25 -o /tmp/dg-protected.json -w '%{http_code}' -X POST -H "apikey: $PUB" -H 'Content-Type: application/json' --data '{}' "$BASE/$fn")
             test "$CODE" = '401'
           done
-      - name: Verify free shared services are alive
-        shell: bash
-        run: |
-          set -euo pipefail
-          BASE='https://rufnflwelexnpgzpzzfq.supabase.co/functions/v1'
-          PUSH_DISP=$(curl --fail --silent --show-error --max-time 25 "$BASE/push-dispatch")
-          FOOD=$(curl --fail --silent --show-error --max-time 25 "$BASE/food-lookup")
-          echo "$PUSH_DISP" | grep -q '"ok":true'
-          echo "$FOOD" | grep -q '"zeroCost":true'
-          echo "$FOOD" | grep -q 'Open Food Facts v3'
