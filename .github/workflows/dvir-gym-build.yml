@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'gym/code/**'
+      - 'gym/assets/**'
       - '.github/workflows/dvir-gym-build.yml'
   workflow_dispatch:
 
@@ -31,11 +32,21 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p gym/dist
+
           printf '/* Dvir Gym AI Athlete OS — generated production CSS. Do not edit directly. */\n' > gym/dist/app.css
-          for i in $(seq 1 17); do cat "gym/code/css${i}.txt" >> gym/dist/app.css; done
+          while IFS= read -r f; do
+            echo "Bundling $f"
+            cat "$f" >> gym/dist/app.css
+            printf '\n' >> gym/dist/app.css
+          done < <(printf '%s\n' gym/code/css*.txt | sort -V)
 
           printf '/* Dvir Gym AI Athlete OS — generated production JS. Do not edit directly. */\n' > gym/dist/app.js
-          for i in $(seq 1 44); do cat "gym/code/js${i}.txt" >> gym/dist/app.js; done
+          while IFS= read -r f; do
+            echo "Bundling $f"
+            cat "$f" >> gym/dist/app.js
+            printf '\n' >> gym/dist/app.js
+          done < <(printf '%s\n' gym/code/js*.txt | sort -V)
+
           BUILD_ID="$GITHUB_SHA" node - <<'NODE'
           const fs=require('fs');
           const p='gym/dist/app.js';
@@ -45,10 +56,16 @@ jobs:
           s=s.replace(marker, marker+"\nconst DG_BUILD_ID='"+process.env.BUILD_ID+"';");
           fs.writeFileSync(p,s);
           NODE
-          node --check gym/dist/app.js
 
-          printf '%s\n' "$(sha256sum gym/dist/app.js | cut -d' ' -f1)  app.js" "$(sha256sum gym/dist/app.css | cut -d' ' -f1)  app.css" > gym/dist/SHA256SUMS
-          printf '{"build":"%s","builtAt":"%s","channel":"production","appVersion":"9.2.2"}\n' "$GITHUB_SHA" "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" > gym/version.json
+          node --check gym/dist/app.js
+          grep -q 'Athlete OS 9.3 — Mobile Scroll Contract' gym/dist/app.css
+          grep -q 'Mobile scroll watchdog' gym/dist/app.js
+          grep -q 'DG_GYM_ATLAS_DIRECT_V93' gym/dist/app.js
+          grep -q 'Multi-provider AI' gym/dist/app.js
+          test -s gym/assets/gym-photo-v93.webp
+
+          printf '%s\n' "$(sha256sum gym/dist/app.js | cut -d' ' -f1)  app.js" "$(sha256sum gym/dist/app.css | cut -d' ' -f1)  app.css" "$(sha256sum gym/assets/gym-photo-v93.webp | cut -d' ' -f1)  gym-photo-v93.webp" > gym/dist/SHA256SUMS
+          printf '{"build":"%s","builtAt":"%s","channel":"production","appVersion":"9.3.0"}\n' "$GITHUB_SHA" "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" > gym/version.json
       - name: Commit bundle when changed
         shell: bash
         run: |
