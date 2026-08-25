@@ -1,0 +1,14 @@
+/* Athlete OS 9.3 — direct optimized gym atlas; avoids Base64 reconstruction in browser memory */
+const DG_GYM_ATLAS_DIRECT_V93='assets/gym-photo-v93.webp';
+dgGymAtlasV93=DG_GYM_ATLAS_DIRECT_V93;
+dgGymAtlasPromiseV93=null;
+dgLoadGymAtlasV93=async function(){
+ dgGymAtlasV93=DG_GYM_ATLAS_DIRECT_V93;
+ try{
+  const img=new Image();img.decoding='async';img.loading='eager';img.src=DG_GYM_ATLAS_DIRECT_V93;
+  if(img.decode)img.decode().catch(()=>{});
+ }catch{}
+ return dgGymAtlasV93;
+};
+// Repaint any library/workout that rendered before this final atlas override.
+requestAnimationFrame(()=>{try{if(document.querySelector('#machineGrid'))renderMachineGrid(MACHINES);if(document.querySelector('#workoutDialog[open]'))renderWorkout()}catch{}});
