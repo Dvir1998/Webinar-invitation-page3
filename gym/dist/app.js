@@ -1,6 +1,6 @@
 /* Dvir Gym AI Athlete OS — generated production JS. Do not edit directly. */
 'use strict';
-const DG_BUILD_ID='dab3ac410b5603452945a96d3c38502f91e6ad82';
+const DG_BUILD_ID='4e282693ae32df7887b147a0d9017bf1f0a9e1ce';
 const VERSION='6.0.0';
 const STORE='dvirAthleteOS_v6';
 const LEGACY=['dvirAthleteLiveV1','dvirGymAthleteOSV4','dvirGym2027V3'];
@@ -1732,3 +1732,116 @@ setTimeout(()=>{
  try{window.__dgBootReady?.()}catch{}
  const p=new URL(location.href).searchParams;if(p.get('recovered')==='1')try{toast('Athlete OS תוקן וה־cache נבנה מחדש ✓')}catch{}
 },1200);
+/* Athlete OS 9.3 — scroll watchdog, Gemini/OpenRouter multi-provider AI, complete photographed gym library */
+const DG_V93='9.3.0';
+
+/* ---------- Mobile scroll watchdog ---------- */
+function dgUnlockDocumentScrollV93(){
+ try{
+  const hasModal=!!document.querySelector('dialog[open]');
+  if(!hasModal){
+   for(const el of [document.documentElement,document.body]){
+    if(!el)continue;
+    for(const p of ['overflow','overflow-y','height','max-height','position','top','touch-action'])el.style.removeProperty(p);
+   }
+  }
+  const active=document.querySelector('.screen.active');if(active){active.style.removeProperty('height');active.style.removeProperty('max-height');active.style.removeProperty('overflow')}
+  document.documentElement.dataset.dgScroll='unlocked';
+ }catch{}
+}
+const dgSwitchScreenScrollBaseV93=switchScreen;
+switchScreen=function(name){const r=dgSwitchScreenScrollBaseV93(name);requestAnimationFrame(()=>{dgUnlockDocumentScrollV93();try{window.scrollTo({top:0,left:0,behavior:'instant'})}catch{window.scrollTo(0,0)}});return r};
+for(const ev of ['pageshow','resize','orientationchange'])window.addEventListener(ev,()=>requestAnimationFrame(dgUnlockDocumentScrollV93),{passive:true});
+document.addEventListener('close',()=>requestAnimationFrame(dgUnlockDocumentScrollV93),true);
+new MutationObserver(()=>requestAnimationFrame(dgUnlockDocumentScrollV93)).observe(document.body,{attributes:true,attributeFilter:['style','class'],subtree:false});
+setTimeout(dgUnlockDocumentScrollV93,50);setTimeout(dgUnlockDocumentScrollV93,800);setTimeout(dgUnlockDocumentScrollV93,2500);
+
+/* ---------- Multi-provider AI ---------- */
+const DG_AI_PREF_V93='dvirGymAiProviderV93::';
+let dgAiProvidersV93={openrouter:{configured:false},gemini:{configured:false}};
+function dgAiPrefKeyV93(){return DG_AI_PREF_V93+(dgCurrentUserId?.()||'guest')}
+function dgAiPreferenceV93(){const p=localStorage.getItem(dgAiPrefKeyV93())||'auto';return ['auto','gemini','openrouter'].includes(p)?p:'auto'}
+function dgSetAiPreferenceV93(p){if(!['auto','gemini','openrouter'].includes(p))p='auto';localStorage.setItem(dgAiPrefKeyV93(),p);S.ai=S.ai||{};S.ai.providerPreference=p;save();dgRenderAIStudioV93();dgInjectCoachProviderV93();toast(p==='auto'?'AI יבחר אוטומטית את הספק הזמין':`AI יעדיף ${p==='gemini'?'Gemini':'OpenRouter'}`)}
+async function dgAiProviderStatusV93(force=false){
+ if(!dgIsAccount()){dgAiProvidersV93={openrouter:{configured:false},gemini:{configured:false}};dgAiConfigured=false;return{ok:true,configured:false,providers:dgAiProvidersV93}}
+ if(!force&&Date.now()-dgAiStatusCheckedAt<20000&&dgAiConfigured)return{ok:true,configured:true,providers:dgAiProvidersV93};
+ dgAiStatusCheckedAt=Date.now();
+ try{const j=await dgKeyVault('status');dgAiProvidersV93=j.providers||dgAiProvidersV93;dgAiConfigured=!!j.configured;localStorage.setItem('dvirGymAiConfiguredV8::'+dgCurrentUserId(),dgAiConfigured?'1':'0');return j}catch(e){dgAiConfigured=localStorage.getItem('dvirGymAiConfiguredV8::'+dgCurrentUserId())==='1';return{ok:false,configured:dgAiConfigured,providers:dgAiProvidersV93,error:String(e)}}
+}
+dgCheckAIConfigured=async function(force=false){const j=await dgAiProviderStatusV93(force);return !!j.configured};
+callAI=async function(message,imageData=null){
+ if(!dgIsAccount())throw new Error('account_required');
+ const configured=await dgCheckAIConfigured();if(!configured)throw new Error('ai_not_configured');
+ const c=new AbortController(),timer=setTimeout(()=>c.abort(),65000);
+ try{
+  const headers=await dgAuthHeaders(),r=await fetch(DG_USER_COACH_URL,{method:'POST',headers,body:JSON.stringify({message,imageData,history:S.chat.slice(-16),memory:coachMemory(),providerPreference:dgAiPreferenceV93()}),signal:c.signal}),j=await r.json().catch(()=>({}));
+  if(!r.ok){const e=new Error(j.error||('AI '+r.status));e.data=j;e.status=r.status;throw e}
+  S.ai=S.ai||{};S.ai.lastProvider=j.provider||'';S.ai.lastModel=j.servedBy||'';S.ai.lastOk=Date.now();S.ai.quota=j.quota||S.ai.quota||{};return j
+ }finally{clearTimeout(timer)}
+};
+const dgApplyAIV93Base=applyAI;applyAI=function(out){const r=dgApplyAIV93Base(out);if(out?.provider){S.ai=S.ai||{};S.ai.lastProvider=out.provider;S.ai.lastModel=out.servedBy||out.provider;S.ai.lastOk=Date.now()}return r};
+
+function dgAIProviderNameV93(p){return p==='gemini'?'Gemini':p==='openrouter'?'OpenRouter':'Auto'}
+async function dgSaveProviderKeyV93(provider){
+ if(!dgIsAccount()){dgOpenAccount('login');return}
+ const input=$(`#dg-${provider}-key-v93`),btn=$(`[data-dg-save-provider="${provider}"]`),key=input?.value.trim()||'';
+ if(key.length<20){toast('המפתח קצר מדי או ריק');return}
+ if(btn){btn.disabled=true;btn.textContent='בודק ומצפין…'}
+ try{const j=await dgKeyVault('set',key,{provider});if(input)input.value='';await dgAiProviderStatusV93(true);toast(`${dgAIProviderNameV93(provider)} חובר בהצלחה${j.testedModel?' · '+j.testedModel:''}`);dgRenderAIStudioV93();dgInjectCoachProviderV93()}
+ catch(e){const status=e?.data?.status||e?.data?.detail||'';toast(`${dgAIProviderNameV93(provider)} לא התחבר${status?' · '+String(status).slice(0,80):''}`)}
+ finally{if(btn){btn.disabled=false;btn.textContent='שמור וחבר'}}
+}
+async function dgDeleteProviderV93(provider){if(!dgIsAccount())return;if(!confirm(`לנתק את ${dgAIProviderNameV93(provider)} מהחשבון?`))return;try{await dgKeyVault('delete','',{provider});await dgAiProviderStatusV93(true);toast(`${dgAIProviderNameV93(provider)} נותק`);dgRenderAIStudioV93();dgInjectCoachProviderV93()}catch{toast('לא הצלחתי לנתק כרגע')}}
+function dgProviderCardV93(provider,title,subtitle,configured){const isGem=provider==='gemini';return`<section class="dg-provider-card ${configured?'live':''}"><header><div><h3>${title}</h3><small>${subtitle}</small></div><span class="dg-provider-status">${configured?'CONNECTED':'NOT CONNECTED'}</span></header>${configured?`<div class="dg-provider-buttons"><button data-dg-remove-provider="${provider}">נתק מפתח</button>${isGem?'<a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">ניהול Gemini key</a>':'<a href="https://openrouter.ai/settings/keys" target="_blank" rel="noopener">ניהול OpenRouter key</a>'}</div>`:`<div class="dg-provider-actions"><input id="dg-${provider}-key-v93" type="password" autocomplete="off" spellcheck="false" placeholder="${isGem?'Gemini API key':'sk-or-v1-…'}"><button data-dg-save-provider="${provider}">שמור וחבר</button></div><div class="dg-provider-buttons">${isGem?'<a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">צור Gemini API key</a>':'<a href="https://openrouter.ai/settings/keys" target="_blank" rel="noopener">צור OpenRouter key</a>'}</div>`}</section>`}
+async function dgRenderAIStudioV93(){
+ const s=$('#screen-more');if(!s)return;
+ const old=$('#dgAiCloudCard');old?.remove();let card=$('#dgAiStudioV93');if(card)card.remove();
+ card=document.createElement('section');card.id='dgAiStudioV93';card.className='card dg-ai-studio-v93';
+ if(!dgIsAccount()){card.innerHTML=`<div class="dg-ai-studio-head"><div><div class="eyebrow">AI ENGINE 9.3</div><h2>חבר AI אמיתי לחשבון</h2><p>במצב אורח הצ׳אט עובד רק עם Memory Engine מקומי. מפתחות API נשמרים רק בכספת של חשבון אישי.</p></div><span class="badge warn">LOCAL</span></div><button class="primary" id="dgAiLoginV93" style="margin-top:12px">התחבר / צור חשבון</button>`;s.prepend(card);$('#dgAiLoginV93').onclick=()=>dgOpenAccount('login');return}
+ const st=await dgAiProviderStatusV93(true),p=st.providers||dgAiProvidersV93,pref=dgAiPreferenceV93();
+ card.innerHTML=`<div class="dg-ai-studio-head"><div><div class="eyebrow">MULTI‑PROVIDER COACH</div><h2>מנועי AI לחשבון שלך</h2><p>אפשר לחבר Gemini ו־OpenRouter במקביל. המפתחות נשמרים ב־Supabase Vault בצד השרת ולא חוזרים לדפדפן.</p></div><span class="badge">${st.configured?'AI READY':'SETUP'}</span></div><div class="dg-provider-priority"><button data-dg-ai-pref="auto" class="${pref==='auto'?'active':''}">AUTO</button><button data-dg-ai-pref="gemini" class="${pref==='gemini'?'active':''}">GEMINI</button><button data-dg-ai-pref="openrouter" class="${pref==='openrouter'?'active':''}">OPENROUTER</button></div><div class="dg-provider-grid">${dgProviderCardV93('gemini','Google Gemini','מודל מולטימודלי · טקסט + תמונות · המפתח שלך',!!p.gemini?.configured)}${dgProviderCardV93('openrouter','OpenRouter Free Router','Fallback חינמי לפי זמינות ומכסה',!!p.openrouter?.configured)}</div><div class="dg-ai-warning">Gemini API עשוי לפעול במסגרת מכסה חינמית או בחיוב לפי חשבון Google/Cloud שלך. האפליקציה לא יכולה להבטיח עלות 0$ עבור מפתח Gemini שלך. OpenRouter נשאר fallback נפרד.</div>`;
+ const anchor=$('#dgThemeCard')||s.querySelector('.hero');anchor?.insertAdjacentElement('afterend',card);if(!anchor)s.prepend(card);
+ $$('[data-dg-ai-pref]',card).forEach(b=>b.onclick=()=>dgSetAiPreferenceV93(b.dataset.dgAiPref));$$('[data-dg-save-provider]',card).forEach(b=>b.onclick=()=>dgSaveProviderKeyV93(b.dataset.dgSaveProvider));$$('[data-dg-remove-provider]',card).forEach(b=>b.onclick=()=>dgDeleteProviderV93(b.dataset.dgRemoveProvider));
+}
+function dgInjectCoachProviderV93(){
+ const s=$('#screen-coach'),hero=s?.querySelector('.coach-hero');if(!s||!hero)return;let b=$('#dgCoachProviderV93');if(b)b.remove();b=document.createElement('div');b.id='dgCoachProviderV93';b.className='dg-coach-provider-banner';const p=S.ai?.lastProvider||'',pref=dgAiPreferenceV93();b.innerHTML=`<span><b>${p?`AI פעיל: ${dgAIProviderNameV93(p)}`:dgIsAccount()?'AI בענן לא נבדק עדיין':'Memory Engine מקומי'}</b> · העדפה ${dgAIProviderNameV93(pref)}</span><button>הגדר AI</button>`;hero.insertAdjacentElement('afterend',b);b.querySelector('button').onclick=()=>{switchScreen('more');setTimeout(()=>$('#dgAiStudioV93')?.scrollIntoView({behavior:'smooth',block:'start'}),180)}}
+const dgRenderCoachV93Base=renderCoach;renderCoach=function(thinking=false){const r=dgRenderCoachV93Base(thinking);setTimeout(dgInjectCoachProviderV93,0);setTimeout(dgUnlockDocumentScrollV93,0);return r};
+const dgRenderMoreV93Base=renderMore;renderMore=function(){const r=dgRenderMoreV93Base();setTimeout(()=>{dgRenderAIStudioV93();dgPatchMachineLibraryTextV93();dgUnlockDocumentScrollV93()},180);return r};
+checkAIHealth=async function(){const els=[$('#homeAiStatus'),$('#coachStatus')].filter(Boolean);if(!els.length)return;const st=await dgAiProviderStatusV93(true),p=st.providers||{},live=!!st.configured;els.forEach(e=>{e.classList.toggle('off',!live);const sp=e.querySelector('span');if(!sp)return;if(live){const names=[p.gemini?.configured?'Gemini':'',p.openrouter?.configured?'OpenRouter':''].filter(Boolean).join(' + ');sp.textContent=`AI READY · ${names}${S.ai?.lastModel?' · '+S.ai.lastModel:''}`}else sp.textContent=dgIsAccount()?'Memory Engine · חבר Gemini/OpenRouter':'Memory Engine · התחבר לחשבון כדי לחבר AI'})};
+
+/* Local fallback must never pretend to be a general LLM. */
+const dgLocalCoachV93Base=localCoach;localCoach=function(message){const q=String(message||'').toLowerCase();if(/(אתר|אפליקצי|גלול|לגלול|קורס|קרס|קריסה|צ[׳']אט|chat|api|gemini|ג['׳]?מיני|מפתח)/i.test(q))return{reply:dgIsAccount()?'אני כרגע ב־Memory Engine המקומי ולכן אני לא אמציא תשובת AI כללית. זו נראית שאלה על האפליקציה/ה־AI. עבור ל״עוד → מנועי AI״ וחבר Gemini או OpenRouter; כשהענן מחובר השיחה עוברת למודל אמיתי ושומרת את ההקשר שלך.':'זו שאלה על האפליקציה, לא סימן גופני. כרגע אתה במצב אורח ולכן הצ׳אט הוא Memory Engine מקומי בלבד. התחבר לחשבון כדי לחבר Gemini/OpenRouter בצורה מאובטחת.'};if(/(כועס|מתוסכל|מעצבן|עצבים)/i.test(q))return{reply:'קלטתי שאתה מתוסכל, אבל אני לא הולך להיתקע על המשפט הזה. אם זה בגלל האפליקציה — כתוב מה בדיוק לא עובד. אם זו שאלה על אימון/אוכל — שאל אותה ישירות ואשתמש בנתונים השמורים שלך.'};const out=dgLocalCoachV93Base(message);if(out?.reply?.startsWith('הענן לא זמין'))out.reply='Cloud AI לא מחובר/לא זמין כרגע. Memory Engine יכול לענות רק על הנתונים המקומיים שלך — אימון, אוכל, משקל, היקפים והתאוששות. לשיחה חופשית אמיתית חבר Gemini או OpenRouter.';return out};
+
+/* ---------- Complete photographed gym library: 23 equipment entries / 39 photos ---------- */
+const DG_GYM_ATLAS_PARTS_V93=['assets/gym-photo-v93-1.txt','assets/gym-photo-v93-2.txt','assets/gym-photo-v93-3.txt','assets/gym-photo-v93-4.txt','assets/gym-photo-v93-5.txt'];
+const DG_GYM_PHOTOS_V93={
+ 'lat-pulldown':[24,0],'leg-extension':[33,1],'pec-rear':[34,2],'lat-row-combo':[38,3],'hip':[37,4],'seated-row':[35,5],'ab-crunch':[36,6],'leg-curl':[27,7],'shoulder-press':[25,8],'chest-press':[22,9],'smith':[31,32,10],'preacher':[11],'cable':[28,29,30,12],'assisted':[13],'treadmill':[20,14],'elliptical':[15],'stair':[16],'recumbent':[17],'rower':[18],'bike':[19],'dumbbells':[21],'biceps-curl':[23],'leg-press':[26]
+};
+let dgGymAtlasV93='';let dgGymAtlasPromiseV93=null;
+function dgAtlasStyleV93(index){const c=index%5,r=Math.floor(index/5),x=(c/4*100).toFixed(4),y=(r/7*100).toFixed(4);return`background-image:url("${dgGymAtlasV93}");background-size:500% 800%;background-position:${x}% ${y}%;background-repeat:no-repeat;background-color:#121418`}
+async function dgLoadGymAtlasV93(){if(dgGymAtlasV93)return dgGymAtlasV93;if(dgGymAtlasPromiseV93)return dgGymAtlasPromiseV93;dgGymAtlasPromiseV93=(async()=>{try{const parts=await Promise.all(DG_GYM_ATLAS_PARTS_V93.map(async p=>{const r=await fetch(p,{cache:'force-cache'});if(!r.ok)throw new Error('atlas_'+r.status);return(await r.text()).trim()}));dgGymAtlasV93='data:image/webp;base64,'+parts.join('');if($('#machineGrid'))renderMachineGrid(MACHINES);if($('#workoutDialog')?.open)renderWorkout();return dgGymAtlasV93}catch(e){try{dgRecordError?.('gym-atlas-v93',e)}catch{}return''}finally{dgGymAtlasPromiseV93=null}})();return dgGymAtlasPromiseV93}
+const dgMachineVisualV93Fallback=machineVisual;machineVisual=function(m,cls='machine-sprite'){const idx=DG_GYM_PHOTOS_V93[m.id]?.[0];if(idx==null||!dgGymAtlasV93)return dgMachineVisualV93Fallback(m,cls);return`<div class="${cls} dg-atlas-photo" role="img" aria-label="${esc(m.simple)}" style="${dgAtlasStyleV93(idx)}"></div>`};
+function dgAddGymEquipmentV93(m){if(machineMap[m.id])return;MACHINES.push(m);machineMap[m.id]=m;m.photoSource='צילום אמיתי מהמכון'}
+dgAddGymEquipmentV93({id:'biceps-curl',simple:'מכונת כפיפת מרפקים',pro:'Biceps Curl Machine',cat:'ידיים',muscles:['biceps'],setup:'כוון את גובה המושב כך שהזרוע העליונה נתמכת והמרפק נמצא בקו ציר התנועה של המכונה.',cue:'כופף את המרפקים בלי להרים כתפיים ובלי לנתק את הזרוע מהכרית. חזור לאט עד מתיחה נשלטת.',mistake:'אל תזרוק את הגוף לאחור ואל תסיים חזרה באמצעות תנופה.',bestFor:'בידוד בייספס במסלול יציב ומדיד.',programUse:'תרגיל יד קדמית ב־Upper B לאחר תרגילי הגב.'});
+dgAddGymEquipmentV93({id:'leg-press',simple:'מכונת לחיצת רגליים',pro:'Leg Press',cat:'רגליים',muscles:['quads','glutes','hamstrings'],setup:'כוון את המושב/משענת כך שבנקודה התחתונה כל כף הרגל נשארת על הפלטה והאגן אינו מתגלגל פנימה.',cue:'רד בשליטה, ברכיים בכיוון האצבעות, ודחוף דרך כל כף הרגל בלי לנעול ברכיים באגרסיביות.',mistake:'אל תרד עמוק יותר מהטווח שבו הגב והאגן נשארים יציבים.',bestFor:'העמסה גבוהה על ארבע־ראשי וגלוטס עם יציבות גבוהה.',programUse:'תרגיל רגליים מרכזי ב־Lower B; משלים את Smith Squat של Lower A.'});
+dgAddGymEquipmentV93({id:'dumbbells',simple:'מתקן המשקולות החופשיות',pro:'Dumbbell Rack',cat:'משקולות חופשיות',muscles:[],setup:'בחר זוג זהה, פנה לעצמך שטח עבודה והחזר כל משקולת למקום לאחר הסט.',cue:'השתמש במשקולות ללחיצות, חתירות, הרחקות כתף, כפיפות מרפקים, RDL ותרגילים חד־צדדיים לפי התוכנית.',mistake:'אל תבחר משקל לפי האגו; בחר עומס שמאפשר טווח מלא ו־RIR מתוכנן.',bestFor:'עבודה חד־צדדית, טווח תנועה חופשי והתקדמות מדורגת.',programUse:'מאגר ציוד חלופי כשמכונה תפוסה או כשצריך וריאציה חופשית.'});
+try{const ub=TEMPLATES.gym.upperB,pi=ub.findIndex(x=>x[0]==='preacher');if(pi>=0)ub[pi]=['biceps-curl','Biceps Curl Machine',3,'10–15',60];const lb=TEMPLATES.gym.lowerB,si=lb.findIndex((x,i)=>x[0]==='smith'&&String(x[1]).includes('Squat'));if(si>=0)lb[si]=['leg-press','Leg Press',3,'8–12',120]}catch{}
+function dgGalleryPhotoV93(index,label){return`<button type="button" aria-label="${esc(label)}"><div class="dg-atlas-photo" style="${dgAtlasStyleV93(index)}"></div></button>`}
+openMachine=function(id){const m=machineMap[id];if(!m)return;const photos=DG_GYM_PHOTOS_V93[id]||[];const draw=()=>{const gallery=dgGymAtlasV93&&photos.length?`<div class="dg-machine-gallery-v93">${photos.map((i,n)=>dgGalleryPhotoV93(i,`${m.simple} · תמונה ${n+1}`)).join('')}</div><div class="dg-machine-photo-note"><span><b>${photos.length}</b> תמונות אמיתיות מהמכון</span><span>החלק לצדדים לצפייה</span></div>`:`<div style="height:40vh;min-height:260px">${machineVisual(m,'machine-sprite modal-sprite')}</div>`;$('#machineContent').innerHTML=`<div class="sheet"><div class="sheet-head"><div><div class="eyebrow">REAL GYM LIBRARY</div><h2>${esc(m.simple)}</h2></div><button class="close" onclick="machineDialog.close()">×</button></div>${gallery}<p class="help">${esc(m.pro)} · ${esc(m.cat)}</p><div class="card nudge good"><b>איך מכוונים</b><p>${esc(m.setup||'')}</p></div><div class="card nudge" style="margin-top:8px"><b>איך מבצעים</b><p>${esc(m.cue||'')}</p></div><div class="card nudge warn" style="margin-top:8px"><b>טעות נפוצה</b><p>${esc(m.mistake||'')}</p></div>${m.bestFor?`<div class="card nudge" style="margin-top:8px"><b>למה הוא טוב</b><p>${esc(m.bestFor)}</p></div>`:''}<button class="primary" id="machineAsk" style="margin-top:10px">שאל את ה־AI על המכשיר</button></div>`;$('#machineAsk').onclick=()=>{$('#machineDialog').close();openCoachWith(`אני עומד מול ${m.pro} (${m.simple}). לפי התוכנית וההיסטוריה שלי, תסביר איך לכוון אותו, איזה עומס התחלתי לבחור בלי לנחש מספר שרירותי, כמה סטים/חזרות/RIR לעשות ומה לרשום כדי להתקדם.`)};$('#machineDialog').showModal();dgUnlockDocumentScrollV93()};if(!dgGymAtlasV93)dgLoadGymAtlasV93().then(draw);else draw()};
+const dgRenderMachineGridV93Base=renderMachineGrid;renderMachineGrid=function(arr){const g=$('#machineGrid');if(!g)return;g.innerHTML=arr.map(m=>`<button class="card machine-card dg-machine-card-v93" data-machine="${m.id}">${machineVisual(m,'machine-sprite card-sprite')}<div class="body"><b>${esc(m.simple)}</b><small>${esc(m.pro)} · ${esc(m.cat)}</small><span class="dg-machine-count-v93">${DG_GYM_PHOTOS_V93[m.id]?.length||1} תמונות</span></div></button>`).join('');$$('[data-machine]',g).forEach(b=>b.onclick=()=>openMachine(b.dataset.machine));if(!dgGymAtlasV93)dgLoadGymAtlasV93()};
+function dgPatchMachineLibraryTextV93(){const s=$('#screen-more');if(!s)return;for(const h of $$('.section-head',s)){if(h.querySelector('h2')?.textContent.includes('המכשירים במכון')){const sm=h.querySelector('small');if(sm)sm.textContent=`${MACHINES.length} פריטי ציוד · 39 תמונות אמיתיות שצולמו במכון`;break}}}
+setTimeout(()=>{if(S.location==='gym')dgLoadGymAtlasV93();dgPatchMachineLibraryTextV93();dgRenderAIStudioV93();dgInjectCoachProviderV93();dgUnlockDocumentScrollV93()},1400);
+/* Athlete OS 9.3 — direct optimized gym atlas; avoids Base64 reconstruction in browser memory */
+const DG_GYM_ATLAS_DIRECT_V93='assets/gym-photo-v93.webp';
+dgGymAtlasV93=DG_GYM_ATLAS_DIRECT_V93;
+dgGymAtlasPromiseV93=null;
+dgLoadGymAtlasV93=async function(){
+ dgGymAtlasV93=DG_GYM_ATLAS_DIRECT_V93;
+ try{
+  const img=new Image();img.decoding='async';img.loading='eager';img.src=DG_GYM_ATLAS_DIRECT_V93;
+  if(img.decode)img.decode().catch(()=>{});
+ }catch{}
+ return dgGymAtlasV93;
+};
+// Repaint any library/workout that rendered before this final atlas override.
+requestAnimationFrame(()=>{try{if(document.querySelector('#machineGrid'))renderMachineGrid(MACHINES);if(document.querySelector('#workoutDialog[open]'))renderWorkout()}catch{}});
