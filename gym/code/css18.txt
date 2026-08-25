@@ -1,0 +1,47 @@
+/* Athlete OS 9.3 — Mobile Scroll Contract + Multi‑Provider AI + full gym photo gallery */
+html{height:auto!important;min-height:100%!important;overflow-x:hidden!important;overflow-y:auto!important;touch-action:pan-y pinch-zoom!important;overscroll-behavior-y:auto!important;-webkit-text-size-adjust:100%}
+body{height:auto!important;min-height:100dvh!important;overflow-x:hidden!important;overflow-y:auto!important;touch-action:pan-y pinch-zoom!important;overscroll-behavior-y:auto!important;-webkit-overflow-scrolling:touch!important;position:relative!important}
+#app,.app-shell,main{height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important;touch-action:pan-y pinch-zoom!important}
+.app-shell{min-height:100dvh!important;padding-bottom:calc(116px + env(safe-area-inset-bottom))!important}
+.screen{height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important;touch-action:pan-y!important}
+.screen.active{display:block!important;overflow:visible!important}
+#screen-home,#screen-fuel,#screen-progress,#screen-more{padding-bottom:24px}
+#screen-coach{min-height:calc(100dvh - 110px)!important}
+.coach-shell{min-height:calc(100dvh - 168px)!important;height:auto!important;max-height:none!important;overflow:visible!important}
+.messages{min-height:280px!important;max-height:min(52dvh,560px)!important;overflow-y:auto!important;overscroll-behavior:contain!important;touch-action:pan-y!important;-webkit-overflow-scrolling:touch!important}
+.composer{z-index:35}
+dialog[open]{touch-action:pan-y pinch-zoom!important;overscroll-behavior:contain!important}
+.sheet-dialog,.full-dialog{overflow-x:hidden!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;touch-action:pan-y!important}
+.full-dialog{height:100dvh!important;max-height:100dvh!important}
+#workoutContent,#profileContent,#mealContent,#measureContent,#reminderContent,#machineContent,#onboardContent{min-height:0!important;overflow:visible!important;touch-action:pan-y!important}
+.workout-top{touch-action:pan-y!important}
+.exercise-panel{padding-bottom:calc(54px + env(safe-area-inset-bottom))!important}
+/* Do not let decorative layers capture a swipe. */
+.ambient,.noise,.card::before,.hero-glow{pointer-events:none!important}
+/* Native controls remain interactive while vertical swipes work around them. */
+button,input,textarea,select,a{touch-action:manipulation}
+
+/* AI provider studio */
+.dg-ai-studio-v93{margin-top:14px;padding:16px;overflow:visible!important}
+.dg-ai-studio-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.dg-ai-studio-head h2{margin:3px 0;font-size:17px}.dg-ai-studio-head p{margin:0;color:var(--muted);font-size:8px;line-height:1.5}
+.dg-provider-priority{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin:13px 0;padding:5px;border:1px solid var(--line);border-radius:17px;background:rgba(255,255,255,.04)}
+.dg-provider-priority button{min-height:39px;border:0;border-radius:13px;background:transparent;color:var(--muted);font-size:8px;font-weight:900}
+.dg-provider-priority button.active{background:linear-gradient(115deg,var(--cyan),var(--lime));color:#071014}
+.dg-provider-grid{display:grid;gap:9px}.dg-provider-card{padding:13px;border:1px solid var(--line);border-radius:19px;background:rgba(255,255,255,.035)}
+.dg-provider-card.live{border-color:color-mix(in srgb,var(--lime) 40%,var(--line));background:color-mix(in srgb,var(--lime) 7%,var(--panel))}
+.dg-provider-card header{display:flex;justify-content:space-between;gap:10px;align-items:center}.dg-provider-card h3{margin:0;font-size:12px}.dg-provider-card header small{display:block;margin-top:3px;color:var(--muted);font-size:7px}
+.dg-provider-status{padding:5px 8px;border-radius:999px;border:1px solid var(--line);font-size:7px;font-weight:950;color:var(--muted)}.dg-provider-card.live .dg-provider-status{color:var(--lime);border-color:color-mix(in srgb,var(--lime) 35%,var(--line))}
+.dg-provider-actions{display:grid;grid-template-columns:1fr auto;gap:7px;margin-top:9px}.dg-provider-actions input{min-width:0;border:1px solid var(--line);background:var(--bg2);color:var(--text);border-radius:13px;padding:10px;font-size:12px}.dg-provider-actions button{min-width:92px;border:0;border-radius:13px;background:linear-gradient(110deg,var(--cyan),var(--lime));color:#071014;font-size:8px;font-weight:950;padding:9px}
+.dg-provider-buttons{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.dg-provider-buttons button,.dg-provider-buttons a{min-height:38px;display:inline-flex;align-items:center;justify-content:center;padding:0 11px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--text);text-decoration:none;font-size:8px;font-weight:900}
+.dg-ai-warning{margin-top:10px;padding:10px;border-radius:14px;border:1px solid color-mix(in srgb,var(--amber) 30%,var(--line));background:color-mix(in srgb,var(--amber) 7%,var(--panel));color:var(--muted);font-size:8px;line-height:1.55}
+.dg-coach-provider-banner{margin:8px 0 4px;padding:9px 11px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.035);font-size:8px;color:var(--muted);display:flex;align-items:center;justify-content:space-between;gap:10px}.dg-coach-provider-banner b{color:var(--text)}.dg-coach-provider-banner button{border:0;border-radius:10px;padding:7px 9px;background:rgba(85,231,255,.11);color:var(--cyan);font-size:8px;font-weight:900}
+
+/* Full photographed gym library */
+.dg-machine-count-v93{display:inline-flex;align-items:center;gap:6px;padding:5px 8px;border-radius:999px;background:rgba(85,231,255,.08);border:1px solid rgba(85,231,255,.18);color:var(--cyan);font-size:7px;font-weight:900}
+.dg-atlas-photo{background-color:#121418!important;background-repeat:no-repeat!important}
+.dg-machine-gallery-v93{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;padding:8px 0 4px;scrollbar-width:none;touch-action:pan-x pan-y!important}.dg-machine-gallery-v93::-webkit-scrollbar{display:none}.dg-machine-gallery-v93 button{flex:0 0 min(82vw,430px);height:300px;border:1px solid var(--line);border-radius:19px;overflow:hidden;padding:0;background:#111;scroll-snap-align:center}.dg-machine-gallery-v93 .dg-atlas-photo{width:100%;height:100%;display:block}
+.dg-machine-photo-note{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;color:var(--muted);font-size:8px}.dg-machine-photo-note b{color:var(--cyan)}
+.dg-machine-card-v93 .machine-sprite{height:180px}
+@media(max-width:520px){.dg-provider-actions{grid-template-columns:1fr}.dg-provider-actions button{width:100%}.dg-machine-gallery-v93 button{height:250px}.composer{bottom:calc(88px + env(safe-area-inset-bottom))}}
+@media(max-width:390px){.dg-machine-gallery-v93 button{height:220px}.messages{max-height:48dvh!important}}
