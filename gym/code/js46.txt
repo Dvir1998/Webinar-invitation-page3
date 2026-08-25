@@ -1,14 +1,24 @@
-/* Athlete OS 9.3 — direct optimized gym atlas; avoids Base64 reconstruction in browser memory */
-const DG_GYM_ATLAS_DIRECT_V93='assets/gym-photo-v93.webp';
-dgGymAtlasV93=DG_GYM_ATLAS_DIRECT_V93;
+/* Athlete OS 9.3 — complete photographed gym atlas reconstructed once as a binary Blob */
+const DG_GYM_ATLAS_PARTS_FINAL_V93=[
+ 'assets/gym-new-v93-tiny-1.txt','assets/gym-new-v93-tiny-2.txt','assets/gym-new-v93-tiny-3.txt','assets/gym-new-v93-tiny-4.txt','assets/gym-new-v93-tiny-5.txt'
+];
+let dgGymAtlasBlobUrlV93='';
+dgGymAtlasV93=null;
 dgGymAtlasPromiseV93=null;
 dgLoadGymAtlasV93=async function(){
- dgGymAtlasV93=DG_GYM_ATLAS_DIRECT_V93;
- try{
-  const img=new Image();img.decoding='async';img.loading='eager';img.src=DG_GYM_ATLAS_DIRECT_V93;
-  if(img.decode)img.decode().catch(()=>{});
- }catch{}
- return dgGymAtlasV93;
+ if(dgGymAtlasV93)return dgGymAtlasV93;
+ if(dgGymAtlasPromiseV93)return dgGymAtlasPromiseV93;
+ dgGymAtlasPromiseV93=(async()=>{
+  const parts=await Promise.all(DG_GYM_ATLAS_PARTS_FINAL_V93.map(async p=>{const r=await fetch(p,{cache:'force-cache'});if(!r.ok)throw new Error('gym_atlas_part_'+r.status);return(await r.text()).trim()}));
+  const b64=parts.join(''),bin=atob(b64),bytes=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+  const blob=new Blob([bytes],{type:'image/webp'});
+  if(blob.size<20000)throw new Error('gym_atlas_incomplete');
+  dgGymAtlasBlobUrlV93=URL.createObjectURL(blob);dgGymAtlasV93=dgGymAtlasBlobUrlV93;
+  try{const img=new Image();img.decoding='async';img.src=dgGymAtlasV93;if(img.decode)await img.decode()}catch{}
+  requestAnimationFrame(()=>{try{if(document.querySelector('#machineGrid'))renderMachineGrid(MACHINES);if(document.querySelector('#workoutDialog[open]'))renderWorkout()}catch{}});
+  return dgGymAtlasV93;
+ })().catch(e=>{dgGymAtlasPromiseV93=null;try{dgRecordError?.('gym-atlas-v93',e)}catch{};return null});
+ return dgGymAtlasPromiseV93;
 };
-// Repaint any library/workout that rendered before this final atlas override.
-requestAnimationFrame(()=>{try{if(document.querySelector('#machineGrid'))renderMachineGrid(MACHINES);if(document.querySelector('#workoutDialog[open]'))renderWorkout()}catch{}});
+addEventListener('pagehide',()=>{try{if(dgGymAtlasBlobUrlV93)URL.revokeObjectURL(dgGymAtlasBlobUrlV93)}catch{}},{once:true});
