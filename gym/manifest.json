@@ -1,8 +1,8 @@
 {
   "id":"./",
-  "name":"Dvir Gym AI — Athlete OS 9.2.2",
+  "name":"Dvir Gym AI — Athlete OS 9.3",
   "short_name":"Dvir Gym AI",
-  "description":"מאמן כושר ותזונה רב-משתמשי עם חשבונות נפרדים, זיכרון מוצפן, AI חינמי בלבד, Food Scanner, Technique Check, Push, Decision Engine, אימוני מכון ובית עם הדגמות AI, תזונה ו-Progress Photos",
+  "description":"מאמן כושר ותזונה רב-משתמשי עם חשבונות נפרדים, זיכרון מוצפן, Gemini + OpenRouter, ספריית מכון מצולמת מלאה, אימוני מכון ובית, תזונה, Push ו-Progress Photos",
   "lang":"he",
   "dir":"rtl",
   "start_url":"./",
@@ -20,7 +20,7 @@
   ],
   "shortcuts":[
     {"name":"התחל אימון","short_name":"אימון","description":"פתח את האימון המתאים לחשבון הנוכחי","url":"./?action=workout","icons":[{"src":"assets/icon-192.png","sizes":"192x192","type":"image/png"}]},
-    {"name":"שאל את המאמן","short_name":"AI","description":"פתח את Coach Intelligence האישי והחינמי","url":"./?action=coach","icons":[{"src":"assets/icon-192.png","sizes":"192x192","type":"image/png"}]},
+    {"name":"שאל את המאמן","short_name":"AI","description":"פתח את Coach Intelligence האישי","url":"./?action=coach","icons":[{"src":"assets/icon-192.png","sizes":"192x192","type":"image/png"}]},
     {"name":"תעד אוכל","short_name":"אוכל","description":"תעד או סרוק ארוחה בזיכרון התזונתי האישי","url":"./?action=fuel","icons":[{"src":"assets/icon-192.png","sizes":"192x192","type":"image/png"}]}
   ]
 }
