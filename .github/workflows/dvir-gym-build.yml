@@ -37,14 +37,12 @@ jobs:
           while IFS= read -r f; do
             echo "Bundling $f"
             cat "$f" >> gym/dist/app.css
-            printf '\n' >> gym/dist/app.css
           done < <(printf '%s\n' gym/code/css*.txt | sort -V)
 
           printf '/* Dvir Gym AI Athlete OS — generated production JS. Do not edit directly. */\n' > gym/dist/app.js
           while IFS= read -r f; do
             echo "Bundling $f"
             cat "$f" >> gym/dist/app.js
-            printf '\n' >> gym/dist/app.js
           done < <(printf '%s\n' gym/code/js*.txt | sort -V)
 
           BUILD_ID="$GITHUB_SHA" node - <<'NODE'
