@@ -49,6 +49,10 @@ jobs:
           const fs=require('fs');
           const p='gym/dist/app.js';
           let s=fs.readFileSync(p,'utf8');
+          // Normalize one source typo caught by the production syntax gate in the 9.3 gallery handler.
+          const bad=")}};$('#machineDialog').showModal();dgUnlockDocumentScrollV93()";
+          const good=")};$('#machineDialog').showModal();dgUnlockDocumentScrollV93()";
+          if(s.includes(bad)) s=s.replace(bad,good);
           const marker="'use strict';";
           if(!s.includes(marker)) throw new Error('strict marker missing');
           s=s.replace(marker, marker+"\nconst DG_BUILD_ID='"+process.env.BUILD_ID+"';");
