@@ -67,7 +67,7 @@ await assertDocumentScroll('Home');
 
 const tabs=engine==='webkit'?['עוד']:['תזונה','התקדמות','עוד'];
 for(const tab of tabs){
- await page.getByRole('button',{name:new RegExp(tab)}).click();
+	await page.getByRole('button',{name:tab,exact:true}).click();
  await page.locator('.screen.active').waitFor();
  await page.waitForTimeout(engine==='webkit'&&tab==='עוד'?50:300);
  await assertDocumentScroll(tab);
