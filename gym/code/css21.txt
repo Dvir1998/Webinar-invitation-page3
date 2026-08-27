@@ -1,0 +1,11 @@
+/* Athlete OS 9.3.1 — non-blocking release banner */
+.dg-update-banner{
+ top:auto!important;
+ bottom:calc(96px + env(safe-area-inset-bottom))!important;
+ transform:translate(-50%,145%)!important;
+ pointer-events:none!important;
+}
+.dg-update-banner.show{
+ transform:translate(-50%,0)!important;
+ pointer-events:auto!important;
+}

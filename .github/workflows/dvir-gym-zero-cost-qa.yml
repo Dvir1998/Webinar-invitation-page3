@@ -22,7 +22,7 @@ jobs:
         run: |
           set -euo pipefail
           test -f .nojekyll
-          for p in gym/index.html gym/recover.html gym/manifest.json gym/sw.js gym/version.json gym/dist/app.js gym/dist/app.css gym/dist/SHA256SUMS gym/code/css19.txt gym/code/css20.txt gym/code/js47.txt gym/code/js48.txt gym/assets/gym-machines.webp; do test -f "$p"; done
+          for p in gym/index.html gym/recover.html gym/manifest.json gym/sw.js gym/version.json gym/dist/app.js gym/dist/app.css gym/dist/SHA256SUMS gym/code/css19.txt gym/code/css20.txt gym/code/css21.txt gym/code/js47.txt gym/code/js48.txt gym/assets/gym-machines.webp; do test -f "$p"; done
           node --check gym/dist/app.js
           node --check gym/sw.js
           node -e "const x=JSON.parse(require('fs').readFileSync('gym/version.json','utf8'));if(!x.build||x.appVersion!=='9.3.1')process.exit(1);console.log('version',x.appVersion,x.build)"

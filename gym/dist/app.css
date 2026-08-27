@@ -283,3 +283,14 @@ dialog[open],.sheet-dialog,.full-dialog{overflow-x:hidden!important;overflow-y:a
 /* Athlete OS 9.3.1 — recommendation rationale */
 .dg-recovery-option.recommended{border-color:color-mix(in srgb,var(--lime) 58%,var(--line))!important;box-shadow:0 12px 34px color-mix(in srgb,var(--lime) 12%,transparent)!important}
 .dg-recovery-reason-v931{display:block;margin-top:8px;padding:8px 9px;border-radius:11px;background:color-mix(in srgb,var(--cyan) 8%,var(--panel));color:var(--text)!important;font-size:8px!important;line-height:1.5}.dg-recovery-reason-v931 b{color:var(--lime);font-size:8px}
+/* Athlete OS 9.3.1 — non-blocking release banner */
+.dg-update-banner{
+ top:auto!important;
+ bottom:calc(96px + env(safe-area-inset-bottom))!important;
+ transform:translate(-50%,145%)!important;
+ pointer-events:none!important;
+}
+.dg-update-banner.show{
+ transform:translate(-50%,0)!important;
+ pointer-events:auto!important;
+}

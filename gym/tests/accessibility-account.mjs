@@ -1,6 +1,6 @@
 import { chromium } from 'playwright';
 
-const base='http://127.0.0.1:4173/';
+const base=process.env.DG_TEST_BASE||'http://127.0.0.1:4173/';
 const browser=await chromium.launch({headless:true});
 const parseRgb=value=>(String(value).match(/[\d.]+/g)||[]).slice(0,3).map(Number);
 const luminance=color=>{
