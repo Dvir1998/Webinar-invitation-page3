@@ -40,10 +40,16 @@ async function swipeUp(target='window'){
   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:195,y:710,radiusX:6,radiusY:6,force:1}]});
   for(const y of [640,570,500,430,360,290,220])await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:195,y,radiusX:6,radiusY:6,force:1}]});
   await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
- }else await page.evaluate(target=>{
-  const node=target==='window'?window:document.querySelector(target);
-  node?.scrollBy?.({top:620,left:0,behavior:'instant'});
- },target);
+	}else await page.evaluate(({target,before})=>{
+	 if(target==='window'){
+	  const root=document.scrollingElement||document.documentElement;
+	  root.scrollTop=before+620;
+	  window.scrollTo(0,before+620);
+	  return;
+	 }
+	 const node=document.querySelector(target);
+	 if(node)node.scrollTop=before+620;
+	},{target,before});
  await page.waitForFunction(({target,before})=>{
   const now=target==='window'?scrollY:document.querySelector(target)?.scrollTop||0;
   return now>before+24;
