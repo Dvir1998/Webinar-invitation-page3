@@ -280,3 +280,6 @@ dialog[open],.sheet-dialog,.full-dialog{overflow-x:hidden!important;overflow-y:a
  .composer{position:sticky!important;bottom:calc(86px + env(safe-area-inset-bottom))!important}
  .dg-coach-setup-v931{grid-template-columns:1fr}.dg-coach-setup-v931 button{width:100%}
 }
+/* Athlete OS 9.3.1 — recommendation rationale */
+.dg-recovery-option.recommended{border-color:color-mix(in srgb,var(--lime) 58%,var(--line))!important;box-shadow:0 12px 34px color-mix(in srgb,var(--lime) 12%,transparent)!important}
+.dg-recovery-reason-v931{display:block;margin-top:8px;padding:8px 9px;border-radius:11px;background:color-mix(in srgb,var(--cyan) 8%,var(--panel));color:var(--text)!important;font-size:8px!important;line-height:1.5}.dg-recovery-reason-v931 b{color:var(--lime);font-size:8px}

@@ -1,6 +1,6 @@
 /* Dvir Gym AI Athlete OS — generated production JS. Do not edit directly. */
 'use strict';
-const DG_BUILD_ID='7f9ac774b968091a11c757822539e869db15ba6f';
+const DG_BUILD_ID='local-v9.3.1-quality';
 const VERSION='6.0.0';
 const STORE='dvirAthleteOS_v6';
 const LEGACY=['dvirAthleteLiveV1','dvirGymAthleteOSV4','dvirGym2027V3'];
@@ -2006,3 +2006,46 @@ function dgMarkRuntimeV931(){
 dgMarkRuntimeV931();try{save()}catch{}dgMarkRuntimeV931();
 for(const delay of [0,240,1600])setTimeout(()=>{dgMarkRuntimeV931();dgUnlockDocumentScrollV93();if(!delay){dgInjectCoachProviderV93();dgPatchMachineLibraryTextV93()}},delay);
 addEventListener('pageshow',dgMarkRuntimeV931,{passive:true});
+/* Athlete OS 9.3.1 — evidence-aligned post-workout recommendation ranking */
+const DG_RECOVERY_LOGIC_V931='protein-gap-v1';
+const dgBuildPostWorkoutPlanV931Base=dgBuildPostWorkoutPlanV92;
+
+function dgRecoveryMealScoreV931(meal,context){
+ const proteinGap=Math.min(45,Math.max(context.proteinTarget,context.proteinRemaining||0));
+ const calorieBudget=context.calorieRemaining<=0?420:clamp(Math.round(context.calorieRemaining*(context.goal==='lean_gain'?0.3:0.24)),420,context.goal==='lean_gain'?760:650);
+ let score=130-Math.abs(meal.protein-proteinGap)*2.4-Math.abs(meal.calories-calorieBudget)/16;
+ if(meal.protein<context.proteinTarget)score-=(context.proteinTarget-meal.protein)*4;
+ if(context.type==='lower'&&meal.highCarb)score+=15;
+ if(context.slot==='morning'&&meal.highCarb)score+=6;
+ if(context.slot==='evening'&&context.type!=='lower'&&!meal.highCarb)score+=8;
+ if(context.location==='gym'&&meal.id.startsWith('portable-'))score+=10;
+ if(context.recentIds.has(meal.id))score-=24;
+ score+=(dgHashV92(`${context.workoutId}:${meal.id}`)%100)/100;
+ return{score,proteinGap,calorieBudget};
+}
+function dgRecoveryReasonV931(meal,plan,index){
+ if(index===0)return`הבחירה המובילה: ${meal.protein} גרם חלבון והתאמה טובה ליתרה היומית ול${plan.type==='lower'?'אימון הרגליים':'אימון שבוצע'}.`;
+ if(plan.location==='gym'&&meal.id.startsWith('portable-'))return'אפשרות נוחה לדרך מהמכון, בלי לדחות את הארוחה בגלל הכנה.';
+ if(plan.type==='lower'&&meal.highCarb)return'כוללת יותר פחמימה כדי לתמוך במילוי מאגרי האנרגיה לאחר אימון רגליים.';
+ if(plan.slot==='evening'&&!meal.highCarb)return'אפשרות ערב עם חלבון גבוה ועומס פחמימה מתון יותר.';
+ return`חלופה מגוונת שמספקת לפחות ${meal.protein} גרם חלבון במנה המוצעת.`;
+}
+dgBuildPostWorkoutPlanV92=function(workout){
+ const plan=dgBuildPostWorkoutPlanV931Base(workout),blocked=dgRestrictionKeysV92(),recentIds=new Set((S.postWorkoutPlans||[]).slice(0,6).flatMap(item=>[item.loggedOption,...(item.options||[]).slice(0,1).map(option=>option.id)].filter(Boolean)));
+ let pool=DG_RECOVERY_MEALS.filter(meal=>meal.slots.includes(plan.slot)&&meal.locations.includes(plan.location)&&dgDietAllowsV92(meal)&&!meal.keys.some(key=>blocked.includes(key)));
+ if(pool.length<3)pool=DG_RECOVERY_MEALS.filter(meal=>meal.slots.includes(plan.slot)&&dgDietAllowsV92(meal)&&!meal.keys.some(key=>blocked.includes(key)));
+ const context={...plan,workoutId:plan.workoutId||workout.id||'',recentIds};
+ const ranked=pool.map(meal=>{const rank=dgRecoveryMealScoreV931(meal,context);return{...meal,rankScore:Math.round(rank.score*10)/10}}).sort((a,b)=>b.rankScore-a.rankScore);
+ const options=ranked.slice(0,3);while(options.length<3)options.push(...plan.options.filter(option=>!options.some(x=>x.id===option.id)).slice(0,3-options.length));
+ plan.options=options.map((meal,index)=>({...meal,recommended:index===0,reason:dgRecoveryReasonV931(meal,plan,index)}));
+ plan.logicVersion=DG_RECOVERY_LOGIC_V931;plan.proteinGap=Math.max(0,plan.proteinRemaining);plan.calorieBudget=dgRecoveryMealScoreV931(plan.options[0],context).calorieBudget;
+ return plan;
+};
+
+const dgOpenPostWorkoutV931Base=dgOpenPostWorkoutV92;
+dgOpenPostWorkoutV92=function(id){
+ const result=dgOpenPostWorkoutV931Base(id),plan=dgFindPlanV92(id),dialog=$('#dgRecoveryDialogV92');if(!plan||!dialog)return result;
+ const copy=dialog.querySelector('.dg-recovery-copy p');if(copy)copy.textContent=`אין חלון קסם קצר. היעד המעשי הוא ארוחה בשעות הקרובות. נותרו היום כ־${plan.proteinRemaining} גרם חלבון וכ־${plan.calorieRemaining} קלוריות לפי התיעוד הקיים.`;
+ [...dialog.querySelectorAll('.dg-recovery-option')].forEach((card,index)=>{const meal=plan.options[index];if(!meal)return;card.classList.toggle('recommended',!!meal.recommended);const body=card.querySelector('div:nth-child(2)');if(body&&!body.querySelector('.dg-recovery-reason-v931'))body.insertAdjacentHTML('beforeend',`<small class="dg-recovery-reason-v931">${meal.recommended?'<b>מומלץ ראשון</b> ':''}${esc(meal.reason||'')}</small>`)});
+ return result;
+};

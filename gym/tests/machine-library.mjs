@@ -1,6 +1,6 @@
 import { chromium } from 'playwright';
 
-const base='http://127.0.0.1:4173/';
+const base=process.env.DG_TEST_BASE||'http://127.0.0.1:4173/';
 const viewports=[
  {name:'mobile',width:390,height:844,expectedColumns:2},
  {name:'desktop',width:1440,height:1000,expectedColumns:3}

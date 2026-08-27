@@ -36,6 +36,7 @@ for(const viewport of [{name:'mobile',width:390,height:844},{name:'desktop',widt
  const dialog=page.locator('#dgRecoveryDialogV92'),text=await dialog.innerText();
  if(!text.includes('האימון הושלם')||!text.includes('במכון')||!text.includes('גרם חלבון'))throw new Error(`${viewport.name}: recovery context missing`);
  if(await dialog.locator('.dg-recovery-option').count()!==3)throw new Error(`${viewport.name}: expected three recovery options`);
+ if(await dialog.locator('.dg-recovery-option.recommended').count()!==1||!(await dialog.locator('.dg-recovery-reason-v931').first().innerText()).includes('מומלץ ראשון'))throw new Error(`${viewport.name}: ranked recovery rationale missing`);
  const recoveryTitleColor=await dialog.locator('.dg-recovery-option h4').first().evaluate(element=>getComputedStyle(element).color);
  if(recoveryTitleColor!=='rgb(19, 34, 56)')throw new Error(`${viewport.name}: light recovery title contrast failed ${recoveryTitleColor}`);
  const proteins=await dialog.locator('.dg-recovery-option').evaluateAll(nodes=>nodes.map(n=>Number((n.innerText.match(/(\d+) גרם חלבון/)||[])[1])));
@@ -54,10 +55,11 @@ for(const viewport of [{name:'mobile',width:390,height:844},{name:'desktop',widt
   const morning=new Date();morning.setHours(8,15,0,0);const evening=new Date();evening.setHours(19,30,0,0);
   const a=dgBuildPostWorkoutPlanV92({id:'morning-gym',finishedAt:+morning,location:'gym',type:'upperA',title:'Upper A'});
   const b=dgBuildPostWorkoutPlanV92({id:'evening-home',finishedAt:+evening,location:'home',type:'lowerB',title:'Lower B'});
-  return{morning:{slot:a.slot,location:a.location,ids:a.options.map(x=>x.id)},evening:{slot:b.slot,location:b.location,ids:b.options.map(x=>x.id)}};
+  return{morning:{slot:a.slot,location:a.location,logic:a.logicVersion,ids:a.options.map(x=>x.id),scores:a.options.map(x=>x.rankScore),reasons:a.options.map(x=>x.reason)},evening:{slot:b.slot,location:b.location,logic:b.logicVersion,ids:b.options.map(x=>x.id),scores:b.options.map(x=>x.rankScore),reasons:b.options.map(x=>x.reason)}};
  });
  if(variants.morning.slot!=='morning'||variants.morning.location!=='gym'||variants.evening.slot!=='evening'||variants.evening.location!=='home')throw new Error(`${viewport.name}: contextual variants failed ${JSON.stringify(variants)}`);
  if(variants.morning.ids.join(',')===variants.evening.ids.join(','))throw new Error(`${viewport.name}: meal variants are not diverse`);
+ if(variants.morning.logic!=='protein-gap-v1'||variants.evening.logic!=='protein-gap-v1'||variants.morning.scores.some((score,index,list)=>index&&score>list[index-1])||variants.morning.reasons.some(reason=>!reason))throw new Error(`${viewport.name}: recovery ranking logic failed ${JSON.stringify(variants)}`);
  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
  if(overflow>1)throw new Error(`${viewport.name}: horizontal overflow ${overflow}`);
  if(errors.length)throw new Error(`${viewport.name}: runtime errors ${errors.join(' | ')}`);
