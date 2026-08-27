@@ -1,8 +1,8 @@
 {
   "id":"./",
-  "name":"Dvir Gym AI — Athlete OS 9.3",
+  "name":"Dvir Gym AI — Athlete OS 9.3.1",
   "short_name":"Dvir Gym AI",
-  "description":"מאמן כושר ותזונה רב-משתמשי עם חשבונות נפרדים, זיכרון מוצפן, Gemini + OpenRouter, ספריית מכון מצולמת מלאה, אימוני מכון ובית, תזונה, Push ו-Progress Photos",
+  "description":"מאמן כושר ותזונה רב-משתמשי עם חשבונות נפרדים, זיכרון מוצפן, חיבור מאובטח למודלי בינה, ספריית מכשירים מקצועית, אימוני מכון ובית, תזונה, תזכורות ותמונות התקדמות",
   "lang":"he",
   "dir":"rtl",
   "start_url":"./",

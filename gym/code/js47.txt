@@ -1,0 +1,151 @@
+/* Athlete OS 9.3.1 — iPhone scroll recovery, verified media and honest AI state */
+const DG_V931='9.3.1';
+
+/* Keep one document scroller. A modal owns scrolling only while it is open. */
+dgUnlockDocumentScrollV93=function(){
+ try{
+  const modal=document.querySelector('dialog[open]');
+  if(!modal){
+   for(const el of [document.documentElement,document.body])for(const p of ['overflow','overflow-x','overflow-y','height','max-height','position','top','left','right','touch-action'])if(el.style.getPropertyValue(p))el.style.removeProperty(p);
+   const active=document.querySelector('.screen.active');if(active)for(const p of ['overflow','overflow-y','height','max-height','position','top'])if(active.style.getPropertyValue(p))active.style.removeProperty(p);
+  }
+  const mode=modal?'modal':'document';if(document.documentElement.dataset.dgScroll!==mode)document.documentElement.dataset.dgScroll=mode;
+ }catch{}
+};
+for(const ev of ['pageshow','orientationchange'])addEventListener(ev,()=>requestAnimationFrame(dgUnlockDocumentScrollV93),{passive:true});
+window.visualViewport?.addEventListener?.('resize',()=>requestAnimationFrame(dgUnlockDocumentScrollV93),{passive:true});
+document.addEventListener('close',()=>requestAnimationFrame(dgUnlockDocumentScrollV93),true);
+
+/* Reject a partial atlas before WebKit attempts to decode it. */
+const DG_GYM_ATLAS_COMPLETE_V931=false;
+let dgGymAtlasReadyV931=false,dgGymAtlasFailedV931=!DG_GYM_ATLAS_COMPLETE_V931;
+function dgAtlasBytesV931(base64){
+ const clean=String(base64||'').replace(/\s+/g,'');
+ if(!clean||!/^[A-Za-z0-9+/]+={0,2}$/.test(clean))throw new Error('gym_atlas_base64_invalid');
+ const bin=atob(clean),bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);return bytes;
+}
+function dgValidateAtlasV931(bytes){
+ if(bytes.length<20||String.fromCharCode(...bytes.slice(0,4))!=='RIFF'||String.fromCharCode(...bytes.slice(8,12))!=='WEBP')throw new Error('gym_atlas_header_invalid');
+ const declared=(bytes[4]|bytes[5]<<8|bytes[6]<<16|bytes[7]<<24)>>>0,expected=declared+8;
+ if(expected!==bytes.length)throw new Error(`gym_atlas_partial_${bytes.length}_of_${expected}`);
+ return true;
+}
+dgLoadGymAtlasV93=async function(){
+ if(dgGymAtlasReadyV931&&dgGymAtlasV93)return dgGymAtlasV93;
+ if(dgGymAtlasFailedV931)return null;
+ if(dgGymAtlasPromiseV93)return dgGymAtlasPromiseV93;
+ dgGymAtlasPromiseV93=(async()=>{
+  try{
+   const parts=await Promise.all(DG_GYM_ATLAS_PARTS_FINAL_V93.map(async path=>{const response=await fetch(path,{cache:'force-cache'});if(!response.ok)throw new Error('gym_atlas_part_'+response.status);return response.text()}));
+   const bytes=dgAtlasBytesV931(parts.join(''));dgValidateAtlasV931(bytes);
+   const blob=new Blob([bytes],{type:'image/webp'}),url=URL.createObjectURL(blob),img=new Image();img.decoding='async';img.src=url;
+   await Promise.race([img.decode(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('gym_atlas_decode_timeout')),5000))]);
+   if(!img.naturalWidth||!img.naturalHeight){URL.revokeObjectURL(url);throw new Error('gym_atlas_dimensions_invalid')}
+   if(dgGymAtlasBlobUrlV93)URL.revokeObjectURL(dgGymAtlasBlobUrlV93);dgGymAtlasBlobUrlV93=url;dgGymAtlasV93=url;dgGymAtlasReadyV931=true;
+   renderMachineGrid(MACHINES);dgPatchMachineLibraryTextV93();return url;
+  }catch(error){
+   dgGymAtlasFailedV931=true;dgGymAtlasReadyV931=false;dgGymAtlasV93='';try{dgRecordError?.('gym-atlas-v931',error)}catch{}dgPatchMachineLibraryTextV93();return null;
+  }finally{dgGymAtlasPromiseV93=null}
+ })();
+ return dgGymAtlasPromiseV93;
+};
+
+const DG_LEGACY_PHOTO_IDS_V931=new Set(Object.keys(DG_MACHINE_DETAILS));
+Object.assign(machineMap['biceps-curl']||{}, {tip:'בחר עומס שמאפשר כיווץ מלא בלי להרים את הכתפיים ובלי לנתק את הזרוע מהכרית.'});
+Object.assign(machineMap['leg-press']||{}, {tip:'התחל בטווח שמאפשר לאגן ולגב להישאר צמודים, והעמק רק כל עוד השליטה נשמרת.'});
+Object.assign(machineMap.dumbbells||{}, {tip:'התחל בזוג שמאפשר את כל הטווח עם שתיים עד שלוש חזרות ברזרבה.'});
+for(const m of MACHINES){m.isCardio=!!m.isCardio||(m.muscles||[]).includes('cardio');m.photoSource=DG_LEGACY_PHOTO_IDS_V931.has(m.id)||dgGymAtlasReadyV931?'צילום אמיתי מהמכון':'ממתין לקובץ הצילום המקורי'}
+
+function dgMachineFallbackPhotoV931(m,cls=''){
+ if(DG_LEGACY_PHOTO_IDS_V931.has(m.id))return`<div class="dg-machine-photo-frame ${cls}">${dgMachineVisualV93Fallback(m,'machine-sprite dg-machine-photo')}<span class="dg-real-photo-badge">צילום מהמכון</span></div>`;
+ return`<div class="dg-machine-photo-frame ${cls} dg-photo-unavailable-v931" role="img" aria-label="התמונה המקורית של ${esc(m.simple)} עדיין לא הושלמה"><div><span>▧</span>התמונה המקורית עדיין לא הושלמה<br>המדריך המקצועי זמין במלואו</div></div>`;
+}
+function dgMachineCardMediaV931(m){
+ if(!dgGymAtlasReadyV931)return dgMachineFallbackPhotoV931(m,'dg-machine-card-photo');
+ return`<div class="dg-machine-photo-frame dg-machine-card-photo">${machineVisual(m,'machine-sprite dg-machine-photo')}<span class="dg-real-photo-badge">צילום מהמכון</span></div>`;
+}
+let dgMachineVisibleV931=innerWidth<=600?8:Number.MAX_SAFE_INTEGER;
+renderMachineGrid=function(arr){
+ const grid=$('#machineGrid');if(!grid)return;grid.setAttribute('aria-live','polite');grid.setAttribute('aria-label','ספריית מכשירי המכון');
+ if(!arr.length){grid.innerHTML='<div class="dg-machine-empty">לא נמצאו מכשירים שמתאימים לחיפוש.</div>';return}
+ const shown=innerWidth<=600?arr.slice(0,dgMachineVisibleV931):arr;
+ grid.innerHTML=shown.map(m=>`<button class="card machine-card dg-machine-card-v91 dg-machine-card-v93" type="button" data-machine="${esc(m.id)}" aria-label="פתח מדריך ${esc(m.simple)}">${dgMachineCardMediaV931(m)}<div class="body"><span class="dg-machine-kind ${m.isCardio?'cardio':'strength'}">${m.isCardio?'אירובי וחימום':'אימון כוח'}</span><b>${esc(m.simple)}</b><small>${esc(m.pro)}</small><em>${esc(dgMachineMuscles(m)||m.cat)}</em><span class="dg-atlas-state-v931 ${dgGymAtlasReadyV931?'ready':''}">${dgGymAtlasReadyV931?(DG_GYM_PHOTOS_V93[m.id]?.length||1)+' תמונות':'מדריך מלא'}</span></div></button>`).join('')+(shown.length<arr.length?`<button id="dgMachineLoadMoreV931" class="secondary dg-machine-load-more-v931" type="button">הצג עוד ${Math.min(8,arr.length-shown.length)} מכשירים</button>`:'');
+ $$('[data-machine]',grid).forEach(button=>button.onclick=()=>openMachine(button.dataset.machine));if(!dgGymAtlasReadyV931&&!dgGymAtlasFailedV931)dgLoadGymAtlasV93();
+ const more=$('#dgMachineLoadMoreV931');if(more)more.onclick=()=>{dgMachineVisibleV931+=8;renderMachineGrid(arr)};
+};
+function dgMachineGalleryV931(m){
+ const photos=DG_GYM_PHOTOS_V93[m.id]||[];
+ if(!dgGymAtlasReadyV931||!photos.length)return dgMachineFallbackPhotoV931(m,'dg-machine-modal-photo');
+ return`<div class="dg-machine-gallery-v93" aria-label="גלריית ${esc(m.simple)}">${photos.map((index,n)=>dgGalleryPhotoV93(index,`${m.simple} · תמונה ${n+1}`)).join('')}</div><div class="dg-machine-photo-note"><span><b>${photos.length}</b> תמונות אמיתיות מהמכון</span><span>החלק לצדדים לצפייה</span></div>`;
+}
+openMachine=function(id){
+ const m=machineMap[id];if(!m)return;const dialog=$('#machineDialog');
+ $('#machineContent').innerHTML=`<div class="dg-machine-modal-v91">${dgMachineGalleryV931(m)}<button class="close dg-machine-close" id="dgMachineClose" type="button" aria-label="סגור מדריך">×</button><div class="sheet dg-machine-sheet"><div class="dg-machine-title-row"><div><div class="eyebrow">${m.isCardio?'CARDIO & WARM-UP':'MACHINE GUIDE'}</div><h2>${esc(m.simple)}</h2><p>${esc(m.pro)} · ${esc(m.cat)}</p></div><span class="dg-machine-kind ${m.isCardio?'cardio':'strength'}">${m.isCardio?'אירובי':'כוח'}</span></div><div class="dg-muscle-strip"><small>שרירים ומערכת</small><b>${esc(dgMachineMuscles(m)||m.cat)}</b></div><div class="dg-guide-grid"><section><span>1</span><div><b>כיוון והכנה</b><p>${esc(m.setup||'')}</p></div></section><section><span>2</span><div><b>ביצוע נכון</b><p>${esc(m.cue||'')}</p></div></section><section><span>3</span><div><b>טיפ מקצועי</b><p>${esc(m.tip||'התחל בעומס שמאפשר טווח מלא ושתי חזרות ברזרבה.')}</p></div></section><section class="warn"><span>!</span><div><b>אזהרה וטעות נפוצה</b><p>${esc(m.mistake||'אל תקריב טווח ושליטה כדי להעלות משקל.')}</p></div></section></div><div class="dg-program-fit"><div><small>שילוב בתוכנית</small><b>${esc(m.programUse||'משולב לפי קבוצת השרירים והעומס השבועי.')}</b></div><div><small>למי מתאים</small><b>${esc(m.bestFor||'למתאמן שמבצע את התנועה בטווח נשלט וללא כאב.')}</b></div></div><button class="primary" id="machineAsk" type="button">שאל את המאמן על המכשיר</button></div></div>`;
+ dialog.showModal();$('#dgMachineClose').onclick=()=>dialog.close();$('#machineAsk').onclick=()=>{dialog.close();openCoachWith(`אני עומד מול ${m.pro} (${m.simple}). לפי התוכנית וההיסטוריה שלי, הסבר איך לכוון אותו, איזה עומס לבחור, כמה סטים וחזרות לבצע ומה לתעד.`)};
+};
+dgPatchMachineLibraryTextV93=function(){
+ const screen=$('#screen-more');if(!screen)return;for(const head of $$('.section-head',screen)){if(!head.querySelector('h2')?.textContent.includes('המכשירים במכון'))continue;const small=head.querySelector('small');if(small)small.textContent=dgGymAtlasReadyV931?`${MACHINES.length} פריטי ציוד · 39 תמונות אמיתיות שצולמו במכון`:`${MACHINES.length} פריטי ציוד · 20 תמונות תקינות · הגלריה המלאה ממתינה לקובץ המקורי`;break}
+ };
+
+/* Make the real-AI state explicit and never mistake frustration for the user's question. */
+let dgAiStatusPromiseV931=null,dgAiStatusCacheV931=null,dgAiStatusCacheAtV931=0;
+const dgKeyVaultV931Base=dgKeyVault;
+dgKeyVault=async function(action='status',apiKey='',extra={}){
+ const result=await dgKeyVaultV931Base(action,apiKey,extra);
+ if(action!=='status'){dgAiStatusCacheV931=null;dgAiStatusCacheAtV931=0}
+ return result;
+};
+const dgAiProviderStatusV931Base=dgAiProviderStatusV93;
+dgAiProviderStatusV93=function(force=false){
+ const maxAge=force?900:20000;
+ if(dgAiStatusCacheV931&&Date.now()-dgAiStatusCacheAtV931<maxAge)return Promise.resolve(dgAiStatusCacheV931);
+ if(dgAiStatusPromiseV931)return dgAiStatusPromiseV931;
+ dgAiStatusPromiseV931=Promise.resolve(dgAiProviderStatusV931Base(force)).then(result=>{dgAiStatusCacheV931=result;dgAiStatusCacheAtV931=Date.now();return result}).finally(()=>{dgAiStatusPromiseV931=null});
+ return dgAiStatusPromiseV931;
+};
+checkSystemPanel=async function(){
+ const badge=$('#sysAiBadge'),model=$('#sysModel');if(!badge||!model)return;
+ const live=!!dgAiConfigured;badge.textContent=live?'LIVE':'LOCAL';badge.classList.toggle('warn',!live);
+ model.textContent=live?'מנוע בינה אישי מחובר לחשבון':dgIsAccount()?'המנוע המקומי פעיל · אפשר לחבר Gemini או OpenRouter':'המנוע המקומי פעיל · כניסה לחשבון מאפשרת חיבור בינה';
+};
+function dgOpenAISetupV931(){if(!dgIsAccount()){dgOpenAccount('login');return}switchScreen('more');setTimeout(()=>$('#dgAiStudioV93')?.scrollIntoView({behavior:'smooth',block:'start'}),120)}
+const dgInjectCoachProviderV931Base=dgInjectCoachProviderV93;
+dgInjectCoachProviderV93=function(){
+ dgInjectCoachProviderV931Base();const screen=$('#screen-coach'),hero=screen?.querySelector('.coach-hero');if(!screen||!hero)return;screen.querySelector('#dgCoachSetupV931')?.remove();
+ const live=!!dgAiConfigured,box=document.createElement('section');box.id='dgCoachSetupV931';box.className='dg-coach-setup-v931';box.innerHTML=live?`<div><b>AI אמיתי מחובר</b><small>${esc(S.ai?.lastProvider?dgAIProviderNameV93(S.ai.lastProvider):'Gemini או OpenRouter')} · ההודעה הבאה תישלח למודל הענן.</small></div><button type="button">ניהול מנועים</button>`:`<div><b>הצ׳אט כרגע מקומי ומוגבל</b><small>חבר Gemini או OpenRouter כדי לקבל שיחה חופשית אמיתית במקום תשובות קבועות.</small></div><button type="button">${dgIsAccount()?'חבר מפתח API':'כניסה וחיבור AI'}</button>`;
+ (hero.nextElementSibling||hero).insertAdjacentElement('afterend',box);box.querySelector('button').onclick=dgOpenAISetupV931;
+};
+const dgLocalCoachV931Base=localCoach;
+localCoach=function(message){
+ const text=String(message||''),q=text.toLowerCase(),withoutEmotion=q.replace(/אני\s+(כועס|מתוסכל)|כועס|מתוסכל|מעצבן|עצבים/g,' ').trim();
+ if(/גלול|לגלול|גלילה|קופא|תקוע|קרס|קורס/.test(q))return{reply:'קלטתי דיווח טכני על גלילה או תקיעה. זו אינה שאלה על מצב הרוח שלך. נסה לרענן לגרסה החדשה; אם התקלה חוזרת, כתוב באיזה מסך ובאיזה מכשיר והיא תישמר כדיווח טכני.'};
+ if(!withoutEmotion&&/(כועס|מתוסכל|מעצבן|עצבים)/.test(q))return{reply:'הבנתי שיש תקלה מתסכלת. כתוב פעולה אחת שלא עובדת — למשל גלילה, פתיחת אימון או שליחת הודעה — ואענה ישירות על התקלה.'};
+ return dgLocalCoachV931Base(withoutEmotion||text);
+};
+sendCoach=async function(text,imageData=null){
+ text=String(text||'').trim();if(!text&&!imageData)return;captureReport(text);S.chat.push({role:'user',text:text||'📷 תמונה',ts:Date.now()});S.chat=S.chat.slice(-60);save();renderCoach(true);
+ try{const out=await callAI(text||'נתח את התמונה בהקשר של הזיכרון שלי.',imageData);applyAI(out);S.chat.push({role:'assistant',text:out.reply||'קיבלתי.',ts:Date.now(),model:out.servedBy||out.provider||''});if(out.achievement)toast('🏆 '+out.achievement)}
+ catch(error){S.ai.lastError=String(error?.message||error);const out=localCoach(text||''),reason=/account_required/.test(S.ai.lastError)?'כדי להשתמש ב־AI אמיתי צריך להיכנס לחשבון.':/not_configured/.test(S.ai.lastError)?'Gemini או OpenRouter עדיין לא מחוברים לחשבון.':'מנוע הענן לא ענה כרגע.';applyAI(out);S.chat.push({role:'assistant',text:`${out.reply}\n\n${reason}`,ts:Date.now(),offline:true})}
+ S.chat=S.chat.slice(-60);save();renderCoach();
+};
+
+/* Keep the long More screen interactive while optional diagnostics hydrate. */
+function dgDeferMobileMoreV931(base,delay){
+ return function(...args){
+  if(innerWidth>600)return base.apply(this,args);
+  const context=this;setTimeout(()=>{try{Promise.resolve(base.apply(context,args)).catch(error=>dgRecordError?.('more-hydration-v931',error))}catch(error){try{dgRecordError?.('more-hydration-v931',error)}catch{}}},delay);
+  return Promise.resolve();
+ };
+}
+dgRenderHealthCard=dgDeferMobileMoreV931(dgRenderHealthCard,450);
+dgRenderAIStudioV93=dgDeferMobileMoreV931(dgRenderAIStudioV93,850);
+dgInjectLaunchChecklist=dgDeferMobileMoreV931(dgInjectLaunchChecklist,1350);
+dgInjectPrivacyV73=dgDeferMobileMoreV931(dgInjectPrivacyV73,2100);
+
+function dgMarkRuntimeV931(){
+ document.documentElement.dataset.athleteOs=DG_V931;S.appVersion=DG_V931;S.version=DG_V931;
+ for(const row of $$('#screen-more .system-row'))if(row.querySelector('b')?.textContent.trim()==='Version'){const badge=row.querySelector('.badge');if(badge)badge.textContent='v'+DG_V931}
+}
+dgMarkRuntimeV931();try{save()}catch{}dgMarkRuntimeV931();
+for(const delay of [0,240,1600])setTimeout(()=>{dgMarkRuntimeV931();dgUnlockDocumentScrollV93();if(!delay){dgInjectCoachProviderV93();dgPatchMachineLibraryTextV93()}},delay);
+addEventListener('pageshow',dgMarkRuntimeV931,{passive:true});

@@ -1,0 +1,26 @@
+/* Athlete OS 9.3.1 — iPhone-safe single-scroller contract */
+html{height:100%!important;min-height:100%!important;overflow-x:hidden!important;overflow-y:scroll!important;touch-action:auto!important;-webkit-overflow-scrolling:touch!important}
+body{height:auto!important;min-height:100%!important;max-height:none!important;overflow:visible!important;position:static!important;touch-action:auto!important;overscroll-behavior-y:auto!important}
+#app,.app-shell,main,.screen,.screen.active{height:auto!important;max-height:none!important;overflow:visible!important;touch-action:auto!important}
+.app-shell{min-height:100dvh!important}
+dialog[open],.sheet-dialog,.full-dialog{overflow-x:hidden!important;overflow-y:auto!important;touch-action:auto!important;-webkit-overflow-scrolling:touch!important}
+.sheet-dialog{max-height:min(90dvh,900px)!important}
+.full-dialog{height:100dvh!important;max-height:100dvh!important}
+.dg-photo-unavailable-v931{display:grid!important;place-items:center!important;min-height:180px!important;padding:22px!important;background:linear-gradient(145deg,#111a25,#0b1018)!important;color:#9eabba!important;text-align:center!important;font-size:9px!important;line-height:1.55!important}
+.dg-photo-unavailable-v931 span{display:block;font-size:25px;margin-bottom:8px}
+.dg-atlas-state-v931{display:inline-flex;align-items:center;gap:5px;color:var(--muted);font-size:7px}.dg-atlas-state-v931.ready{color:var(--lime)}
+.dg-machine-load-more-v931{grid-column:1/-1!important;min-height:48px!important;margin-top:2px!important}
+.dg-coach-setup-v931{margin:9px 0 5px;padding:11px 12px;border:1px solid color-mix(in srgb,var(--cyan) 28%,var(--line));border-radius:16px;background:color-mix(in srgb,var(--cyan) 7%,var(--panel));display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}.dg-coach-setup-v931 b{font-size:10px}.dg-coach-setup-v931 small{display:block;margin-top:3px;color:var(--muted);font-size:7.5px;line-height:1.45}.dg-coach-setup-v931 button{min-height:40px;border:0;border-radius:12px;padding:8px 11px;background:linear-gradient(110deg,var(--cyan),var(--lime));color:#071014;font-size:8px;font-weight:950}
+@media(max-width:600px){
+ html{scroll-behavior:auto!important}
+ .ambient,.noise{display:none!important}
+ .card,.glassline,.topbar,.dock{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+ .topbar{background:color-mix(in srgb,var(--panel2) 96%,var(--bg))!important}
+ .dock{background:color-mix(in srgb,#090c12 97%,var(--panel2))!important}
+ .hero:before,.dg-personal-motivation::before,.primary::after{animation:none!important}
+ #screen-more .card{box-shadow:0 10px 28px rgba(0,0,0,.18)!important}
+ .messages{min-height:0!important;max-height:none!important;overflow:visible!important;overscroll-behavior:auto!important;touch-action:auto!important}
+ .coach-shell{min-height:calc(100dvh - 145px)!important}
+ .composer{position:sticky!important;bottom:calc(86px + env(safe-area-inset-bottom))!important}
+ .dg-coach-setup-v931{grid-template-columns:1fr}.dg-coach-setup-v931 button{width:100%}
+}

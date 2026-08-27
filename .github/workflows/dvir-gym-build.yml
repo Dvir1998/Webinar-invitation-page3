@@ -60,14 +60,14 @@ jobs:
           NODE
 
           node --check gym/dist/app.js
-          grep -q 'Athlete OS 9.3 — Mobile Scroll Contract' gym/dist/app.css
-          grep -q 'Mobile scroll watchdog' gym/dist/app.js
-          grep -q 'DG_GYM_ATLAS_DIRECT_V93' gym/dist/app.js
+          grep -q 'Athlete OS 9.3.1 — iPhone-safe single-scroller contract' gym/dist/app.css
+          grep -q 'DG_GYM_ATLAS_COMPLETE_V931=false' gym/dist/app.js
+          grep -q 'dgValidateAtlasV931' gym/dist/app.js
           grep -q 'Multi-provider AI' gym/dist/app.js
-          test -s gym/assets/gym-photo-v93.webp
+          test -s gym/assets/gym-machines.webp
 
-          printf '%s\n' "$(sha256sum gym/dist/app.js | cut -d' ' -f1)  app.js" "$(sha256sum gym/dist/app.css | cut -d' ' -f1)  app.css" "$(sha256sum gym/assets/gym-photo-v93.webp | cut -d' ' -f1)  gym-photo-v93.webp" > gym/dist/SHA256SUMS
-          printf '{"build":"%s","builtAt":"%s","channel":"production","appVersion":"9.3.0"}\n' "$GITHUB_SHA" "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" > gym/version.json
+          printf '%s\n' "$(sha256sum gym/dist/app.js | cut -d' ' -f1)  app.js" "$(sha256sum gym/dist/app.css | cut -d' ' -f1)  app.css" > gym/dist/SHA256SUMS
+          printf '{"build":"%s","builtAt":"%s","channel":"production","appVersion":"9.3.1"}\n' "$GITHUB_SHA" "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" > gym/version.json
       - name: Commit bundle when changed
         shell: bash
         run: |

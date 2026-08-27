@@ -54,6 +54,7 @@ for(const viewport of [{name:'compact',width:320,height:700},{name:'mobile',widt
 
  await page.getByRole('button',{name:/עוד/}).last().click();
  await page.waitForSelector('.dg-machine-card-v91');
+ while(await page.locator('#dgMachineLoadMoreV931').count())await page.locator('#dgMachineLoadMoreV931').evaluate(button=>button.click());
  await page.getByRole('button',{name:/פתח מדריך המכשיר שדוחפים קדימה/}).click();
  await page.waitForSelector('#machineDialog[open]');
  const guide=await page.locator('#machineDialog .dg-guide-grid p').first().evaluate(element=>getComputedStyle(element).color);

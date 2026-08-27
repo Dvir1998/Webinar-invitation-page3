@@ -20,10 +20,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - name: Install Playwright Chromium
+      - name: Install Playwright browsers
         run: |
           npm install --no-save playwright@1.55.0
-          npx playwright install chromium
+          npx playwright install chromium webkit
       - name: Serve Athlete OS
         run: |
           python3 -m http.server 4173 --directory gym >/tmp/dvir-gym-http.log 2>&1 &
@@ -45,5 +45,11 @@ jobs:
         run: node gym/tests/accessibility-account.mjs
       - name: Run daily tracking and recovery nutrition E2E
         run: node gym/tests/daily-tracker-recovery.mjs
+      - name: Run personal Gemini provider and secure vault E2E
+        run: node gym/tests/ai-provider.mjs
       - name: Run first-paint visual stability E2E
         run: node gym/tests/visual-stability.mjs
+      - name: Run trusted mobile scroll E2E in Chromium
+        run: node gym/tests/mobile-scroll.mjs
+      - name: Run iPhone engine scroll E2E in WebKit
+        run: DG_BROWSER=webkit node gym/tests/mobile-scroll.mjs

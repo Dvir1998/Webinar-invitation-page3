@@ -17,29 +17,29 @@ jobs:
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
-      - name: Verify Athlete OS 9.3 production artifacts
+      - name: Verify Athlete OS 9.3.1 production artifacts
         shell: bash
         run: |
           set -euo pipefail
           test -f .nojekyll
-          for p in gym/index.html gym/recover.html gym/manifest.json gym/sw.js gym/version.json gym/dist/app.js gym/dist/app.css gym/dist/SHA256SUMS gym/code/css18.txt gym/code/js45.txt gym/code/js46.txt gym/assets/gym-photo-v93.webp; do test -f "$p"; done
+          for p in gym/index.html gym/recover.html gym/manifest.json gym/sw.js gym/version.json gym/dist/app.js gym/dist/app.css gym/dist/SHA256SUMS gym/code/css19.txt gym/code/js47.txt gym/assets/gym-machines.webp; do test -f "$p"; done
           node --check gym/dist/app.js
           node --check gym/sw.js
-          node -e "const x=JSON.parse(require('fs').readFileSync('gym/version.json','utf8'));if(!x.build||x.appVersion!=='9.3.0')process.exit(1);console.log('version',x.appVersion,x.build)"
-          node -e "const x=JSON.parse(require('fs').readFileSync('gym/manifest.json','utf8'));if(!x.name.includes('9.3'))process.exit(1);console.log('manifest ok')"
+          node -e "const x=JSON.parse(require('fs').readFileSync('gym/version.json','utf8'));if(!x.build||x.appVersion!=='9.3.1')process.exit(1);console.log('version',x.appVersion,x.build)"
+          node -e "const x=JSON.parse(require('fs').readFileSync('gym/manifest.json','utf8'));if(!x.name.includes('9.3.1'))process.exit(1);console.log('manifest ok')"
           node - <<'NODE'
           const fs=require('fs');
-          const p='gym/assets/gym-photo-v93.webp',x=fs.readFileSync(p);
-          if(x.length<100000||x.slice(0,4).toString()!=='RIFF'||x.slice(8,12).toString()!=='WEBP')throw new Error('full gym atlas invalid');
-          console.log('gym atlas ok',x.length);
+          const p='gym/assets/gym-machines.webp',x=fs.readFileSync(p);
+          if(x.length<20000||x.slice(0,4).toString()!=='RIFF'||x.slice(8,12).toString()!=='WEBP')throw new Error('verified gym photo sprite invalid');
+          const declared=x.readUInt32LE(4)+8;if(declared!==x.length)throw new Error(`partial gym photo sprite ${x.length}/${declared}`);
+          console.log('verified gym photo sprite ok',x.length);
           NODE
-          grep -q 'Athlete OS 9.3 — Mobile Scroll Contract' gym/dist/app.css
-          grep -q 'overflow-y:auto!important' gym/dist/app.css
-          grep -q 'touch-action:pan-y pinch-zoom' gym/dist/app.css
-          grep -q 'Mobile scroll watchdog' gym/dist/app.js
-          grep -q 'DG_GYM_ATLAS_DIRECT_V93' gym/dist/app.js
-          grep -q 'assets/gym-photo-v93.webp' gym/dist/app.js
-          grep -q '39 תמונות אמיתיות' gym/dist/app.js
+          grep -q 'Athlete OS 9.3.1 — iPhone-safe single-scroller contract' gym/dist/app.css
+          grep -q 'body{height:auto!important' gym/dist/app.css
+          grep -q 'overflow:visible!important' gym/dist/app.css
+          grep -q 'DG_GYM_ATLAS_COMPLETE_V931=false' gym/dist/app.js
+          grep -q 'dgValidateAtlasV931' gym/dist/app.js
+          grep -q '20 תמונות תקינות' gym/dist/app.js
           grep -q "'leg-press'" gym/dist/app.js
           grep -q "'biceps-curl'" gym/dist/app.js
           grep -q "'treadmill'" gym/dist/app.js
@@ -53,8 +53,9 @@ jobs:
           grep -q 'OpenRouter' gym/dist/app.js
           grep -q 'providerPreference' gym/dist/app.js
           grep -q 'Memory Engine המקומי' gym/dist/app.js
-          grep -q 'dvir-athlete-os-v9-3-0-20260825' gym/sw.js
-          grep -q "'assets/gym-photo-v93.webp'" gym/sw.js
+          grep -q 'dvir-athlete-os-v9-3-1-iphone-scroll-20260827' gym/sw.js
+          grep -q "'assets/gym-machines.webp'" gym/sw.js
+          if grep -q 'gym-new-v93-tiny' gym/sw.js; then echo 'partial atlas must not be cached'; exit 1; fi
           grep -q "cache:'reload'" gym/sw.js
           grep -q 'dist/app.js?b=' gym/index.html
           grep -q 'dvirGymBootGuardV922' gym/index.html

@@ -42,7 +42,7 @@ const domClick=selector=>page.locator(selector).evaluate(el=>el.click());
 const waitReady=async()=>{await page.waitForSelector('body.ready',{timeout:30000});await page.waitForSelector('#screen-home.active',{timeout:10000});if(await page.locator('#onboardDialog[open]').count())await page.locator('#obBack').click().catch(()=>{})};
 await page.goto(base,{waitUntil:'domcontentloaded'});await waitReady();
 
-if(await page.evaluate(()=>document.documentElement.dataset.athleteOs)!=='8.0.0')throw new Error('Athlete OS 8 runtime version missing');
+await page.waitForFunction(()=>document.documentElement.dataset.athleteOs==='9.3.1',null,{timeout:3000});
 const dock=await page.evaluate(()=>{const d=document.querySelector('.dock'),items=[...document.querySelectorAll('.dock-item')].map(x=>{const r=x.getBoundingClientRect();return{left:r.left,right:r.right,width:r.width,label:x.querySelector('b')?.textContent||''}}),r=d.getBoundingClientRect();return{left:r.left,right:r.right,width:r.width,count:items.length,items,viewport:innerWidth}});
 if(dock.count!==5||dock.left<0||dock.right>dock.viewport||dock.items.some(x=>x.left<0||x.right>dock.viewport||x.width<45))throw new Error('Dock geometry failed: '+JSON.stringify(dock));
 if(await page.evaluate(()=>dgIsAccount()))throw new Error('Fresh browser must start in Guest mode');
