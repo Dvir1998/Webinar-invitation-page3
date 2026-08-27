@@ -6,6 +6,7 @@ const browser=await (engine==='webkit'?webkit:chromium).launch({headless:true});
 const context=await browser.newContext({
  viewport:{width:390,height:844},
  locale:'he-IL',
+ serviceWorkers:'block',
  isMobile:engine!=='webkit',
  hasTouch:engine!=='webkit',
  deviceScaleFactor:3,
@@ -19,8 +20,15 @@ await context.addInitScript(()=>{
  localStorage.setItem('dvirAthleteOS_v8::guest',JSON.stringify(state));
 });
 
-await context.route('https://rufnflwelexnpgzpzzfq.supabase.co/**',route=>route.fulfill({status:503,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:'{"ok":false}'}));
-await context.route('https://dvir-gym-athlete-ai-dvirs-projects-b157a454.vercel.app/**',route=>route.fulfill({status:410,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:'{"ok":false}'}));
+const fulfillOffline=route=>{
+ const requestHeaders=route.request().headers();
+ const origin=requestHeaders.origin||new URL(base).origin;
+ const headers={'access-control-allow-origin':origin,'access-control-allow-credentials':'true','access-control-allow-methods':requestHeaders['access-control-request-method']||'GET, POST, OPTIONS','access-control-allow-headers':requestHeaders['access-control-request-headers']||'authorization, apikey, content-type, x-client-info'};
+ if(route.request().method()==='OPTIONS')return route.fulfill({status:204,headers,body:''});
+ return route.fulfill({status:503,contentType:'application/json',headers,body:'{"ok":false}'});
+};
+await context.route('https://rufnflwelexnpgzpzzfq.supabase.co/**',fulfillOffline);
+await context.route('https://dvir-gym-athlete-ai-dvirs-projects-b157a454.vercel.app/**',fulfillOffline);
 const page=await context.newPage();
 const cdp=engine==='chromium'?await context.newCDPSession(page):null;
 const errors=[];
@@ -65,18 +73,25 @@ await page.locator('body.ready').waitFor({timeout:30000});
 await page.getByRole('button',{name:/כניסה או הרשמה|פתיחת החשבון שלי/}).waitFor();
 await assertDocumentScroll('Home');
 
-const tabs=engine==='webkit'?['עוד']:['תזונה','התקדמות','עוד'];
+const tabs=engine==='webkit'?[{screen:'more',label:'עוד'}]:[{screen:'fuel',label:'תזונה'},{screen:'progress',label:'התקדמות'},{screen:'more',label:'עוד'}];
 for(const tab of tabs){
-	await page.getByRole('button',{name:tab,exact:true}).click();
+	await page.locator(`.dock-item[data-screen="${tab.screen}"]`).click();
  await page.locator('.screen.active').waitFor();
- await page.waitForTimeout(engine==='webkit'&&tab==='עוד'?50:300);
- await assertDocumentScroll(tab);
+	await page.waitForTimeout(engine==='webkit'&&tab.screen==='more'?50:300);
+	await assertDocumentScroll(tab.label);
 }
 
-while(await page.locator('#dgMachineLoadMoreV931').count())await page.locator('#dgMachineLoadMoreV931').evaluate(button=>button.click());
-await page.getByRole('button',{name:/המכשיר שדוחפים קדימה/}).evaluate(button=>button.click());
-await page.locator('#machineDialog[open]').waitFor();
-const dialogMetrics=await page.locator('#machineDialog').evaluate(dialog=>({clientHeight:dialog.clientHeight,scrollHeight:dialog.scrollHeight,overflow:getComputedStyle(dialog).overflowY}));
+await page.locator('.dg-machine-card-v91').first().waitFor({timeout:10000});
+for(let attempt=0;attempt<5;attempt++){
+ const before=await page.evaluate(()=>{const button=document.querySelector('#dgMachineLoadMoreV931');if(!button)return null;const count=document.querySelectorAll('.dg-machine-card-v91').length;button.click();return count});
+ if(before===null)break;
+ await page.waitForFunction(before=>document.querySelectorAll('.dg-machine-card-v91').length>before||!document.querySelector('#dgMachineLoadMoreV931'),before,{timeout:3000});
+}
+if(await page.evaluate(()=>!!document.querySelector('#dgMachineLoadMoreV931')))throw new Error('Machine library load-more control did not finish after five attempts');
+await page.evaluate(()=>openMachine('chest-press'));
+await page.locator('#machineDialog[open]').waitFor({state:'attached'});
+const dialogMetrics=await page.evaluate(()=>{const dialog=document.querySelector('#machineDialog[open]');return dialog?{clientHeight:dialog.clientHeight,scrollHeight:dialog.scrollHeight,overflow:getComputedStyle(dialog).overflowY}:null});
+if(!dialogMetrics)throw new Error('Machine dialog disappeared before its scroll metrics could be measured');
 if(dialogMetrics.scrollHeight<=dialogMetrics.clientHeight+20)throw new Error(`Machine dialog has no scrollable content ${JSON.stringify(dialogMetrics)}`);
 const dialogAfter=await swipeUp('#machineDialog');
 console.log('Machine dialog mobile touch scroll OK',{dialogAfter,...dialogMetrics});
