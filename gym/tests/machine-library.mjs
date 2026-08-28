@@ -18,14 +18,16 @@ for(const viewport of viewports){
  const page=await context.newPage(),errors=[],failed=[];
  const domClick=selector=>page.locator(selector).evaluate(el=>el.click());
  page.on('pageerror',e=>errors.push(String(e)));
- page.on('response',r=>{if(r.url().includes('/assets/gym-machines.webp')&&r.status()!==200)failed.push(`${r.status()} ${r.url()}`)});
+ page.on('response',r=>{if(r.url().includes('/assets/gym-machines-2x.webp')&&r.status()!==200)failed.push(`${r.status()} ${r.url()}`)});
  await page.goto(base,{waitUntil:'domcontentloaded'});
  await page.waitForSelector('body.ready',{timeout:30000});
  if(await page.locator('#onboardDialog[open]').count())throw new Error(`${viewport.name}: onboarding unexpectedly blocked a completed profile`);
  await page.locator('[data-screen="more"]').evaluate(el=>el.click());
  await page.waitForSelector('#screen-more.active');
  await page.waitForSelector('.dg-machine-card-v93');
- await page.waitForFunction(()=>getComputedStyle(document.querySelector('.dg-machine-photo')).backgroundImage.includes('gym-machines.webp'));
+ await page.waitForFunction(()=>getComputedStyle(document.querySelector('.dg-machine-photo')).backgroundImage.includes('gym-machines-2x.webp'));
+ const sprite=await page.evaluate(async()=>{const image=new Image();image.src='assets/gym-machines-2x.webp?decode-test=1';await image.decode();return{width:image.naturalWidth,height:image.naturalHeight}});
+ if(sprite.width!==960||sprite.height!==1600)throw new Error(`${viewport.name}: 2x sprite dimensions failed ${JSON.stringify(sprite)}`);
  while(await page.locator('#dgMachineLoadMoreV931').count())await page.locator('#dgMachineLoadMoreV931').evaluate(button=>button.click());
  const library=await page.evaluate(()=>{
   const grid=document.querySelector('#machineGrid'),cards=[...grid.querySelectorAll('.dg-machine-card-v93')],r=grid.getBoundingClientRect();

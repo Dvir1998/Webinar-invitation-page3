@@ -1,6 +1,6 @@
 /* Athlete OS 9.1 — production gym equipment library, authentic-photo cards and cardio protocol */
-const DG_GYM_LIBRARY_VERSION='9.2.1';
-const DG_MACHINE_SPRITE_URL=`assets/gym-machines.webp?v=${DG_GYM_LIBRARY_VERSION}`;
+const DG_GYM_LIBRARY_VERSION='9.3.1-quality2';
+const DG_MACHINE_SPRITE_URL=`assets/gym-machines-2x.webp?v=${DG_GYM_LIBRARY_VERSION}`;
 const DG_HOME_SPRITE_URL=`assets/home-exercises.webp?v=${DG_GYM_LIBRARY_VERSION}`;
 
 // The original photos are one 4×5 contact sheet. A fixed 3:4 tile ratio keeps every

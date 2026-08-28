@@ -41,6 +41,8 @@ jobs:
         run: node gym/tests/home-visuals.mjs
       - name: Run authentic gym equipment library E2E
         run: node gym/tests/machine-library.mjs
+      - name: Verify 2x gym photos decode in the iPhone engine
+        run: node gym/tests/gym-photo-decode.mjs
       - name: Run light-theme accessibility and account-entry E2E
         run: node gym/tests/accessibility-account.mjs
       - name: Run daily tracking and recovery nutrition E2E

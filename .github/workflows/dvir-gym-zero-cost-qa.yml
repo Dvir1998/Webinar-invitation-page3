@@ -22,17 +22,21 @@ jobs:
         run: |
           set -euo pipefail
           test -f .nojekyll
-          for p in gym/index.html gym/recover.html gym/manifest.json gym/sw.js gym/version.json gym/dist/app.js gym/dist/app.css gym/dist/SHA256SUMS gym/code/css19.txt gym/code/css20.txt gym/code/css21.txt gym/code/js47.txt gym/code/js48.txt gym/assets/gym-machines.webp; do test -f "$p"; done
+          for p in gym/index.html gym/recover.html gym/manifest.json gym/sw.js gym/version.json gym/dist/app.js gym/dist/app.css gym/dist/SHA256SUMS gym/code/css19.txt gym/code/css20.txt gym/code/css21.txt gym/code/js47.txt gym/code/js48.txt gym/assets/gym-machines.webp gym/assets/gym-machines-2x.webp; do test -f "$p"; done
           node --check gym/dist/app.js
           node --check gym/sw.js
           node -e "const x=JSON.parse(require('fs').readFileSync('gym/version.json','utf8'));if(!x.build||x.appVersion!=='9.3.1')process.exit(1);console.log('version',x.appVersion,x.build)"
           node -e "const x=JSON.parse(require('fs').readFileSync('gym/manifest.json','utf8'));if(!x.name.includes('9.3.1'))process.exit(1);console.log('manifest ok')"
           node - <<'NODE'
           const fs=require('fs');
-          const p='gym/assets/gym-machines.webp',x=fs.readFileSync(p);
+          const p='gym/assets/gym-machines-2x.webp',x=fs.readFileSync(p);
           if(x.length<20000||x.slice(0,4).toString()!=='RIFF'||x.slice(8,12).toString()!=='WEBP')throw new Error('verified gym photo sprite invalid');
           const declared=x.readUInt32LE(4)+8;if(declared!==x.length)throw new Error(`partial gym photo sprite ${x.length}/${declared}`);
-          console.log('verified gym photo sprite ok',x.length);
+          const frame=x.indexOf(Buffer.from([0x9d,0x01,0x2a]));
+          if(frame<0)throw new Error('gym photo sprite frame header missing');
+          const width=x.readUInt16LE(frame+3)&0x3fff,height=x.readUInt16LE(frame+5)&0x3fff;
+          if(width!==960||height!==1600)throw new Error(`gym photo sprite dimensions ${width}x${height}`);
+          console.log('verified 2x gym photo sprite ok',x.length,width,height);
           NODE
           grep -q 'Athlete OS 9.3.1 — iPhone-safe single-scroller contract' gym/dist/app.css
           grep -q 'body{height:auto!important' gym/dist/app.css
@@ -54,8 +58,8 @@ jobs:
           grep -q 'OpenRouter' gym/dist/app.js
           grep -q 'providerPreference' gym/dist/app.js
           grep -q 'Memory Engine המקומי' gym/dist/app.js
-          grep -q 'dvir-athlete-os-v9-3-1-iphone-scroll-20260827' gym/sw.js
-          grep -q "'assets/gym-machines.webp'" gym/sw.js
+          grep -q 'dvir-athlete-os-v9-3-1-gym-photo-2x-20260828' gym/sw.js
+          grep -q "'assets/gym-machines-2x.webp'" gym/sw.js
           if grep -q 'gym-new-v93-tiny' gym/sw.js; then echo 'partial atlas must not be cached'; exit 1; fi
           grep -q "cache:'reload'" gym/sw.js
           grep -q 'dist/app.js?b=' gym/index.html
