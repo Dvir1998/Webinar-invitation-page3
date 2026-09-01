@@ -65,8 +65,18 @@ jobs:
           grep -q 'dgValidateAtlasV931' gym/dist/app.js
           grep -q 'Multi-provider AI' gym/dist/app.js
           grep -q 'DG_RECOVERY_LOGIC_V931' gym/dist/app.js
+          grep -q 'DG_GYM_PHOTO_LIBRARY_READY_V94=true' gym/dist/app.js
+          grep -q 'DG_GYM_PHOTO_TOTAL_V94' gym/dist/app.js
+          grep -q 'DG_AI_UX_VERSION_V941' gym/dist/app.js
+          grep -q 'dgProviderErrorV941' gym/dist/app.js
+          grep -q 'Athlete OS 9.4 — native high-resolution machine photography' gym/dist/app.css
+          grep -q 'Athlete OS 9.4.1 — direct Gemini setup and persistent diagnostics' gym/dist/app.css
           grep -q 'non-blocking release banner' gym/dist/app.css
           test -s gym/assets/gym-machines-2x.webp
+          test -s gym/assets/gym-photos/manifest.json
+          test "$(find gym/assets/gym-photos/source -type f -name '*.png' | wc -l | tr -d ' ')" = '32'
+          test "$(find gym/assets/gym-photos/full -type f -name '*.webp' | wc -l | tr -d ' ')" = '32'
+          test "$(find gym/assets/gym-photos/thumb -type f -name '*.webp' | wc -l | tr -d ' ')" = '32'
 
           printf '%s\n' "$(sha256sum gym/dist/app.js | cut -d' ' -f1)  app.js" "$(sha256sum gym/dist/app.css | cut -d' ' -f1)  app.css" > gym/dist/SHA256SUMS
           printf '{"build":"%s","builtAt":"%s","channel":"production","appVersion":"9.3.1"}\n' "$GITHUB_SHA" "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" > gym/version.json

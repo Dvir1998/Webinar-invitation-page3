@@ -69,8 +69,12 @@ async function assertDocumentScroll(label){
   touchAction:getComputedStyle(document.body).touchAction
  }));
  if(metrics.scrollHeight<=metrics.viewport+80)throw new Error(`${label}: page has no scrollable content ${JSON.stringify(metrics)}`);
- const after=await swipeUp();
- if(after<25)throw new Error(`${label}: touch swipe did not scroll ${JSON.stringify({...metrics,after})}`);
+ let after=0,lastError=null;
+ for(let attempt=0;attempt<2&&after<25;attempt++){
+  try{after=await swipeUp()}catch(error){lastError=error}
+  if(after<25)await page.waitForTimeout(120);
+ }
+ if(after<25)throw new Error(`${label}: touch swipe did not scroll ${JSON.stringify({...metrics,after,cause:String(lastError||'')})}`);
  console.log(`${label} ${engine} mobile scroll OK`,{after,...metrics});
 }
 

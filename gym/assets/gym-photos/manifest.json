@@ -1,0 +1,53 @@
+{
+  "version": "9.4.0",
+  "receivedFiles": 33,
+  "uniquePhotos": 32,
+  "coveredEquipment": 22,
+  "legacyFallbackEquipment": ["assisted"],
+  "duplicateUploads": [
+    {
+      "source": "codex-clipboard-bea20618-4378-41a2-96e9-76f9f27c0bab.png",
+      "sameAs": "hip-1",
+      "sha256": "cb3b63126c736e2d88fd4fce9e14b0e5cbe96ea759601f21e0f00aa3b546bd99"
+    }
+  ],
+  "derivatives": {
+    "source": "unaltered PNG",
+    "full": "2x WebP, Lanczos upscale, source-safe mild sharpening",
+    "thumb": "720px-wide WebP for cards and fast mobile loading"
+  },
+  "photos": [
+    ["hip-1", "hip", 1600, 900],
+    ["ab-crunch-1", "ab-crunch", 1600, 900],
+    ["seated-row-1", "seated-row", 1600, 900],
+    ["pec-rear-1", "pec-rear", 1600, 900],
+    ["leg-extension-1", "leg-extension", 1600, 900],
+    ["leg-curl-1", "leg-curl", 1600, 900],
+    ["leg-press-1", "leg-press", 1600, 900],
+    ["shoulder-press-1", "shoulder-press", 1600, 900],
+    ["lat-pulldown-1", "lat-pulldown", 1600, 900],
+    ["chest-press-1", "chest-press", 1600, 900],
+    ["dumbbells-1", "dumbbells", 900, 1600],
+    ["biceps-curl-1", "biceps-curl", 1600, 900],
+    ["smith-1", "smith", 900, 1600],
+    ["smith-2", "smith", 900, 1600],
+    ["cable-1", "cable", 900, 1600],
+    ["cable-2", "cable", 900, 1600],
+    ["cable-3", "cable", 900, 1600],
+    ["leg-press-2", "leg-press", 1600, 900],
+    ["ab-crunch-2", "ab-crunch", 1600, 900],
+    ["seated-row-2", "seated-row", 1600, 900],
+    ["lat-row-combo-1", "lat-row-combo", 1600, 900],
+    ["pec-rear-2", "pec-rear", 1600, 900],
+    ["leg-extension-2", "leg-extension", 1600, 900],
+    ["treadmill-1", "treadmill", 900, 1600],
+    ["lat-pulldown-2", "lat-pulldown", 1600, 900],
+    ["biceps-curl-2", "biceps-curl", 1600, 900],
+    ["bike-1", "bike", 900, 1600],
+    ["rower-1", "rower", 900, 1600],
+    ["recumbent-1", "recumbent", 900, 1600],
+    ["stair-1", "stair", 900, 1600],
+    ["elliptical-1", "elliptical", 900, 1600],
+    ["preacher-1", "preacher", 900, 1600]
+  ]
+}

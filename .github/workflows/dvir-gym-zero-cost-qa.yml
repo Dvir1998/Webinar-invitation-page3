@@ -22,7 +22,7 @@ jobs:
         run: |
           set -euo pipefail
           test -f .nojekyll
-          for p in gym/index.html gym/recover.html gym/manifest.json gym/sw.js gym/version.json gym/dist/app.js gym/dist/app.css gym/dist/SHA256SUMS gym/code/css19.txt gym/code/css20.txt gym/code/css21.txt gym/code/js47.txt gym/code/js48.txt gym/assets/gym-machines.webp gym/assets/gym-machines-2x.webp; do test -f "$p"; done
+          for p in gym/index.html gym/recover.html gym/manifest.json gym/sw.js gym/version.json gym/dist/app.js gym/dist/app.css gym/dist/SHA256SUMS gym/code/css19.txt gym/code/css20.txt gym/code/css21.txt gym/code/css22.txt gym/code/css23.txt gym/code/js47.txt gym/code/js48.txt gym/code/js49.txt gym/code/js50.txt gym/assets/gym-machines.webp gym/assets/gym-machines-2x.webp gym/assets/gym-photos/manifest.json; do test -f "$p"; done
           node --check gym/dist/app.js
           node --check gym/sw.js
           node -e "const x=JSON.parse(require('fs').readFileSync('gym/version.json','utf8'));if(!x.build||x.appVersion!=='9.3.1')process.exit(1);console.log('version',x.appVersion,x.build)"
@@ -38,13 +38,45 @@ jobs:
           if(width!==960||height!==1600)throw new Error(`gym photo sprite dimensions ${width}x${height}`);
           console.log('verified 2x gym photo sprite ok',x.length,width,height);
           NODE
+          node - <<'NODE'
+          const fs=require('fs'),path=require('path');
+          const root='gym/assets/gym-photos',manifest=JSON.parse(fs.readFileSync(path.join(root,'manifest.json'),'utf8'));
+          if(manifest.receivedFiles!==33||manifest.uniquePhotos!==32||manifest.coveredEquipment!==22||manifest.photos.length!==32)throw new Error('gym source manifest coverage is incomplete');
+          if(manifest.duplicateUploads.length!==1||manifest.legacyFallbackEquipment.join(',')!=='assisted')throw new Error('gym source provenance contract failed');
+          const files=dir=>fs.readdirSync(path.join(root,dir)).filter(name=>name.match(dir==='source'?/\.png$/:/\.webp$/));
+          for(const dir of ['source','full','thumb'])if(files(dir).length!==32)throw new Error(`${dir} expected 32 files, found ${files(dir).length}`);
+          const webpDimensions=file=>{
+            const x=fs.readFileSync(file);
+            if(x.slice(0,4).toString()!=='RIFF'||x.slice(8,12).toString()!=='WEBP'||x.readUInt32LE(4)+8!==x.length)throw new Error(`invalid or partial WebP ${file}`);
+            const frame=x.indexOf(Buffer.from([0x9d,0x01,0x2a]));
+            if(frame<0)throw new Error(`VP8 frame missing ${file}`);
+            return{x,width:x.readUInt16LE(frame+3)&0x3fff,height:x.readUInt16LE(frame+5)&0x3fff};
+          };
+          let fullBytes=0,thumbBytes=0;
+          for(const [key,equipment,width,height] of manifest.photos){
+            if(!key||!equipment||![900,1600].includes(width)||![900,1600].includes(height))throw new Error(`invalid photo record ${key}`);
+            const png=fs.readFileSync(path.join(root,'source',`${key}.png`));
+            if(png.slice(1,4).toString()!=='PNG'||png.readUInt32BE(16)!==width||png.readUInt32BE(20)!==height)throw new Error(`source PNG mismatch ${key}`);
+            const full=webpDimensions(path.join(root,'full',`${key}.webp`));
+            if(full.width!==width*2||full.height!==height*2)throw new Error(`full dimensions mismatch ${key}: ${full.width}x${full.height}`);
+            const thumb=webpDimensions(path.join(root,'thumb',`${key}.webp`)),portrait=height>width;
+            if(thumb.width!==720||thumb.height!==(portrait?1280:406))throw new Error(`thumb dimensions mismatch ${key}: ${thumb.width}x${thumb.height}`);
+            fullBytes+=full.x.length;thumbBytes+=thumb.x.length;
+          }
+          if(fullBytes>20_000_000||thumbBytes>4_000_000)throw new Error(`photo payload budget exceeded ${JSON.stringify({fullBytes,thumbBytes})}`);
+          console.log('verified source-faithful gym photo library',{photos:manifest.photos.length,fullBytes,thumbBytes});
+          NODE
           grep -q 'Athlete OS 9.3.1 — iPhone-safe single-scroller contract' gym/dist/app.css
           grep -q 'body{height:auto!important' gym/dist/app.css
           grep -q 'overflow:visible!important' gym/dist/app.css
           grep -q 'DG_GYM_ATLAS_COMPLETE_V931=false' gym/dist/app.js
           grep -q 'dgValidateAtlasV931' gym/dist/app.js
-          grep -q '20 תמונות תקינות' gym/dist/app.js
           grep -q 'DG_RECOVERY_LOGIC_V931' gym/dist/app.js
+          grep -q 'DG_GYM_PHOTO_LIBRARY_READY_V94=true' gym/dist/app.js
+          grep -q 'DG_GYM_PHOTO_TOTAL_V94' gym/dist/app.js
+          grep -q 'DG_AI_UX_VERSION_V941' gym/dist/app.js
+          grep -q 'dgProviderErrorV941' gym/dist/app.js
+          grep -q 'dgCoachGeminiSetupV941' gym/dist/app.js
           grep -q "'leg-press'" gym/dist/app.js
           grep -q "'biceps-curl'" gym/dist/app.js
           grep -q "'treadmill'" gym/dist/app.js
@@ -58,7 +90,7 @@ jobs:
           grep -q 'OpenRouter' gym/dist/app.js
           grep -q 'providerPreference' gym/dist/app.js
           grep -q 'Memory Engine המקומי' gym/dist/app.js
-          grep -q 'dvir-athlete-os-v9-3-1-gym-photo-2x-20260828' gym/sw.js
+          grep -q 'dvir-athlete-os-v9-4-source-photo-library-20260831' gym/sw.js
           grep -q "'assets/gym-machines-2x.webp'" gym/sw.js
           if grep -q 'gym-new-v93-tiny' gym/sw.js; then echo 'partial atlas must not be cached'; exit 1; fi
           grep -q "cache:'reload'" gym/sw.js

@@ -1,4 +1,4 @@
-const CACHE='dvir-athlete-os-v9-3-1-gym-photo-2x-20260828';
+const CACHE='dvir-athlete-os-v9-4-source-photo-library-20260831';
 const ASSETS=['./','index.html','recover.html','manifest.json','version.json','assets/icon-192.png','assets/icon-512.png','dist/app.css','dist/app.js','dist/SHA256SUMS','assets/gym-machines-2x.webp','assets/home-exercises.webp'];
 self.addEventListener('install',e=>{e.waitUntil((async()=>{const c=await caches.open(CACHE);await Promise.allSettled(ASSETS.map(a=>c.add(a)));await self.skipWaiting()})())});
 self.addEventListener('activate',e=>{e.waitUntil((async()=>{for(const k of await caches.keys())if(k!==CACHE)await caches.delete(k);await self.clients.claim()})())});

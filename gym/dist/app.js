@@ -1,6 +1,6 @@
 /* Dvir Gym AI Athlete OS — generated production JS. Do not edit directly. */
 'use strict';
-const DG_BUILD_ID='ae8ebc280879f764182a5aceaa69b5705ede06d4';
+const DG_BUILD_ID='local-source-photo-ai-final-qa';
 const VERSION='6.0.0';
 const STORE='dvirAthleteOS_v6';
 const LEGACY=['dvirAthleteLiveV1','dvirGymAthleteOSV4','dvirGym2027V3'];
@@ -2049,3 +2049,202 @@ dgOpenPostWorkoutV92=function(id){
  [...dialog.querySelectorAll('.dg-recovery-option')].forEach((card,index)=>{const meal=plan.options[index];if(!meal)return;card.classList.toggle('recommended',!!meal.recommended);const body=card.querySelector('div:nth-child(2)');if(body&&!body.querySelector('.dg-recovery-reason-v931'))body.insertAdjacentHTML('beforeend',`<small class="dg-recovery-reason-v931">${meal.recommended?'<b>מומלץ ראשון</b> ':''}${esc(meal.reason||'')}</small>`)});
  return result;
 };
+/* Athlete OS 9.4 — source-faithful native gym photo library */
+const DG_GYM_PHOTO_VERSION_V94='9.4.0-source32';
+const DG_GYM_PHOTO_LIBRARY_READY_V94=true;
+const DG_GYM_PHOTO_LIBRARY_V94={
+ 'lat-pulldown':['lat-pulldown-1','lat-pulldown-2'],
+ 'leg-extension':['leg-extension-1','leg-extension-2'],
+ 'pec-rear':['pec-rear-1','pec-rear-2'],
+ 'lat-row-combo':['lat-row-combo-1'],
+ 'hip':['hip-1'],
+ 'seated-row':['seated-row-1','seated-row-2'],
+ 'ab-crunch':['ab-crunch-1','ab-crunch-2'],
+ 'leg-curl':['leg-curl-1'],
+ 'shoulder-press':['shoulder-press-1'],
+ 'chest-press':['chest-press-1'],
+ 'smith':['smith-1','smith-2'],
+ 'preacher':['preacher-1'],
+ 'cable':['cable-1','cable-2','cable-3'],
+ 'assisted':[],
+ 'treadmill':['treadmill-1'],
+ 'elliptical':['elliptical-1'],
+ 'stair':['stair-1'],
+ 'recumbent':['recumbent-1'],
+ 'rower':['rower-1'],
+ 'bike':['bike-1'],
+ 'dumbbells':['dumbbells-1'],
+ 'biceps-curl':['biceps-curl-1','biceps-curl-2'],
+ 'leg-press':['leg-press-1','leg-press-2']
+};
+const DG_GYM_PORTRAIT_PHOTOS_V94=new Set(['dumbbells-1','smith-1','smith-2','cable-1','cable-2','cable-3','treadmill-1','bike-1','rower-1','recumbent-1','stair-1','elliptical-1','preacher-1']);
+const DG_GYM_PHOTO_TOTAL_V94=Object.values(DG_GYM_PHOTO_LIBRARY_V94).reduce((total,photos)=>total+photos.length,0);
+const DG_GYM_ANATOMY_V94={
+ 'lat-pulldown':{primary:'הרחב גבי והעגול הגדול',secondary:'בייספס, ברכיאליס, אמות וטרפז תחתון',purpose:'משיכה אנכית לבניית רוחב הגב ולחיזוק השליטה בשכמות.'},
+ 'leg-extension':{primary:'הארבע־ראשי: הישר הירכי ושלושת השרירים הרחבים',secondary:'אין שריר מניע משמעותי נוסף; הליבה מייצבת',purpose:'פשיטת ברך ממוקדת והגדלת נפח הארבע־ראשי בעומס מדיד.'},
+ 'pec-rear':{primary:'במצב פרפר: החזה הגדול. במצב אחורי: הכתף האחורית',secondary:'כתף קדמית או מקרבי השכמות לפי מצב המכונה',purpose:'מכשיר דו־שימושי לבידוד החזה או הכתף האחורית; לא משלבים את שני המצבים באותה חזרה.'},
+ 'lat-row-combo':{primary:'הרחב גבי, מעוינים וטרפז אמצעי',secondary:'בייספס, אמות וכתף אחורית',purpose:'מאפשר משיכה אנכית לרוחב הגב או חתירה אופקית לעובי הגב.'},
+ 'hip':{primary:'בפתיחה: העכוז האמצעי והקטן. בסגירה: מקרבי הירך',secondary:'עכוז גדול ומייצבי האגן',purpose:'חיזוק ממוקד של יציבות האגן, מרחיקי הירך ומקרבי הירך בשני מצבים נפרדים.'},
+ 'seated-row':{primary:'הרחב גבי, המעוינים והטרפז האמצעי',secondary:'כתף אחורית, בייספס ואמות',purpose:'משיכה אופקית לבניית עובי הגב ולתרגול קירוב שכמות בשליטה.'},
+ 'ab-crunch':{primary:'הישר הבטני',secondary:'האלכסוניים מייצבים; מכופפי הירך צריכים להישאר משניים',purpose:'כיפוף מבוקר של עמוד השדרה והעמסה מתקדמת על שרירי הבטן.'},
+ 'leg-curl':{primary:'המסטרינגס: דו־ראשי ירכי, חצי־גידי וחצי־קרומי',secondary:'שריר התאומים מסייע בכפיפת הברך',purpose:'כפיפת ברך ממוקדת לבניית הירך האחורית ולהשלמת תנועות ציר ירך.'},
+ 'shoulder-press':{primary:'הכתף הקדמית והאמצעית',secondary:'טרייספס והחלק העליון של החזה',purpose:'לחיצה אנכית לבניית מסת כתפיים וכוח דחיפה מעל הראש.'},
+ 'chest-press':{primary:'החזה הגדול',secondary:'טרייספס וכתף קדמית',purpose:'לחיצה אופקית יציבה לבניית החזה תוך אפשרות לעקוב אחרי עומס וחזרות.'},
+ 'smith':{primary:'משתנה לפי התרגיל: רגליים, חזה, כתפיים או תאומים',secondary:'שרירי הייצוב הרלוונטיים לתרגיל הנבחר',purpose:'מסילה קבועה לתרגילים שונים. השריר נבחר לפי התנועה, מיקום הספסל ומיקום הרגליים.'},
+ 'preacher':{primary:'הבייספס והברכיאליס',secondary:'הברכיורדיאליס והאמות',purpose:'כפיפת מרפק עם תמיכת זרוע שמפחיתה תנופה ומדגישה עבודה מבוקרת.'},
+ 'cable':{primary:'משתנה לפי הידית, גובה הכבל וכיוון המשיכה',secondary:'שרירי הליבה מייצבים את הגוף ברוב התרגילים',purpose:'תחנה רב־תכליתית לחזה, גב, כתפיים וידיים עם מתח רציף לאורך הטווח.'},
+ 'assisted':{primary:'במתח: הרחב גבי. בדיפס: חזה וטרייספס',secondary:'בייספס, כתפיים ומייצבי השכמה לפי התנועה',purpose:'למידת מתח או דיפס בעזרת משקל נגדי; התקדמות נמדדת בירידה הדרגתית בסיוע.'},
+ 'treadmill':{primary:'מערכת לב־ריאה ושרירי הרגליים בהליכה או ריצה',secondary:'שוקיים, עכוז וליבה בהתאם לשיפוע ולקצב',purpose:'חימום, הליכה בשיפוע או אירובי מתון; אינו תחליף לאימון כוח לבניית שריר.'},
+ 'elliptical':{primary:'מערכת לב־ריאה, רגליים ועכוז',secondary:'פלג גוף עליון כאשר משתמשים בידיות הנעות',purpose:'חימום גוף מלא ואירובי עם עומס פגיעה נמוך יחסית.'},
+ 'stair':{primary:'עכוז, ארבע־ראשי ומערכת לב־ריאה',secondary:'המסטרינגס והשוקיים',purpose:'אירובי מאתגר וסבולת רגליים; מתאים בעיקר אחרי פלג גוף עליון או ביום נפרד.'},
+ 'recumbent':{primary:'מערכת לב־ריאה והארבע־ראשי',secondary:'עכוז, המסטרינגס ושוקיים',purpose:'אירובי קל והתאוששות פעילה עם תמיכת גב ומשקל גוף נתמך.'},
+ 'rower':{primary:'מערכת לב־ריאה, ארבע־ראשי, עכוז וגב',secondary:'המסטרינגס, בייספס, כתפיים וליבה',purpose:'תנועה מחזורית לכל הגוף שבה הרגליים יוזמות והידיים רק מסיימות את המשיכה.'},
+ 'bike':{primary:'מערכת לב־ריאה והארבע־ראשי',secondary:'עכוז, המסטרינגס ושוקיים',purpose:'חימום רגליים ואירובי מדיד ללא זעזועי ריצה.'},
+ 'dumbbells':{primary:'משתנה לפי התרגיל שנבחר',secondary:'מייצבי הכתף, האגן והליבה עובדים יותר מאשר במסילה קבועה',purpose:'ציוד חופשי ללחיצות, חתירות, תרגילי כתף, ידיים ורגליים עם עבודה חד־צדדית.'},
+ 'biceps-curl':{primary:'הבייספס והברכיאליס',secondary:'הברכיורדיאליס ושרירי האמה',purpose:'כפיפת מרפק במסלול יציב לבניית נפח הזרוע הקדמית.'},
+ 'leg-press':{primary:'הארבע־ראשי והעכוז הגדול',secondary:'מקרבי הירך והמסטרינגס מסייעים ומייצבים',purpose:'לחיצת רגליים יציבה שמאפשרת עומס גבוה על הירכיים והעכוז בלי צורך לייצב מוט חופשי.'}
+};
+
+function dgGymPhotoPathV94(key,variant='thumb'){return`assets/gym-photos/${variant}/${key}.webp?v=${DG_GYM_PHOTO_VERSION_V94}`}
+function dgGymPhotoAbsoluteV94(key,variant='thumb'){return new URL(dgGymPhotoPathV94(key,variant),document.baseURI).href}
+function dgGymPhotoDimensionsV94(key,variant='thumb'){
+ const portrait=DG_GYM_PORTRAIT_PHOTOS_V94.has(key);
+ if(variant==='full')return portrait?{width:1800,height:3200}:{width:3200,height:1800};
+ return portrait?{width:720,height:1280}:{width:720,height:406};
+}
+function dgMachinePhotoKeysV94(m){return DG_GYM_PHOTO_LIBRARY_V94[m.id]||[]}
+function dgGymPhotoImgV94(m,key,variant='thumb',index=0,eager=false){
+ const path=dgGymPhotoPathV94(key,variant),dims=dgGymPhotoDimensionsV94(key,variant),portrait=DG_GYM_PORTRAIT_PHOTOS_V94.has(key),label=`${m.simple} · צילום ${index+1}`;
+ return`<img class="dg-gym-photo-v94 ${portrait?'portrait':'landscape'}" src="${path}" alt="${esc(label)}" width="${dims.width}" height="${dims.height}" loading="${eager?'eager':'lazy'}" decoding="async">`;
+}
+function dgMachineLegacyPhotoV94(m,cls=''){
+ return`<div class="dg-machine-photo-frame ${cls} dg-legacy-photo-v94">${dgMachineVisualV93Fallback(m,'machine-sprite dg-machine-photo')}<span class="dg-real-photo-badge">צילום קודם מהמכון</span></div>`;
+}
+function dgMachineCardMediaV94(m){
+ const key=dgMachinePhotoKeysV94(m)[0];if(!key)return dgMachineLegacyPhotoV94(m,'dg-machine-card-photo');
+ const path=dgGymPhotoPathV94(key),background=dgGymPhotoAbsoluteV94(key),portrait=DG_GYM_PORTRAIT_PHOTOS_V94.has(key);
+ return`<div class="dg-machine-photo-frame dg-machine-card-photo dg-source-photo-v94 ${portrait?'portrait':'landscape'}" style="--dg-photo:url('${background}')">${dgGymPhotoImgV94(m,key,'thumb',0,false)}<span class="dg-real-photo-badge">צילום מקור איכותי</span></div>`;
+}
+
+const dgMachineVisualV94Fallback=machineVisual;
+machineVisual=function(m,cls='machine-sprite'){
+ const key=dgMachinePhotoKeysV94(m)[0];if(!key)return dgMachineVisualV94Fallback(m,cls);
+ return`<div class="${cls} dg-source-photo-v94" role="img" aria-label="${esc(m.simple)}">${dgGymPhotoImgV94(m,key,'thumb',0,false)}</div>`;
+};
+for(const m of MACHINES){m.anatomy=DG_GYM_ANATOMY_V94[m.id]||null;m.photoSource=dgMachinePhotoKeysV94(m).length?'צילום מקור חדש מהמכון':'צילום קודם מהמכון'}
+const dgMachineSearchTextV94Base=dgMachineSearchText;
+dgMachineSearchText=function(m){const a=m.anatomy||{};return`${dgMachineSearchTextV94Base(m)} ${a.primary||''} ${a.secondary||''} ${a.purpose||''}`.toLowerCase()};
+
+renderMachineGrid=function(arr){
+ const grid=$('#machineGrid');if(!grid)return;grid.setAttribute('aria-live','polite');grid.setAttribute('aria-label','ספריית מכשירי המכון');
+ if(!arr.length){grid.innerHTML='<div class="dg-machine-empty">לא נמצאו מכשירים שמתאימים לחיפוש.</div>';return}
+ const shown=innerWidth<=600?arr.slice(0,dgMachineVisibleV931):arr;
+ grid.innerHTML=shown.map(m=>{const count=dgMachinePhotoKeysV94(m).length||1;return`<button class="card machine-card dg-machine-card-v91 dg-machine-card-v93 dg-machine-card-v94" type="button" data-machine="${esc(m.id)}" aria-label="פתח מדריך ${esc(m.simple)}">${dgMachineCardMediaV94(m)}<div class="body"><span class="dg-machine-kind ${m.isCardio?'cardio':'strength'}">${m.isCardio?'אירובי וחימום':'אימון כוח'}</span><b>${esc(m.simple)}</b><small>${esc(m.pro)}</small><em>${esc(m.anatomy?.primary||dgMachineMuscles(m)||m.cat)}</em><span class="dg-atlas-state-v931 ready">${count} ${count===1?'צילום':'צילומים'}</span></div></button>`}).join('')+(shown.length<arr.length?`<button id="dgMachineLoadMoreV931" class="secondary dg-machine-load-more-v931" type="button">הצג עוד ${Math.min(8,arr.length-shown.length)} מכשירים</button>`:'');
+ $$('[data-machine]',grid).forEach(button=>button.onclick=()=>openMachine(button.dataset.machine));
+ const more=$('#dgMachineLoadMoreV931');if(more)more.onclick=()=>{dgMachineVisibleV931+=8;renderMachineGrid(arr)};
+};
+
+function dgOpenGymPhotoV94(m,key,index){
+ let zoom=$('#dgGymPhotoZoomV94');if(!zoom){zoom=document.createElement('dialog');zoom.id='dgGymPhotoZoomV94';zoom.className='dg-gym-photo-zoom-v94';document.body.appendChild(zoom)}
+ const path=dgGymPhotoPathV94(key,'full'),dims=dgGymPhotoDimensionsV94(key,'full'),label=`${m.simple} · צילום מוגדל ${index+1}`;
+ zoom.innerHTML=`<button type="button" class="close" aria-label="סגור תמונה">×</button><img src="${path}" alt="${esc(label)}" width="${dims.width}" height="${dims.height}" decoding="async"><small>צילום מקורי מהמכון · הקש מחוץ לתמונה לסגירה</small>`;
+ zoom.querySelector('button').onclick=()=>zoom.close();zoom.onclick=event=>{if(event.target===zoom)zoom.close()};zoom.showModal();
+}
+function dgMachineGalleryV94(m){
+ const photos=dgMachinePhotoKeysV94(m);if(!photos.length)return`${dgMachineLegacyPhotoV94(m,'dg-machine-modal-photo')}<div class="dg-machine-photo-note"><span><b>1</b> צילום קודם מהמכון</span><span>הצילום החדש לא צורף</span></div>`;
+ return`<div class="dg-machine-gallery-v93 dg-machine-gallery-v94" aria-label="גלריית ${esc(m.simple)}">${photos.map((key,index)=>`<button class="dg-source-photo-v94" style="--dg-photo:url('${dgGymPhotoAbsoluteV94(key)}')" type="button" data-dg-gym-photo="${key}" aria-label="הגדל ${esc(m.simple)} · צילום ${index+1}">${dgGymPhotoImgV94(m,key,'thumb',index,index===0)}<span>הגדל תמונה</span></button>`).join('')}</div><div class="dg-machine-photo-note"><span><b>${photos.length}</b> ${photos.length===1?'צילום מקור איכותי':'צילומי מקור איכותיים'}</span><span>מוצג מיד · הקש לטעינת רזולוציה מלאה</span></div>`;
+}
+openMachine=function(id){
+ const m=machineMap[id];if(!m)return;const anatomy=m.anatomy||{},dialog=$('#machineDialog');
+ $('#machineContent').innerHTML=`<div class="dg-machine-modal-v91 dg-machine-modal-v94">${dgMachineGalleryV94(m)}<button class="close dg-machine-close" id="dgMachineClose" type="button" aria-label="סגור מדריך">×</button><div class="sheet dg-machine-sheet"><div class="dg-machine-title-row"><div><div class="eyebrow">${m.isCardio?'אירובי וחימום':'מדריך מכשיר'}</div><h2>${esc(m.simple)}</h2><p>${esc(m.pro)} · ${esc(m.cat)}</p></div><span class="dg-machine-kind ${m.isCardio?'cardio':'strength'}">${m.isCardio?'אירובי':'כוח'}</span></div><div class="dg-anatomy-v94"><section><small>שרירים עיקריים</small><b>${esc(anatomy.primary||dgMachineMuscles(m)||m.cat)}</b></section><section><small>שרירים מסייעים</small><b>${esc(anatomy.secondary||'מייצבי הגוף לפי התנועה')}</b></section><p>${esc(anatomy.purpose||m.bestFor||'עומס מדורג בהתאם לתוכנית.')}</p></div><div class="dg-guide-grid"><section><span>1</span><div><b>כיוון והכנה</b><p>${esc(m.setup||'')}</p></div></section><section><span>2</span><div><b>ביצוע נכון</b><p>${esc(m.cue||'')}</p></div></section><section><span>3</span><div><b>טיפ מקצועי</b><p>${esc(m.tip||'התחל בעומס שמאפשר טווח מלא ושתי חזרות ברזרבה.')}</p></div></section><section class="warn"><span>!</span><div><b>אזהרה וטעות נפוצה</b><p>${esc(m.mistake||'אל תקריב טווח ושליטה כדי להעלות משקל.')}</p></div></section></div><div class="dg-program-fit"><div><small>שילוב בתוכנית</small><b>${esc(m.programUse||'משולב לפי קבוצת השרירים והעומס השבועי.')}</b></div><div><small>למי מתאים</small><b>${esc(m.bestFor||'למתאמן שמבצע את התנועה בטווח נשלט וללא כאב.')}</b></div></div><button class="primary" id="machineAsk" type="button">שאל את המאמן על המכשיר</button></div></div>`;
+ dialog.showModal();$('#dgMachineClose').onclick=()=>dialog.close();$$('[data-dg-gym-photo]',dialog).forEach((button,index)=>button.onclick=()=>dgOpenGymPhotoV94(m,button.dataset.dgGymPhoto,index));$('#machineAsk').onclick=()=>{dialog.close();openCoachWith(`אני עומד מול ${m.pro} (${m.simple}). לפי התוכנית וההיסטוריה שלי, הסבר איך לכוון אותו, איזה עומס לבחור, כמה סטים וחזרות לבצע ומה לתעד.`)};
+};
+dgPatchMachineLibraryTextV93=function(){
+ const screen=$('#screen-more');if(!screen)return;for(const head of $$('.section-head',screen)){if(!head.querySelector('h2')?.textContent.includes('המכשירים במכון'))continue;const small=head.querySelector('small');if(small)small.textContent=`${MACHINES.length} פריטי ציוד · ${DG_GYM_PHOTO_TOTAL_V94} צילומי מקור חדשים · צילום קודם אחד`;break}
+};
+for(const delay of [0,300,1500])setTimeout(()=>{dgPatchMachineLibraryTextV93();if($('#machineGrid'))renderMachineGrid(MACHINES)},delay);
+/* Athlete OS 9.4.1 — direct Gemini setup and honest coach diagnostics */
+const DG_AI_UX_VERSION_V941='9.4.1-gemini-direct';
+
+function dgCleanProviderKeyV941(value){
+ let key=String(value||'').trim();
+ if(/^(?:export\s+)?(?:GEMINI_API_KEY|GOOGLE_API_KEY)\s*=/i.test(key))key=key.replace(/^(?:export\s+)?(?:GEMINI_API_KEY|GOOGLE_API_KEY)\s*=\s*/i,'');
+ key=key.replace(/^["'`]|["'`]$/g,'').replace(/\s+/g,'');
+ return key;
+}
+function dgProviderErrorV941(error,provider='gemini'){
+ const data=error?.data||{},raw=[error?.name,error?.message,data.error,data.status,data.detail,data.code].filter(Boolean).join(' ').toLowerCase();
+ if(/account_required|\bauth\b|unauthorized/.test(raw))return'כדי לשמור מפתח פרטי צריך להיכנס קודם לחשבון האישי.';
+ if(/leak|reported as leaked|blocked/.test(raw))return'גוגל חסמה את המפתח מטעמי אבטחה. צור מפתח חדש בחשבון גוגל ואל תפרסם אותו.';
+ if(/invalid|api_key_invalid|key_rejected|authentication|\b401\b/.test(raw))return provider==='gemini'?'ג׳מיני דחה את המפתח. העתק מפתח חדש מעמוד המפתחות של גוגל ונסה שוב.':'המפתח נדחה. בדוק שהעתקת אותו במלואו ונסה שוב.';
+ if(/permission|forbidden|restricted|\b403\b/.test(raw))return'למפתח אין הרשאה לשירות. ודא שהוא מיועד לממשק ג׳מיני ושפרויקט גוגל פעיל.';
+ if(/quota|resource_exhausted|rate.limit|\b429\b/.test(raw))return'המפתח תקין, אבל המכסה או קצב הבקשות הסתיימו כרגע. אפשר לנסות שוב מאוחר יותר.';
+ if(/not.found|model|\b404\b/.test(raw))return'המפתח נשמר, אבל המודל הזמין בחשבון לא נמצא. המערכת תנסה מודל תואם אחר.';
+ if(/abort|timeout|network|failed to fetch/.test(raw))return'בדיקת החיבור התעכבה או שהרשת נותקה. המפתח לא נשמר; נסה שוב בחיבור יציב.';
+ return'לא הצלחתי לאמת את המפתח. הוא לא נשמר. אפשר לנסות מפתח חדש או לבדוק שוב מאוחר יותר.';
+}
+function dgProviderFeedbackV941(root,message,state='info'){
+ const box=root?.querySelector?.('[data-dg-provider-feedback]');if(!box)return;
+ box.hidden=false;box.dataset.state=state;box.textContent=message;box.setAttribute('role',state==='error'?'alert':'status');
+}
+async function dgConnectProviderV941(provider,key,button,root,onSuccess){
+ const cleaned=dgCleanProviderKeyV941(key),input=root?.querySelector?.('input');
+ if(input)input.value=cleaned;
+ if(cleaned.length<20){dgProviderFeedbackV941(root,'המפתח קצר מדי. הדבק את המפתח המלא שקיבלת מספק הבינה.','error');input?.focus();return false}
+ if(button){button.disabled=true;button.setAttribute('aria-busy','true');button.textContent='בודק ושומר בצורה מאובטחת…'}
+ dgProviderFeedbackV941(root,'בודק את המפתח מול הספק. הוא לא נשמר בדפדפן.','progress');
+ try{
+  const result=await dgKeyVault('set',cleaned,{provider});
+  if(input)input.value='';
+  await dgAiProviderStatusV93(true);
+  localStorage.setItem(dgAiPrefKeyV93(),provider);S.ai=S.ai||{};S.ai.providerPreference=provider;S.ai.lastProvider=provider;S.ai.lastError='';S.ai.lastErrorUser='';save();
+  dgProviderFeedbackV941(root,`${dgAIProviderNameV93(provider)} חובר ונבדק בהצלחה${result.testedModel?' · '+result.testedModel:''}.`,'success');
+  toast(`${dgAIProviderNameV93(provider)} מחובר ומוכן`);
+  if(typeof onSuccess==='function')await onSuccess(result);
+  else setTimeout(()=>{dgRenderAIStudioV93();dgInjectCoachProviderV93();checkAIHealth()},650);
+  return true;
+ }catch(error){
+  const message=dgProviderErrorV941(error,provider);S.ai=S.ai||{};S.ai.lastError=String(error?.message||error);S.ai.lastErrorUser=message;S.ai.lastErrorAt=Date.now();save();dgProviderFeedbackV941(root,message,'error');toast(message);return false;
+ }finally{if(button){button.disabled=false;button.removeAttribute('aria-busy');button.textContent='בדוק ושמור מפתח'}}
+}
+
+dgProviderCardV93=function(provider,title,subtitle,configured){
+ const isGem=provider==='gemini',official=isGem?'https://aistudio.google.com/apikey':'https://openrouter.ai/settings/keys';
+ return`<section class="dg-provider-card dg-provider-card-v941 ${configured?'live':''}" data-dg-provider-card="${provider}"><header><div><h3>${title}</h3><small>${subtitle}</small></div><span class="dg-provider-status">${configured?'מחובר ומאומת':'לא מחובר'}</span></header>${configured?`<div class="dg-provider-connected-v941"><span>✓</span><div><b>המפתח שמור בכספת האישית</b><small>המפתח עצמו לא חוזר לדפדפן ולא מופיע במסך.</small></div></div><div class="dg-provider-buttons"><button data-dg-remove-provider="${provider}">נתק מפתח</button><a href="${official}" target="_blank" rel="noopener">ניהול המפתח אצל הספק</a></div>`:`<ol class="dg-provider-steps-v941"><li>צור או העתק מפתח מהעמוד הרשמי.</li><li>הדבק אותו בשדה הפרטי.</li><li>לחץ בדיקה ושמירה.</li></ol><label class="dg-provider-key-label-v941" for="dg-${provider}-key-v93">${isGem?'מפתח ג׳מיני אישי':'מפתח אישי'}</label><div class="dg-provider-actions dg-provider-actions-v941"><div class="dg-provider-key-wrap-v941"><input id="dg-${provider}-key-v93" type="password" inputmode="text" autocomplete="off" autocapitalize="none" spellcheck="false" enterkeyhint="done" placeholder="הדבק כאן את המפתח המלא"><button type="button" data-dg-toggle-key="${provider}" aria-label="הצג או הסתר מפתח">הצג</button></div><button data-dg-save-provider="${provider}">בדוק ושמור מפתח</button></div><div class="dg-provider-feedback-v941" data-dg-provider-feedback hidden></div><div class="dg-provider-buttons"><a href="${official}" target="_blank" rel="noopener">פתח את עמוד המפתחות הרשמי</a></div>`}</section>`;
+};
+dgSaveProviderKeyV93=async function(provider){
+ const root=document.querySelector(`#dgAiStudioV93 [data-dg-provider-card="${provider}"]`),input=root?.querySelector('input'),button=root?.querySelector(`[data-dg-save-provider="${provider}"]`);
+ if(!dgIsAccount()){dgOpenAccount('login');return}
+ await dgConnectProviderV941(provider,input?.value||'',button,root);
+};
+function dgEnhanceProviderInputsV941(scope=document){
+ for(const button of scope.querySelectorAll?.('[data-dg-toggle-key]:not([data-dg-bound-v941])')||[]){button.dataset.dgBoundV941='1';button.onclick=()=>{const root=button.closest('[data-dg-provider-card],#dgCoachGeminiSetupV941'),input=root?.querySelector('input');if(!input)return;const reveal=input.type==='password';input.type=reveal?'text':'password';button.textContent=reveal?'הסתר':'הצג';input.focus()}}
+ for(const input of scope.querySelectorAll?.('.dg-provider-key-wrap-v941 input:not([data-dg-bound-v941])')||[]){input.dataset.dgBoundV941='1';input.addEventListener('paste',()=>setTimeout(()=>{input.value=dgCleanProviderKeyV941(input.value)},0))}
+}
+new MutationObserver(records=>{for(const record of records)for(const node of record.addedNodes)if(node.nodeType===1)dgEnhanceProviderInputsV941(node)}).observe(document.body,{childList:true,subtree:true});
+dgEnhanceProviderInputsV941();
+
+function dgInjectCoachGeminiV941(){
+ const screen=$('#screen-coach'),setup=$('#dgCoachSetupV931');if(!screen||!setup)return;const current=screen.querySelector('#dgCoachGeminiSetupV941'),mode=dgIsAccount()?'account':'guest';
+ if(dgAiConfigured){current?.remove();return}
+ if(current?.dataset.mode===mode)return;
+ current?.remove();
+ const box=document.createElement('section');box.id='dgCoachGeminiSetupV941';box.className='dg-coach-gemini-v941';
+ box.dataset.mode=mode;
+ if(!dgIsAccount())box.innerHTML=`<div><b>שלב ראשון: כניסה לחשבון אישי</b><p>המפתח לא נשמר בדפדפן. אחרי הכניסה הוא נשמר בכספת הפרטית של החשבון.</p></div><button type="button" id="dgCoachAiLoginV941">התחבר כדי לחבר ג׳מיני</button>`;
+ else box.innerHTML=`<div class="dg-coach-gemini-head-v941"><div><b>חבר ג׳מיני ישירות מתוך הצ׳אט</b><p>הדבק את המפתח האישי, בדוק אותו והמשך מיד לשיחה.</p></div><a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">צור מפתח</a></div><div class="dg-provider-key-wrap-v941"><input id="dgCoachGeminiKeyV941" type="password" inputmode="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="הדבק כאן את המפתח המלא"><button type="button" data-dg-toggle-key="gemini">הצג</button></div><button type="button" id="dgCoachGeminiSaveV941">בדוק ושמור מפתח</button><div class="dg-provider-feedback-v941" data-dg-provider-feedback hidden></div>`;
+ setup.insertAdjacentElement('afterend',box);dgEnhanceProviderInputsV941(box);
+ $('#dgCoachAiLoginV941')?.addEventListener('click',()=>dgOpenAccount('login'));
+ $('#dgCoachGeminiSaveV941')?.addEventListener('click',async()=>{const input=$('#dgCoachGeminiKeyV941'),button=$('#dgCoachGeminiSaveV941');await dgConnectProviderV941('gemini',input?.value||'',button,box,async()=>{setTimeout(()=>{renderCoach();checkAIHealth()},500)})});
+ if(S.ai?.lastErrorUser&&Date.now()-(+S.ai.lastErrorAt||0)<86400000)dgProviderFeedbackV941(box,S.ai.lastErrorUser,'error');
+}
+const dgInjectCoachProviderV941Base=dgInjectCoachProviderV93;
+dgInjectCoachProviderV93=function(){const result=dgInjectCoachProviderV941Base();setTimeout(dgInjectCoachGeminiV941,0);return result};
+
+sendCoach=async function(text,imageData=null){
+ text=String(text||'').trim();if(!text&&!imageData)return;captureReport(text);S.chat.push({role:'user',text:text||'📷 תמונה',ts:Date.now()});S.chat=S.chat.slice(-60);save();renderCoach(true);
+ try{const out=await callAI(text||'נתח את התמונה בהקשר של הזיכרון שלי.',imageData);applyAI(out);S.ai=S.ai||{};S.ai.lastError='';S.ai.lastErrorUser='';S.chat.push({role:'assistant',text:out.reply||'קיבלתי.',ts:Date.now(),model:out.servedBy||out.provider||''});if(out.achievement)toast('🏆 '+out.achievement)}
+ catch(error){const message=dgProviderErrorV941(error,S.ai?.providerPreference||'gemini'),out=localCoach(text||'');S.ai=S.ai||{};S.ai.lastError=String(error?.message||error);S.ai.lastErrorUser=message;S.ai.lastErrorAt=Date.now();applyAI(out);S.chat.push({role:'assistant',text:`${out.reply}\n\nמצב החיבור: ${message}`,ts:Date.now(),offline:true})}
+ S.chat=S.chat.slice(-60);save();renderCoach();
+};
+for(const delay of [0,500,1800])setTimeout(()=>{dgEnhanceProviderInputsV941();if($('#screen-coach.active'))dgInjectCoachProviderV93()},delay);
