@@ -1,6 +1,6 @@
 /* Dvir Gym AI Athlete OS — generated production JS. Do not edit directly. */
 'use strict';
-const DG_BUILD_ID='6fa13e099d988cef7f4f8c21183b67059604fafe';
+const DG_BUILD_ID='local-b0e1e51';
 const VERSION='6.0.0';
 const STORE='dvirAthleteOS_v6';
 const LEGACY=['dvirAthleteLiveV1','dvirGymAthleteOSV4','dvirGym2027V3'];
@@ -1200,7 +1200,7 @@ async function dgChangePasswordNowV9(){const cur=$('#dgCurrentPassword')?.value|
 function dgEnhanceAccountV9(mode){const shell=$('#dgAccountDialogBody .dg-auth-shell');if(!shell)return;if((mode==='login'||mode==='signup')&&!$('#dgRememberMe')){const submit=$('#dgAuthSubmit');submit?.insertAdjacentHTML('beforebegin',dgRememberMarkupV9())}if(dgIsAccount()&&mode==='home'&&!$('#dgSecurityV9')){const wrap=document.createElement('div');wrap.id='dgSecurityV9';wrap.className='dg-account-v9-grid';wrap.innerHTML=`<button class="dg-account-v9-card" id="dgChangePasswordOpen"><span>⌁</span><div><b>שינוי סיסמה</b><small>אימות נוכחית + הצפנה מחדש</small></div></button><button class="dg-account-v9-card" id="dgProfilePhotoOpen"><span>◉</span><div><b>תמונת פרופיל</b><small>פרטית ומסונכרנת לחשבון</small></div></button>`;shell.appendChild(wrap);$('#dgChangePasswordOpen').onclick=()=>dgRenderAccount('change-password');$('#dgProfilePhotoOpen').onclick=()=>{$('#dgAccountDialog')?.close();openProfile()}}}
 const dgRenderAccountV9Base=dgRenderAccount;dgRenderAccount=function(mode=dgAccountMode){if(mode==='change-password'&&dgIsAccount())return dgRenderChangePasswordV9();const r=dgRenderAccountV9Base(mode);setTimeout(()=>dgEnhanceAccountV9(mode),0);return r};
 
-dgSubmitAuth=async function(mode){if(dgAuthBusy)return;const username=$('#dgAuthUser')?.value.trim(),password=$('#dgAuthPassword')?.value||'',displayName=$('#dgSignupName')?.value.trim()||username,remember=$('#dgRememberMe')?.checked!==false;dgAuthBusy=true;const btn=$('#dgAuthSubmit');if(btn){btn.disabled=true;btn.textContent=mode==='signup'?'יוצר את המרחב שלך…':'פותח את החשבון…'}try{dgWriteScopedState(S);const guest=dgGuestState()||S,j=await dgAccountRequest({action:mode,username,password,displayName,claimToken:dgClaimToken()});dgStoreSession(j.session,{username:j.username||username,displayName:j.displayName||displayName},remember);if(j.recoveryKey)localStorage.setItem(dgRecoveryStorageKey(j.session.user.id),j.recoveryKey);const existing=dgReadScopedState('user:'+j.session.user.id);S=existing||dgFreshUserState(j.displayName||j.session.user.user_metadata?.full_name||username);dgWriteScopedState(S);dgSetActiveScope();dgPendingGuestImport=!existing&&dgMeaningfulState(guest);await dgAuthEnsure();sessionStorage.removeItem(DG_CLAIM_SESSION_KEY);dgClaimInfo=null;renderCurrent();await dgLoadPersonalControlV9();await dgLoadAvatarV9(true);if(mode==='signup'&&j.recoveryKey){dgRecoveryReveal=j.recoveryKey;toast('החשבון נוצר · שמור את מפתח החירום');dgRenderAccount('recovery-save')}else{toast(remember?'ברוך הבא · המכשיר יזכור אותך':'ברוך הבא · החיבור יישמר רק לסשן הזה');dgRenderAccount('home');setTimeout(()=>dgCloudBoot(),100);setTimeout(()=>dgSyncLocalPhotosToCloud(),700)}dgShowScopeBanner()}catch(e){dgShowAuthError(dgAuthError(e));if(btn){btn.disabled=false;btn.textContent=mode==='signup'?'צור חשבון אישי':'היכנס לחשבון'}}finally{dgAuthBusy=false}};
+dgSubmitAuth=async function(mode){if(dgAuthBusy)return;const username=$('#dgAuthUser')?.value.trim(),password=$('#dgAuthPassword')?.value||'',displayName=$('#dgSignupName')?.value.trim()||username,remember=$('#dgRememberMe')?.checked!==false;dgAuthBusy=true;const btn=$('#dgAuthSubmit');if(btn){btn.disabled=true;btn.textContent=mode==='signup'?'יוצר את המרחב שלך…':'פותח את החשבון…'}try{dgWriteScopedState(S);const guest=dgGuestState()||S,j=await dgAccountRequest({action:mode,username,password,displayName,claimToken:dgClaimToken()});dgStoreSession(j.session,{username:j.username||username,displayName:j.displayName||displayName},remember);if(j.recoveryKey)localStorage.setItem(dgRecoveryStorageKey(j.session.user.id),j.recoveryKey);const existing=dgReadScopedState('user:'+j.session.user.id);S=existing||dgFreshUserState(j.displayName||j.session.user.user_metadata?.full_name||username);dgWriteScopedState(S);dgSetActiveScope();dgPendingGuestImport=!existing&&dgMeaningfulState(guest);await dgAuthEnsure();sessionStorage.removeItem(DG_CLAIM_SESSION_KEY);dgClaimInfo=null;renderCurrent();const hydratePersonal=()=>Promise.allSettled([dgLoadPersonalControlV9(),dgLoadAvatarV9(true)]);if(mode==='signup'&&j.recoveryKey){dgRecoveryReveal=j.recoveryKey;toast('החשבון נוצר · שמור את מפתח החירום');dgRenderAccount('recovery-save')}else{toast(remember?'ברוך הבא · המכשיר יזכור אותך':'ברוך הבא · החיבור יישמר רק לסשן הזה');dgRenderAccount('home');setTimeout(()=>dgCloudBoot(),100);setTimeout(()=>dgSyncLocalPhotosToCloud(),700)}setTimeout(hydratePersonal,0);dgShowScopeBanner()}catch(e){dgShowAuthError(dgAuthError(e));if(btn){btn.disabled=false;btn.textContent=mode==='signup'?'צור חשבון אישי':'היכנס לחשבון'}}finally{dgAuthBusy=false}};
 
 function dgEnsureAvatarInputV9(){let i=$('#dgProfilePhotoInput');if(i)return i;i=document.createElement('input');i.id='dgProfilePhotoInput';i.type='file';i.accept='image/*';i.setAttribute('capture','user');i.hidden=true;document.body.appendChild(i);i.onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{const data=await compressImage(f,520,.82);if(dgIsAccount()){const j=await dgUserPhotosRequest({action:'profile_upload',data});dgAvatarUrlV9=j.item?.url||data;dgAvatarFetchedAtV9=Date.now()}else{S.profile.avatarData=data;save();dgAvatarUrlV9=data}dgApplyAvatarV9();dgRenderProfileAvatarEditorV9();toast('תמונת הפרופיל נשמרה')}catch{toast('לא הצלחתי לשמור את תמונת הפרופיל')}e.target.value=''};return i}
 async function dgLoadAvatarV9(force=false){if(!force&&dgAvatarUrlV9&&Date.now()-dgAvatarFetchedAtV9<45*60e3)return dgAvatarUrlV9;if(!dgIsAccount()){dgAvatarUrlV9=S.profile?.avatarData||'';dgApplyAvatarV9();return dgAvatarUrlV9}try{const j=await dgUserPhotosRequest({action:'profile_get'});dgAvatarUrlV9=j.item?.url||'';dgAvatarFetchedAtV9=Date.now()}catch{}dgApplyAvatarV9();return dgAvatarUrlV9}
@@ -2191,6 +2191,15 @@ function dgProviderFeedbackV941(root,message,state='info'){
  const box=root?.querySelector?.('[data-dg-provider-feedback]');if(!box)return;
  box.hidden=false;box.dataset.state=state;box.textContent=message;box.setAttribute('role',state==='error'?'alert':'status');
 }
+function dgProviderDiagnosticV941(error){
+ const data=error?.data||{},values=[data.status,data.code,data.error,data.reason,error?.status,error?.name,error?.message];
+ for(const value of values){
+  if(typeof value!=='string'&&typeof value!=='number')continue;
+  const safe=String(value).trim().replace(/[^A-Za-z0-9_.:-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,72);
+  if(safe)return safe;
+ }
+ return'UNKNOWN_PROVIDER_ERROR';
+}
 async function dgConnectProviderV941(provider,key,button,root,onSuccess){
  const cleaned=dgCleanProviderKeyV941(key),input=root?.querySelector?.('input');
  if(input)input.value=cleaned;
@@ -2208,7 +2217,7 @@ async function dgConnectProviderV941(provider,key,button,root,onSuccess){
   else setTimeout(()=>{dgRenderAIStudioV93();dgInjectCoachProviderV93();checkAIHealth()},650);
   return true;
  }catch(error){
-  const message=dgProviderErrorV941(error,provider);S.ai=S.ai||{};S.ai.lastError=String(error?.message||error);S.ai.lastErrorUser=message;S.ai.lastErrorAt=Date.now();save();dgProviderFeedbackV941(root,message,'error');toast(message);return false;
+  const diagnostic=dgProviderDiagnosticV941(error),message=`${dgProviderErrorV941(error,provider)}\nקוד אבחון: ${diagnostic}`;S.ai=S.ai||{};S.ai.lastError=String(error?.message||error);S.ai.lastErrorCode=diagnostic;S.ai.lastErrorUser=message;S.ai.lastErrorAt=Date.now();save();dgProviderFeedbackV941(root,message,'error');toast(message);return false;
  }finally{if(button){button.disabled=false;button.removeAttribute('aria-busy');button.textContent='בדוק ושמור מפתח'}}
 }
 
@@ -2270,3 +2279,26 @@ sendCoach=async function(text,imageData=null){
  S.chat=S.chat.slice(-60);save();renderCoach();
 };
 for(const delay of [0,500,1800])setTimeout(()=>{dgEnhanceProviderInputsV941();if($('#screen-coach.active'))dgInjectCoachProviderV93()},delay);
+/* Athlete OS 9.5 — visible chat history controls */
+const DG_CHAT_TOOLS_V95='9.5-clear-history';
+
+function dgClearCoachChatV95(){
+ if(!Array.isArray(S.chat)||!S.chat.length){toast('השיחה כבר נקייה');return false}
+ if(!confirm('למחוק את כל השיחה עם המאמן? האימונים, הארוחות וההתקדמות שלך לא יימחקו.'))return false;
+ S.chat=[];save();renderCoach();toast('השיחה נמחקה');return true;
+}
+function dgInjectCoachToolsV95(){
+ const screen=$('#screen-coach'),messages=screen?.querySelector('#messages');if(!screen||!messages)return;
+ let tools=screen.querySelector('#dgCoachToolsV95');
+ if(!tools){
+  tools=document.createElement('div');tools.id='dgCoachToolsV95';tools.className='dg-chat-tools-v95';
+  tools.innerHTML='<span aria-live="polite"></span><button type="button" aria-label="נקה את כל השיחה עם המאמן">נקה את השיחה</button>';
+  messages.insertAdjacentElement('beforebegin',tools);
+ }
+ const count=Array.isArray(S.chat)?S.chat.length:0,button=tools.querySelector('button'),status=tools.querySelector('span');
+ status.textContent=count?`${count} הודעות שמורות`:'אין הודעות שמורות';
+ button.disabled=!count;button.onclick=dgClearCoachChatV95;
+}
+const dgRenderCoachV95Base=renderCoach;
+renderCoach=function(thinking=false){const result=dgRenderCoachV95Base(thinking);requestAnimationFrame(dgInjectCoachToolsV95);return result};
+for(const delay of [0,400,1600])setTimeout(()=>{if($('#screen-coach.active'))dgInjectCoachToolsV95()},delay);

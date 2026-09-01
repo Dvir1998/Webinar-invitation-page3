@@ -316,3 +316,11 @@ html:is([data-dg-theme="bright"],[data-dg-theme="cream"],[data-dg-theme="pearl"]
 html:is([data-dg-theme="bright"],[data-dg-theme="cream"],[data-dg-theme="pearl"],[data-dg-theme="aurora"]) .dg-provider-key-wrap-v941{background:#fff!important;border-color:rgba(36,96,140,.30)!important}
 html:is([data-dg-theme="bright"],[data-dg-theme="cream"],[data-dg-theme="pearl"],[data-dg-theme="aurora"]) .dg-provider-feedback-v941{background:#f7fbff!important;color:#183550!important}
 html:is([data-dg-theme="bright"],[data-dg-theme="cream"],[data-dg-theme="pearl"],[data-dg-theme="aurora"]) .coach-hero p{font-size:11px}.dg-coach-gemini-v941 p,.dg-coach-setup-v931 small{font-size:8.5px}.dg-coach-gemini-v941>button,.dg-coach-setup-v931 button{font-size:9.5px}
+/* Athlete OS 9.5 — compact, touch-safe chat history controls */
+.dg-chat-tools-v95{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px;margin:2px 0 6px;padding:4px 2px;border-bottom:1px solid var(--line)}
+.dg-chat-tools-v95 span{color:var(--muted);font-size:9px;font-weight:800}
+.dg-chat-tools-v95 button{min-width:124px;min-height:44px;padding:0 14px;border:1px solid rgba(255,107,126,.28);border-radius:14px;background:rgba(255,107,126,.08);color:#ffb4bf;font-size:10px;font-weight:950}
+.dg-chat-tools-v95 button:disabled{opacity:.45;color:var(--muted);border-color:var(--line);background:rgba(255,255,255,.035)}
+html:is([data-dg-theme="bright"],[data-dg-theme="cream"],[data-dg-theme="pearl"],[data-dg-theme="aurora"]) .dg-chat-tools-v95 span{color:#4f6178}
+html:is([data-dg-theme="bright"],[data-dg-theme="cream"],[data-dg-theme="pearl"],[data-dg-theme="aurora"]) .dg-chat-tools-v95 button{color:#8a2438;background:#fff1f3;border-color:#d697a3}
+@media(max-width:360px){.dg-chat-tools-v95{align-items:stretch;flex-direction:column}.dg-chat-tools-v95 button{width:100%}}

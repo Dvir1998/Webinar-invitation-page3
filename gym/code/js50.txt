@@ -26,6 +26,15 @@ function dgProviderFeedbackV941(root,message,state='info'){
  const box=root?.querySelector?.('[data-dg-provider-feedback]');if(!box)return;
  box.hidden=false;box.dataset.state=state;box.textContent=message;box.setAttribute('role',state==='error'?'alert':'status');
 }
+function dgProviderDiagnosticV941(error){
+ const data=error?.data||{},values=[data.status,data.code,data.error,data.reason,error?.status,error?.name,error?.message];
+ for(const value of values){
+  if(typeof value!=='string'&&typeof value!=='number')continue;
+  const safe=String(value).trim().replace(/[^A-Za-z0-9_.:-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,72);
+  if(safe)return safe;
+ }
+ return'UNKNOWN_PROVIDER_ERROR';
+}
 async function dgConnectProviderV941(provider,key,button,root,onSuccess){
  const cleaned=dgCleanProviderKeyV941(key),input=root?.querySelector?.('input');
  if(input)input.value=cleaned;
@@ -43,7 +52,7 @@ async function dgConnectProviderV941(provider,key,button,root,onSuccess){
   else setTimeout(()=>{dgRenderAIStudioV93();dgInjectCoachProviderV93();checkAIHealth()},650);
   return true;
  }catch(error){
-  const message=dgProviderErrorV941(error,provider);S.ai=S.ai||{};S.ai.lastError=String(error?.message||error);S.ai.lastErrorUser=message;S.ai.lastErrorAt=Date.now();save();dgProviderFeedbackV941(root,message,'error');toast(message);return false;
+  const diagnostic=dgProviderDiagnosticV941(error),message=`${dgProviderErrorV941(error,provider)}\nקוד אבחון: ${diagnostic}`;S.ai=S.ai||{};S.ai.lastError=String(error?.message||error);S.ai.lastErrorCode=diagnostic;S.ai.lastErrorUser=message;S.ai.lastErrorAt=Date.now();save();dgProviderFeedbackV941(root,message,'error');toast(message);return false;
  }finally{if(button){button.disabled=false;button.removeAttribute('aria-busy');button.textContent='בדוק ושמור מפתח'}}
 }
 

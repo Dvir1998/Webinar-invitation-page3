@@ -69,8 +69,10 @@ jobs:
           grep -q 'DG_GYM_PHOTO_TOTAL_V94' gym/dist/app.js
           grep -q 'DG_AI_UX_VERSION_V941' gym/dist/app.js
           grep -q 'dgProviderErrorV941' gym/dist/app.js
+          grep -q 'DG_CHAT_TOOLS_V95' gym/dist/app.js
           grep -q 'Athlete OS 9.4 — native high-resolution machine photography' gym/dist/app.css
           grep -q 'Athlete OS 9.4.1 — direct Gemini setup and persistent diagnostics' gym/dist/app.css
+          grep -q 'Athlete OS 9.5 — compact, touch-safe chat history controls' gym/dist/app.css
           grep -q 'non-blocking release banner' gym/dist/app.css
           test -s gym/assets/gym-machines-2x.webp
           test -s gym/assets/gym-photos/manifest.json

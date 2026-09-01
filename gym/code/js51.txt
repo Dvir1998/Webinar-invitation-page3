@@ -1,0 +1,23 @@
+/* Athlete OS 9.5 — visible chat history controls */
+const DG_CHAT_TOOLS_V95='9.5-clear-history';
+
+function dgClearCoachChatV95(){
+ if(!Array.isArray(S.chat)||!S.chat.length){toast('השיחה כבר נקייה');return false}
+ if(!confirm('למחוק את כל השיחה עם המאמן? האימונים, הארוחות וההתקדמות שלך לא יימחקו.'))return false;
+ S.chat=[];save();renderCoach();toast('השיחה נמחקה');return true;
+}
+function dgInjectCoachToolsV95(){
+ const screen=$('#screen-coach'),messages=screen?.querySelector('#messages');if(!screen||!messages)return;
+ let tools=screen.querySelector('#dgCoachToolsV95');
+ if(!tools){
+  tools=document.createElement('div');tools.id='dgCoachToolsV95';tools.className='dg-chat-tools-v95';
+  tools.innerHTML='<span aria-live="polite"></span><button type="button" aria-label="נקה את כל השיחה עם המאמן">נקה את השיחה</button>';
+  messages.insertAdjacentElement('beforebegin',tools);
+ }
+ const count=Array.isArray(S.chat)?S.chat.length:0,button=tools.querySelector('button'),status=tools.querySelector('span');
+ status.textContent=count?`${count} הודעות שמורות`:'אין הודעות שמורות';
+ button.disabled=!count;button.onclick=dgClearCoachChatV95;
+}
+const dgRenderCoachV95Base=renderCoach;
+renderCoach=function(thinking=false){const result=dgRenderCoachV95Base(thinking);requestAnimationFrame(dgInjectCoachToolsV95);return result};
+for(const delay of [0,400,1600])setTimeout(()=>{if($('#screen-coach.active'))dgInjectCoachToolsV95()},delay);

@@ -58,7 +58,7 @@ if(!delayedDraft.connected||!delayedDraft.value.includes('REJECTED'))throw new E
 await page.locator('#dgCoachGeminiSaveV941').evaluate(button=>button.click());
 await page.waitForFunction(()=>document.querySelector('#dgCoachGeminiSetupV941 [data-dg-provider-feedback]')?.dataset.state==='error',null,{timeout:10000});
 const rejected=await page.evaluate(()=>({value:document.querySelector('#dgCoachGeminiKeyV941')?.value,type:document.querySelector('#dgCoachGeminiKeyV941')?.type,disabled:document.querySelector('#dgCoachGeminiSaveV941')?.disabled,feedback:document.querySelector('#dgCoachGeminiSetupV941 [data-dg-provider-feedback]')?.innerText}));
-if(!rejected.value.startsWith('AIzaSyREJECTED')||rejected.type!=='password'||rejected.disabled||!rejected.feedback.includes('דחה'))throw new Error(`Persistent Gemini rejection UX failed ${JSON.stringify(rejected)}`);
+if(!rejected.value.startsWith('AIzaSyREJECTED')||rejected.type!=='password'||rejected.disabled||!rejected.feedback.includes('דחה')||!rejected.feedback.includes('API_KEY_INVALID'))throw new Error(`Persistent Gemini rejection UX failed ${JSON.stringify(rejected)}`);
 await page.locator('#dgCoachGeminiSetupV941 [data-dg-toggle-key]').evaluate(button=>button.click());
 if(await page.locator('#dgCoachGeminiKeyV941').getAttribute('type')!=='text')throw new Error('Gemini reveal control failed');
 await page.locator('#dgCoachGeminiSetupV941 [data-dg-toggle-key]').evaluate(button=>button.click());
@@ -75,11 +75,20 @@ await page.locator('#coachInput').fill('בנה לי ארוחה אחרי אימו
 await page.locator('#coachSend').evaluate(button=>button.click());
 await page.waitForFunction(()=>document.querySelector('#messages')?.innerText.includes('תשובת מאמן אישית ממנוע ג׳מיני'),null,{timeout:10000});
 
-const result=await page.evaluate(()=>({provider:S.ai?.lastProvider,model:S.ai?.lastModel,offline:S.chat.at(-1)?.offline||false,setup:document.querySelector('#dgCoachSetupV931')?.innerText||''}));
+const clearButton=page.getByRole('button',{name:'נקה את כל השיחה עם המאמן'});
+await clearButton.waitFor({state:'visible'});
+const clearBox=await clearButton.boundingBox();
+if(!clearBox||clearBox.height<44||clearBox.width<44)throw new Error(`Clear chat touch target failed ${JSON.stringify(clearBox)}`);
+page.once('dialog',dialog=>dialog.accept());
+await clearButton.click();
+await page.waitForFunction(()=>Array.isArray(S.chat)&&S.chat.length===0&&document.querySelector('#dgCoachToolsV95 span')?.innerText.includes('אין הודעות'));
+if(!await clearButton.isDisabled())throw new Error('Clear chat button did not disable after deletion');
+
+const result=await page.evaluate(()=>({provider:S.ai?.lastProvider,model:S.ai?.lastModel,chatCount:S.chat.length,setup:document.querySelector('#dgCoachSetupV931')?.innerText||''}));
 if(!vaultRequests.some(request=>request.action==='set'&&request.provider==='gemini'&&String(request.apiKey).includes('REJECTED')))throw new Error('Rejected Gemini path was not tested');
 if(!vaultRequests.some(request=>request.action==='set'&&request.provider==='gemini'&&String(request.apiKey).startsWith('AIzaSyDUMMY')))throw new Error('Gemini key was not sent to the user-scoped vault endpoint');
 if(!coachRequests.some(request=>request.providerPreference==='gemini'&&String(request.message).includes('ארוחה')))throw new Error('Coach request did not prefer Gemini and include the user message');
-if(result.provider!=='gemini'||result.model!=='gemini-2.5-flash'||result.offline)throw new Error(`Cloud coach state mismatch ${JSON.stringify(result)}`);
+if(result.provider!=='gemini'||result.model!=='gemini-2.5-flash'||result.chatCount!==0)throw new Error(`Cloud coach state mismatch ${JSON.stringify(result)}`);
 if(errors.length)throw new Error(`Runtime errors: ${errors.join(' | ')}`);
 
 console.log('Direct Gemini setup, persistent diagnostics and real coach path OK',{vaultRequests:vaultRequests.length,coachRequests:coachRequests.length,rejected,result});
