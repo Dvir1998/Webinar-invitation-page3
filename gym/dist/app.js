@@ -1,6 +1,6 @@
 /* Dvir Gym AI Athlete OS — generated production JS. Do not edit directly. */
 'use strict';
-const DG_BUILD_ID='42d688b43e028281ce8b350a28a40d0e10341491';
+const DG_BUILD_ID='local-7b7a371';
 const VERSION='6.0.0';
 const STORE='dvirAthleteOS_v6';
 const LEGACY=['dvirAthleteLiveV1','dvirGymAthleteOSV4','dvirGym2027V3'];
@@ -2165,6 +2165,10 @@ dgPatchMachineLibraryTextV93=function(){
 for(const delay of [0,300,1500])setTimeout(()=>{dgPatchMachineLibraryTextV93();if($('#machineGrid'))renderMachineGrid(MACHINES)},delay);
 /* Athlete OS 9.4.1 — direct Gemini setup and honest coach diagnostics */
 const DG_AI_UX_VERSION_V941='9.4.1-gemini-direct';
+let dgCoachGeminiDraftV941='';
+let dgCoachGeminiDraftModeV941='';
+
+addEventListener('pagehide',()=>{dgCoachGeminiDraftV941='';dgCoachGeminiDraftModeV941=''});
 
 function dgCleanProviderKeyV941(value){
  let key=String(value||'').trim();
@@ -2226,8 +2230,16 @@ dgEnhanceProviderInputsV941();
 
 function dgInjectCoachGeminiV941(){
  const screen=$('#screen-coach'),setup=$('#dgCoachSetupV931');if(!screen||!setup)return;const current=screen.querySelector('#dgCoachGeminiSetupV941'),mode=dgIsAccount()?'account':'guest';
- if(dgAiConfigured){current?.remove();return}
- if(current?.dataset.mode===mode)return;
+ if(dgAiConfigured){current?.remove();dgCoachGeminiDraftV941='';dgCoachGeminiDraftModeV941='';return}
+ if(current?.dataset.mode===mode){
+  const input=current.querySelector('input');
+  if(input&&!input.value&&dgCoachGeminiDraftModeV941===mode)input.value=dgCoachGeminiDraftV941;
+  if(current.previousElementSibling!==setup)setup.insertAdjacentElement('afterend',current);
+  return;
+ }
+ const priorValue=current?.querySelector('input')?.value||'';
+ if(priorValue){dgCoachGeminiDraftV941=priorValue;dgCoachGeminiDraftModeV941=current?.dataset.mode||mode}
+ if(dgCoachGeminiDraftModeV941&&dgCoachGeminiDraftModeV941!==mode){dgCoachGeminiDraftV941='';dgCoachGeminiDraftModeV941=mode}
  current?.remove();
  const box=document.createElement('section');box.id='dgCoachGeminiSetupV941';box.className='dg-coach-gemini-v941';
  box.dataset.mode=mode;
@@ -2235,7 +2247,17 @@ function dgInjectCoachGeminiV941(){
  else box.innerHTML=`<div class="dg-coach-gemini-head-v941"><div><b>חבר ג׳מיני ישירות מתוך הצ׳אט</b><p>הדבק את המפתח האישי, בדוק אותו והמשך מיד לשיחה.</p></div><a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">צור מפתח</a></div><div class="dg-provider-key-wrap-v941"><input id="dgCoachGeminiKeyV941" type="password" inputmode="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="הדבק כאן את המפתח המלא"><button type="button" data-dg-toggle-key="gemini">הצג</button></div><button type="button" id="dgCoachGeminiSaveV941">בדוק ושמור מפתח</button><div class="dg-provider-feedback-v941" data-dg-provider-feedback hidden></div>`;
  setup.insertAdjacentElement('afterend',box);dgEnhanceProviderInputsV941(box);
  $('#dgCoachAiLoginV941')?.addEventListener('click',()=>dgOpenAccount('login'));
- $('#dgCoachGeminiSaveV941')?.addEventListener('click',async()=>{const input=$('#dgCoachGeminiKeyV941'),button=$('#dgCoachGeminiSaveV941');await dgConnectProviderV941('gemini',input?.value||'',button,box,async()=>{setTimeout(()=>{renderCoach();checkAIHealth()},500)})});
+ const directInput=box.querySelector('#dgCoachGeminiKeyV941');
+ if(directInput){
+  dgCoachGeminiDraftModeV941=mode;
+  directInput.value=dgCoachGeminiDraftV941;
+  directInput.addEventListener('input',()=>{dgCoachGeminiDraftV941=directInput.value;dgCoachGeminiDraftModeV941=mode});
+ }
+ $('#dgCoachGeminiSaveV941')?.addEventListener('click',async()=>{
+  const input=box.querySelector('#dgCoachGeminiKeyV941'),button=box.querySelector('#dgCoachGeminiSaveV941');
+  const ok=await dgConnectProviderV941('gemini',input?.value||dgCoachGeminiDraftV941||'',button,box,async()=>{dgCoachGeminiDraftV941='';dgCoachGeminiDraftModeV941='';setTimeout(()=>{renderCoach();checkAIHealth()},500)});
+  if(!ok)setTimeout(()=>{dgInjectCoachGeminiV941();const live=$('#dgCoachGeminiSetupV941');if(live&&S.ai?.lastErrorUser)dgProviderFeedbackV941(live,S.ai.lastErrorUser,'error')},0);
+ });
  if(S.ai?.lastErrorUser&&Date.now()-(+S.ai.lastErrorAt||0)<86400000)dgProviderFeedbackV941(box,S.ai.lastErrorUser,'error');
 }
 const dgInjectCoachProviderV941Base=dgInjectCoachProviderV93;

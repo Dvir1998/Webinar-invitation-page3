@@ -51,6 +51,10 @@ const contrast=await page.evaluate(()=>{
 if(contrast.some(item=>item.ratio<4.5))throw new Error(`Light coach contrast failed ${JSON.stringify(contrast)}`);
 if(process.env.DG_SCREENSHOT)await page.screenshot({path:process.env.DG_SCREENSHOT,fullPage:true});
 await page.locator('#dgCoachGeminiKeyV941').fill('GEMINI_API_KEY="AIzaSyREJECTED_GEMINI_KEY_FOR_BROWSER_QA_123"');
+const filledInput=await page.locator('#dgCoachGeminiKeyV941').elementHandle();
+await page.waitForTimeout(2300);
+const delayedDraft=await page.evaluate(input=>({connected:input?.isConnected,value:document.querySelector('#dgCoachGeminiKeyV941')?.value}),filledInput);
+if(!delayedDraft.connected||!delayedDraft.value.includes('REJECTED'))throw new Error(`Gemini draft did not survive delayed coach refresh ${JSON.stringify(delayedDraft)}`);
 await page.locator('#dgCoachGeminiSaveV941').evaluate(button=>button.click());
 await page.waitForFunction(()=>document.querySelector('#dgCoachGeminiSetupV941 [data-dg-provider-feedback]')?.dataset.state==='error',null,{timeout:10000});
 const rejected=await page.evaluate(()=>({value:document.querySelector('#dgCoachGeminiKeyV941')?.value,type:document.querySelector('#dgCoachGeminiKeyV941')?.type,disabled:document.querySelector('#dgCoachGeminiSaveV941')?.disabled,feedback:document.querySelector('#dgCoachGeminiSetupV941 [data-dg-provider-feedback]')?.innerText}));
