@@ -8,6 +8,18 @@ const luminance=color=>{
  return .2126*channels[0]+.7152*channels[1]+.0722*channels[2]
 };
 const contrast=(foreground,background)=>{const a=luminance(parseRgb(foreground)),b=luminance(parseRgb(background));return(Math.max(a,b)+.05)/(Math.min(a,b)+.05)};
+const stableBox=async(page,selector,viewportWidth)=>{
+ const handle=await page.waitForFunction(({selector,viewportWidth})=>{
+  const element=document.querySelector(selector),now=performance.now();
+  if(!element||!element.isConnected||!element.getClientRects().length)return null;
+  if(window.__dgStableAccountNode!==element){window.__dgStableAccountNode=element;window.__dgStableAccountSince=now;return null}
+  if(now-(window.__dgStableAccountSince||0)<300)return null;
+  const rect=element.getBoundingClientRect();
+  if(rect.height<44||rect.x<0||rect.right>viewportWidth)return null;
+  return{x:rect.x,y:rect.y,width:rect.width,height:rect.height,right:rect.right};
+ },{selector,viewportWidth},{timeout:10000,polling:50});
+ return handle.jsonValue();
+};
 
 for(const viewport of [{name:'compact',width:320,height:700},{name:'mobile',width:390,height:844},{name:'desktop',width:1440,height:1000}]){
  const context=await browser.newContext({viewport,locale:'he-IL',reducedMotion:'reduce'});
@@ -28,7 +40,7 @@ for(const viewport of [{name:'compact',width:320,height:700},{name:'mobile',widt
  const entry=page.getByRole('button',{name:'כניסה או הרשמה לחשבון'});
  await entry.waitFor({state:'visible',timeout:5000});
  if(!await entry.isVisible())throw new Error(`${viewport.name}: visible account entry missing`);
- const entryBox=await entry.boundingBox();
+ const entryBox=await stableBox(page,'#dgAccountEntryV912',viewport.width);
  if(!entryBox||entryBox.height<44||entryBox.x<0||entryBox.x+entryBox.width>viewport.width)throw new Error(`${viewport.name}: account entry geometry failed ${JSON.stringify(entryBox)}`);
  await entry.click();
  await page.waitForSelector('#dgAccountDialog[open]');
