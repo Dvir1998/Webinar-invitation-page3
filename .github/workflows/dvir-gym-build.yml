@@ -73,6 +73,8 @@ jobs:
           grep -q 'Athlete OS 9.4 — native high-resolution machine photography' gym/dist/app.css
           grep -q 'Athlete OS 9.4.1 — direct Gemini setup and persistent diagnostics' gym/dist/app.css
           grep -q 'Athlete OS 9.5 — compact, touch-safe chat history controls' gym/dist/app.css
+          grep -q 'Athlete OS 9.6 — premium coach canvas and verified light-theme contrast' gym/dist/app.css
+          grep -q 'DG_COACH_PREMIUM_V96' gym/dist/app.js
           grep -q 'non-blocking release banner' gym/dist/app.css
           test -s gym/assets/gym-machines-2x.webp
           test -s gym/assets/gym-photos/manifest.json

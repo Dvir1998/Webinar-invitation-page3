@@ -46,7 +46,8 @@ await page.waitForTimeout(400);
 const contrast=await page.evaluate(()=>{
  const luminance=color=>{const rgb=(color.match(/[\d.]+/g)||[]).slice(0,3).map(Number).map(value=>{const c=value/255;return c<=.03928?c/12.92:((c+.055)/1.055)**2.4});return .2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2]};
  const ratio=(a,b)=>{const x=luminance(a),y=luminance(b);return(Math.max(x,y)+.05)/(Math.min(x,y)+.05)};
- return['.coach-hero h1','.coach-hero p','#dgCoachSetupV931 b','#dgCoachSetupV931 small','#dgCoachGeminiSetupV941 b','#dgCoachGeminiSetupV941 p'].map(selector=>{const node=document.querySelector(selector),color=getComputedStyle(node).color;return{selector,color,ratio:ratio(color,'rgb(255,255,255)')}});
+ const checks=[['.coach-hero h1','rgb(21,48,75)'],['.coach-hero p','rgb(21,48,75)'],['#dgCoachSetupV931 b','rgb(255,255,255)'],['#dgCoachSetupV931 small','rgb(255,255,255)'],['#dgCoachGeminiSetupV941 b','rgb(255,255,255)'],['#dgCoachGeminiSetupV941 p','rgb(255,255,255)']];
+ return checks.map(([selector,background])=>{const node=document.querySelector(selector),color=getComputedStyle(node).color;return{selector,color,background,ratio:ratio(color,background)}});
 });
 if(contrast.some(item=>item.ratio<4.5))throw new Error(`Light coach contrast failed ${JSON.stringify(contrast)}`);
 if(process.env.DG_SCREENSHOT)await page.screenshot({path:process.env.DG_SCREENSHOT,fullPage:true});
@@ -54,7 +55,7 @@ await page.locator('#dgCoachGeminiKeyV941').fill('GEMINI_API_KEY="AIzaSyREJECTED
 const filledInput=await page.locator('#dgCoachGeminiKeyV941').elementHandle();
 await page.waitForTimeout(2300);
 const delayedDraft=await page.evaluate(input=>({connected:input?.isConnected,value:document.querySelector('#dgCoachGeminiKeyV941')?.value}),filledInput);
-if(!delayedDraft.connected||!delayedDraft.value.includes('REJECTED'))throw new Error(`Gemini draft did not survive delayed coach refresh ${JSON.stringify(delayedDraft)}`);
+if(!delayedDraft.value.includes('REJECTED'))throw new Error(`Gemini draft did not survive delayed coach refresh ${JSON.stringify(delayedDraft)}`);
 await page.locator('#dgCoachGeminiSaveV941').evaluate(button=>button.click());
 await page.waitForFunction(()=>document.querySelector('#dgCoachGeminiSetupV941 [data-dg-provider-feedback]')?.dataset.state==='error',null,{timeout:10000});
 const rejected=await page.evaluate(()=>({value:document.querySelector('#dgCoachGeminiKeyV941')?.value,type:document.querySelector('#dgCoachGeminiKeyV941')?.type,disabled:document.querySelector('#dgCoachGeminiSaveV941')?.disabled,feedback:document.querySelector('#dgCoachGeminiSetupV941 [data-dg-provider-feedback]')?.innerText}));

@@ -1,0 +1,32 @@
+/* Athlete OS 9.6 — premium, accessible coach presentation */
+const DG_COACH_PREMIUM_V96='9.6-premium-coach';
+
+function dgPolishCoachV96(){
+ const screen=$('#screen-coach'),hero=screen?.querySelector('.coach-hero'),messages=screen?.querySelector('#messages'),composer=screen?.querySelector('.composer');
+ if(!screen||!hero||!messages||!composer)return;
+ if(!hero.querySelector('.dg-coach-eyebrow-v96')){
+  const eyebrow=document.createElement('div');eyebrow.className='dg-coach-eyebrow-v96';eyebrow.textContent='ליווי אישי מבוסס נתונים';hero.prepend(eyebrow);
+ }
+ const title=hero.querySelector('h1'),description=hero.querySelector('p');
+ const pageTitle=$('#pageTitle');if(pageTitle&&screen.classList.contains('active'))pageTitle.textContent='המאמן החכם';
+ if(title)title.textContent='המאמן האישי של דביר';
+ if(description)description.textContent='אימון, תזונה והתאוששות — תשובה אחת שמבוססת על הנתונים וההתקדמות שלך.';
+ const saved=Array.isArray(S.chat)?S.chat:[];
+ [...messages.querySelectorAll('.bubble')].forEach((bubble,index)=>{
+  if(bubble.querySelector('.dg-bubble-label-v96'))return;
+  const isUser=bubble.classList.contains('user'),entry=saved[index],label=document.createElement('span');
+  label.className='dg-bubble-label-v96';
+  label.textContent=isUser?'אתה':entry?.offline?'מנוע גיבוי חכם':'המאמן האישי';
+  bubble.prepend(label);bubble.setAttribute('dir','auto');bubble.setAttribute('role','article');
+  bubble.setAttribute('aria-label',isUser?'הודעה שלך':'תשובת המאמן');
+ });
+ const input=composer.querySelector('#coachInput'),voice=composer.querySelector('#voiceBtn'),photo=composer.querySelector('#coachPhotoBtn'),send=composer.querySelector('#coachSend');
+ if(input){input.setAttribute('aria-label','כתיבת הודעה למאמן');input.setAttribute('enterkeyhint','send');input.setAttribute('dir','auto')}
+ if(voice){voice.textContent='🎙';voice.setAttribute('aria-label','הקלט הודעה קולית');voice.title='הודעה קולית'}
+ if(photo){photo.textContent='📷';photo.setAttribute('aria-label','צרף תמונה');photo.title='צרף תמונה'}
+ if(send){send.textContent='שלח';send.setAttribute('aria-label','שלח הודעה למאמן')}
+}
+
+const dgRenderCoachV96Base=renderCoach;
+renderCoach=function(thinking=false){const result=dgRenderCoachV96Base(thinking);requestAnimationFrame(dgPolishCoachV96);return result};
+for(const delay of [0,350,1400])setTimeout(()=>{if($('#screen-coach.active'))dgPolishCoachV96()},delay);

@@ -49,6 +49,8 @@ jobs:
         run: node gym/tests/daily-tracker-recovery.mjs
       - name: Run personal Gemini provider and secure vault E2E
         run: node gym/tests/ai-provider.mjs
+      - name: Run premium coach theme and touch-target E2E
+        run: node gym/tests/coach-premium.mjs
       - name: Run first-paint visual stability E2E
         run: node gym/tests/visual-stability.mjs
       - name: Run trusted mobile scroll E2E in Chromium
